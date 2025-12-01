@@ -1,0 +1,595 @@
+.tournament-page {
+  min-height: calc(100vh - 56px);
+  background: #0a0a0f;
+  padding: 24px;
+}
+
+.tournament-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.tournament-header {
+  margin-bottom: 32px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 14px;
+  margin-bottom: 12px;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #00f5d4;
+}
+
+.tournament-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px;
+}
+
+.tournament-subtitle {
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* Section Titles */
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.count-badge {
+  background: rgba(0, 245, 212, 0.1);
+  color: #00f5d4;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Type Selection */
+.type-section {
+  margin-bottom: 32px;
+}
+
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.type-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  position: relative;
+}
+
+.type-card:hover {
+  border-color: rgba(0, 245, 212, 0.3);
+  background: #1a1a24;
+}
+
+.type-card.selected {
+  border-color: #00f5d4;
+  background: rgba(0, 245, 212, 0.05);
+}
+
+.type-icon {
+  font-size: 28px;
+}
+
+.type-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.type-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.type-desc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.type-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #00f5d4;
+  font-weight: 700;
+}
+
+/* Stage Tabs */
+.stage-section {
+  margin-bottom: 24px;
+}
+
+.stage-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stage-tab {
+  padding: 8px 16px;
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  color: #9ca3af;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stage-tab:hover {
+  border-color: rgba(0, 245, 212, 0.3);
+  color: #ffffff;
+}
+
+.stage-tab.active {
+  background: #00f5d4;
+  border-color: #00f5d4;
+  color: #000000;
+  font-weight: 600;
+}
+
+/* Stack Reference */
+.stack-reference {
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.reference-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #9ca3af;
+  margin: 0 0 12px;
+}
+
+.stack-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.stack-category {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stack-cat-label {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stack-values {
+  display: flex;
+  gap: 6px;
+}
+
+.stack-chip {
+  padding: 4px 8px;
+  background: rgba(0, 245, 212, 0.1);
+  border-radius: 4px;
+  font-size: 12px;
+  color: #00f5d4;
+  font-family: 'Fira Code', monospace;
+}
+
+/* Scenarios Grid */
+.scenarios-section {
+  margin-bottom: 40px;
+}
+
+.scenarios-header {
+  margin-bottom: 16px;
+}
+
+.scenarios-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.scenario-card {
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.2s;
+}
+
+.scenario-card:hover {
+  border-color: rgba(0, 245, 212, 0.3);
+  transform: translateY(-2px);
+}
+
+.scenario-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.scenario-type-badge,
+.scenario-stage-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.scenario-type-badge {
+  background: rgba(0, 245, 212, 0.1);
+  color: #00f5d4;
+}
+
+.scenario-type-badge[data-type="mtt"] { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.scenario-type-badge[data-type="sng"] { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.scenario-type-badge[data-type="pko"] { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+.scenario-type-badge[data-type="spin"] { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.scenario-type-badge[data-type="satellite"] { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+
+.scenario-stage-badge {
+  background: rgba(255, 255, 255, 0.05);
+  color: #9ca3af;
+}
+
+.scenario-stage-badge[data-stage="bubble"] { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+.scenario-stage-badge[data-stage="final_table"] { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+.scenario-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 16px;
+}
+
+.scenario-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-label {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.detail-value.icm[data-level="high"] {
+  color: #ef4444;
+}
+
+.detail-value.icm[data-level="medium"] {
+  color: #f59e0b;
+}
+
+.detail-value.icm[data-level="low"] {
+  color: #22c55e;
+}
+
+.detail-value.bounty {
+  color: #22c55e;
+}
+
+.scenario-notes {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.notes-label {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.notes-list {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.notes-list li {
+  margin-bottom: 4px;
+}
+
+.start-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, #00f5d4 0%, #00d4aa 100%);
+  border: none;
+  border-radius: 8px;
+  color: #000000;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.start-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 245, 212, 0.3);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 48px;
+  background: #12121a;
+  border-radius: 16px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.empty-state p {
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+
+.reset-btn {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid rgba(0, 245, 212, 0.3);
+  border-radius: 8px;
+  color: #00f5d4;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-btn:hover {
+  background: rgba(0, 245, 212, 0.1);
+}
+
+/* Modal */
+.scenario-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 100;
+}
+
+.scenario-modal {
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.modal-close:hover {
+  color: #ffffff;
+}
+
+.modal-content {
+  padding: 32px;
+}
+
+.modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px;
+}
+
+.modal-desc {
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 0 0 24px;
+}
+
+.modal-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.info-card {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.info-label {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.info-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.modal-notes {
+  margin-bottom: 24px;
+}
+
+.modal-notes h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 12px;
+}
+
+.modal-notes ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.modal-notes li {
+  margin-bottom: 8px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-start-btn {
+  flex: 1;
+  padding: 14px;
+  background: linear-gradient(135deg, #00f5d4 0%, #00d4aa 100%);
+  border: none;
+  border-radius: 10px;
+  color: #000000;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.modal-start-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 245, 212, 0.3);
+}
+
+.modal-cancel-btn {
+  padding: 14px 24px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #9ca3af;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tournament-page {
+    padding: 16px;
+  }
+
+  .tournament-title {
+    font-size: 24px;
+  }
+
+  .type-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .scenarios-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stage-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
+  }
+
+  .stage-tab {
+    white-space: nowrap;
+  }
+
+  .stack-chips {
+    grid-template-columns: 1fr 1fr;
+  }
+}

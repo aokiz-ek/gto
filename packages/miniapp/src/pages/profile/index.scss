@@ -1,0 +1,202 @@
+$background: #0a0a0f;
+$surface: #12121a;
+$surface-light: #1a1a24;
+$text: #ffffff;
+$text-secondary: #a0a0b0;
+$text-muted: #6b6b7b;
+$primary: #00f5d4;
+$secondary: #9b5de5;
+$accent: #f15bb5;
+
+.profile-container {
+  padding: 24px;
+  min-height: 100vh;
+  background: $background;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  background: $surface;
+  border-radius: 16px;
+  margin-bottom: 24px;
+
+  .avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $secondary 0%, $accent 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text {
+      font-size: 36px;
+      font-weight: 700;
+      color: $text;
+    }
+  }
+
+  .user-info {
+    flex: 1;
+
+    .user-name {
+      font-size: 28px;
+      font-weight: 600;
+      color: $text;
+      display: block;
+    }
+
+    .user-plan {
+      font-size: 20px;
+      color: $text-secondary;
+      display: block;
+      margin-top: 4px;
+    }
+  }
+
+  .login-btn {
+    padding: 12px 24px;
+    border-radius: 32px;
+    background: $primary;
+
+    text {
+      font-size: 24px;
+      font-weight: 600;
+      color: $background;
+    }
+  }
+}
+
+.section {
+  margin-bottom: 24px;
+
+  .section-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: $primary;
+    display: block;
+    margin-bottom: 12px;
+  }
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  .stat-item {
+    background: $surface;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+
+    .stat-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: $primary;
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 20px;
+      color: $text-secondary;
+      display: block;
+      margin-top: 4px;
+    }
+  }
+}
+
+.settings-list {
+  background: $surface;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid $surface-light;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .setting-info {
+    flex: 1;
+
+    .setting-label {
+      font-size: 24px;
+      color: $text;
+      display: block;
+    }
+
+    .setting-desc {
+      font-size: 20px;
+      color: $text-muted;
+      display: block;
+      margin-top: 4px;
+    }
+  }
+}
+
+.upgrade-card {
+  background: linear-gradient(135deg, rgba($secondary, 0.2) 0%, rgba($accent, 0.2) 100%);
+  border: 2px solid $secondary;
+  border-radius: 16px;
+  padding: 24px;
+  text-align: center;
+
+  .upgrade-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: $text;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .upgrade-desc {
+    font-size: 22px;
+    color: $text-secondary;
+    display: block;
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  .upgrade-btn {
+    background: linear-gradient(135deg, $secondary 0%, $accent 100%);
+    padding: 16px;
+    border-radius: 12px;
+    display: inline-block;
+
+    text {
+      font-size: 24px;
+      font-weight: 600;
+      color: $text;
+    }
+  }
+}
+
+.about-info {
+  background: $surface;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+
+  .version {
+    font-size: 24px;
+    color: $text;
+    display: block;
+  }
+
+  .copyright {
+    font-size: 20px;
+    color: $text-muted;
+    display: block;
+    margin-top: 8px;
+  }
+}

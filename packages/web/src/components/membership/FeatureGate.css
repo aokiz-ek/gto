@@ -1,0 +1,150 @@
+/* Blurred preview container */
+.feature-gate-blurred {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.feature-gate-content-blur {
+  filter: blur(8px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.feature-gate-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.feature-gate-overlay:hover {
+  background: rgba(10, 10, 15, 0.6);
+}
+
+.feature-gate-lock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.feature-gate-lock .lock-icon {
+  width: 40px;
+  height: 40px;
+  color: #00f5d4;
+  opacity: 0.8;
+}
+
+.feature-gate-lock .lock-message {
+  font-size: 14px;
+  color: #9ca3af;
+  max-width: 200px;
+}
+
+.feature-gate-lock .lock-upgrade-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #00f5d4, #00d4aa);
+  color: #0a0a0f;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.feature-gate-lock .lock-upgrade-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 245, 212, 0.3);
+}
+
+/* Default locked card */
+.feature-gate-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 24px;
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.feature-gate-locked:hover {
+  border-color: rgba(0, 245, 212, 0.2);
+  background: rgba(18, 18, 26, 0.8);
+}
+
+.feature-gate-locked .locked-icon {
+  width: 32px;
+  height: 32px;
+  color: #6b7280;
+}
+
+.feature-gate-locked .locked-message {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.feature-gate-locked .locked-upgrade-btn {
+  padding: 8px 16px;
+  background: transparent;
+  color: #00f5d4;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid rgba(0, 245, 212, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.feature-gate-locked .locked-upgrade-btn:hover {
+  background: rgba(0, 245, 212, 0.1);
+  border-color: #00f5d4;
+}
+
+/* Mobile responsive */
+@media (max-width: 639px) {
+  .feature-gate-lock {
+    padding: 16px;
+  }
+
+  .feature-gate-lock .lock-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .feature-gate-lock .lock-message {
+    font-size: 13px;
+  }
+
+  .feature-gate-lock .lock-upgrade-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .feature-gate-locked {
+    padding: 24px 16px;
+  }
+
+  .feature-gate-locked .locked-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .feature-gate-locked .locked-message {
+    font-size: 13px;
+  }
+}

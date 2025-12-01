@@ -1,0 +1,171 @@
+/* Full usage indicator */
+.usage-indicator {
+  padding: 12px 16px;
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.usage-indicator.warning {
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.usage-indicator.exhausted {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.usage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.usage-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.usage-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.usage-indicator.warning .usage-text {
+  color: #fbbf24;
+}
+
+.usage-indicator.exhausted .usage-text {
+  color: #ef4444;
+}
+
+/* Progress bar */
+.usage-bar-container {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.usage-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #00f5d4, #00d4aa);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.usage-indicator.warning .usage-bar {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.usage-indicator.exhausted .usage-bar {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+/* Warning and exhausted messages */
+.usage-warning-message,
+.usage-exhausted-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.usage-warning-message span,
+.usage-exhausted-message span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.usage-warning-message span {
+  color: #fbbf24;
+}
+
+.usage-exhausted-message span {
+  color: #ef4444;
+}
+
+.usage-upgrade-link {
+  font-size: 12px;
+  color: #00f5d4;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.usage-upgrade-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.usage-upgrade-btn {
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #00f5d4, #00d4aa);
+  color: #0a0a0f;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.usage-upgrade-btn:hover {
+  box-shadow: 0 2px 8px rgba(0, 245, 212, 0.3);
+}
+
+/* Compact version */
+.usage-indicator-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.usage-indicator-compact .usage-count {
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.usage-indicator-compact.warning .usage-count {
+  color: #fbbf24;
+}
+
+.usage-indicator-compact.exhausted .usage-count {
+  color: #ef4444;
+}
+
+.usage-indicator-compact .usage-upgrade-link {
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile responsive */
+@media (max-width: 639px) {
+  .usage-indicator {
+    padding: 10px 14px;
+  }
+
+  .usage-label,
+  .usage-text {
+    font-size: 12px;
+  }
+
+  .usage-warning-message,
+  .usage-exhausted-message {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .usage-upgrade-btn {
+    width: 100%;
+    text-align: center;
+    padding: 6px 12px;
+  }
+}

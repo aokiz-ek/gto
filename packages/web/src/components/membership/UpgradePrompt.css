@@ -1,0 +1,241 @@
+.upgrade-prompt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.upgrade-prompt {
+  position: relative;
+  max-width: 420px;
+  width: 100%;
+  padding: 32px;
+  background: linear-gradient(135deg, #12121a 0%, #1a1a24 100%);
+  border: 1px solid rgba(0, 245, 212, 0.2);
+  border-radius: 20px;
+  text-align: center;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.upgrade-prompt-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted, #6b7280);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.upgrade-prompt-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary, #ffffff);
+}
+
+.upgrade-prompt-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(0, 245, 212, 0.2), rgba(155, 93, 229, 0.2));
+  border-radius: 50%;
+  color: var(--color-primary, #00f5d4);
+}
+
+.upgrade-prompt-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary, #ffffff);
+  margin: 0 0 12px;
+}
+
+.upgrade-prompt-description {
+  font-size: 15px;
+  color: var(--color-text-secondary, #9ca3af);
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+.upgrade-prompt-comparison {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+.comparison-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.comparison-label {
+  font-size: 12px;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.comparison-value {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.comparison-value.unavailable {
+  color: var(--color-text-muted, #6b7280);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.comparison-value.available {
+  color: var(--color-primary, #00f5d4);
+  background: rgba(0, 245, 212, 0.1);
+}
+
+.comparison-arrow {
+  color: var(--color-text-muted, #6b7280);
+}
+
+.upgrade-prompt-price {
+  margin-bottom: 24px;
+}
+
+.price-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--color-primary, #00f5d4);
+}
+
+.price-unit {
+  font-size: 16px;
+  color: var(--color-text-secondary, #9ca3af);
+  margin-left: 4px;
+}
+
+.price-original {
+  font-size: 14px;
+  color: var(--color-text-muted, #6b7280);
+  text-decoration: line-through;
+  margin-left: 8px;
+}
+
+.upgrade-prompt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.upgrade-btn {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upgrade-btn.primary {
+  background: linear-gradient(135deg, var(--color-primary, #00f5d4), #00d4aa);
+  color: #0a0a0f;
+}
+
+.upgrade-btn.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 245, 212, 0.3);
+}
+
+.upgrade-btn.secondary {
+  background: transparent;
+  color: var(--color-text-secondary, #9ca3af);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.upgrade-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary, #ffffff);
+}
+
+.upgrade-prompt-note {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--color-text-muted, #6b7280);
+}
+
+/* Mobile Responsive */
+@media (max-width: 639px) {
+  .upgrade-prompt-overlay {
+    padding: 16px;
+    align-items: flex-end;
+  }
+
+  .upgrade-prompt {
+    padding: 24px;
+    border-radius: 20px 20px 0 0;
+    max-width: 100%;
+  }
+
+  .upgrade-prompt-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 20px;
+  }
+
+  .upgrade-prompt-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .upgrade-prompt-title {
+    font-size: 20px;
+  }
+
+  .upgrade-prompt-comparison {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .price-value {
+    font-size: 32px;
+  }
+}

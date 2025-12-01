@@ -1,0 +1,219 @@
+.install-prompt {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 16px;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.install-prompt-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 16px 20px;
+  background: var(--color-surface, #12121a);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.install-prompt-icon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--color-primary, #00f5d4), #00d4aa);
+  border-radius: 12px;
+  color: #0a0a0f;
+}
+
+.install-prompt-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.install-prompt-text h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary, #ffffff);
+  margin: 0 0 4px;
+}
+
+.install-prompt-text p {
+  font-size: 14px;
+  color: var(--color-text-secondary, #9ca3af);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.share-icon {
+  display: inline-block;
+  font-size: 16px;
+  vertical-align: middle;
+}
+
+.install-prompt-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.install-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--color-primary, #00f5d4), #00d4aa);
+  color: #0a0a0f;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.install-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 245, 212, 0.3);
+}
+
+.dismiss-btn {
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--color-text-secondary, #9ca3af);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dismiss-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary, #ffffff);
+}
+
+.close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted, #6b7280);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text-primary, #ffffff);
+}
+
+/* iOS Instructions */
+.ios-instructions {
+  max-width: 600px;
+  margin: 12px auto 0;
+  padding: 16px;
+  background: rgba(155, 93, 229, 0.1);
+  border: 1px solid rgba(155, 93, 229, 0.2);
+  border-radius: 12px;
+}
+
+.ios-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--color-text-secondary, #9ca3af);
+}
+
+.ios-step:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.step-number {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-secondary, #9b5de5);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 50%;
+}
+
+/* Mobile Responsive */
+@media (max-width: 639px) {
+  .install-prompt {
+    padding: 12px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .install-prompt-content {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px 16px;
+    padding-top: 32px;
+  }
+
+  .install-prompt-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .install-prompt-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .install-prompt-text h3 {
+    font-size: 18px;
+  }
+
+  .install-prompt-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .install-btn,
+  .dismiss-btn {
+    width: 100%;
+    padding: 12px;
+  }
+
+  .ios-instructions {
+    margin-top: 8px;
+  }
+
+  .ios-step {
+    font-size: 13px;
+  }
+}

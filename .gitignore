@@ -137,3 +137,10 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+supabase
+
+# Ignore all markdown files except README.md
+*.md
+!README.md
+

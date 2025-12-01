@@ -1,0 +1,209 @@
+// Variables
+$background: #0a0a0f;
+$surface: #12121a;
+$surface-light: #1a1a24;
+$text: #ffffff;
+$text-secondary: #a0a0b0;
+$text-muted: #6b6b7b;
+$primary: #00f5d4;
+$primary-dark: #00c4aa;
+$secondary: #9b5de5;
+$accent: #f15bb5;
+
+// Colors for actions
+$raise: #ff6b6b;
+$call: #4ecdc4;
+$fold: #95a5a6;
+
+.container {
+  padding: 24px;
+  min-height: 100vh;
+  background: $background;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+
+  .title {
+    font-size: 48px;
+    font-weight: 700;
+    background: linear-gradient(135deg, $primary 0%, #00bbf9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: block;
+  }
+
+  .subtitle {
+    font-size: 24px;
+    color: $text-secondary;
+    display: block;
+    margin-top: 8px;
+  }
+}
+
+.card {
+  background: $surface;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 16px;
+  border: 1px solid $surface-light;
+
+  .card-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: $primary;
+    display: block;
+    margin-bottom: 16px;
+  }
+}
+
+.positions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.position-badge {
+  padding: 12px 24px;
+  border-radius: 32px;
+  background: rgba($primary, 0.1);
+  border: 2px solid $primary;
+  color: $primary;
+  font-weight: 600;
+  font-size: 24px;
+  transition: all 0.2s ease;
+
+  &.active {
+    background: $primary;
+    color: $background;
+  }
+}
+
+.matrix {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: $background;
+  border-radius: 12px;
+}
+
+.matrix-row {
+  display: flex;
+  gap: 4px;
+}
+
+.matrix-cell {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+
+  &.premium {
+    background: rgba($primary, 0.9);
+    color: $background;
+  }
+
+  &.strong {
+    background: rgba($primary, 0.7);
+    color: $background;
+  }
+
+  &.playable {
+    background: rgba($primary, 0.5);
+    color: $text;
+  }
+
+  &.speculative {
+    background: rgba($primary, 0.3);
+    color: $text;
+  }
+
+  &.fold {
+    background: $surface;
+    color: $text-muted;
+  }
+
+  .cell-text {
+    font-size: 16px;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.action-btn {
+  padding: 16px 32px;
+  border-radius: 12px;
+  text-align: center;
+  min-width: 140px;
+
+  &.raise {
+    background: rgba($raise, 0.2);
+    border: 2px solid $raise;
+
+    .action-text {
+      color: $raise;
+    }
+  }
+
+  &.call {
+    background: rgba($call, 0.2);
+    border: 2px solid $call;
+
+    .action-text {
+      color: $call;
+    }
+  }
+
+  &.fold {
+    background: rgba($fold, 0.2);
+    border: 2px solid $fold;
+
+    .action-text {
+      color: $fold;
+    }
+  }
+
+  .action-text {
+    font-size: 24px;
+    font-weight: 700;
+    display: block;
+  }
+
+  .action-freq {
+    font-size: 20px;
+    color: $text-secondary;
+    display: block;
+    margin-top: 4px;
+  }
+}
+
+.ev-card {
+  text-align: center;
+  background: linear-gradient(135deg, rgba($primary, 0.1) 0%, rgba($secondary, 0.1) 100%);
+  border: 1px solid $primary;
+
+  .ev-label {
+    font-size: 24px;
+    color: $text-secondary;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .ev-value {
+    font-size: 48px;
+    font-weight: 700;
+    color: $primary;
+    display: block;
+  }
+}

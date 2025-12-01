@@ -1,0 +1,161 @@
+$background: #0a0a0f;
+$surface: #12121a;
+$surface-light: #1a1a24;
+$text: #ffffff;
+$text-secondary: #a0a0b0;
+$primary: #00f5d4;
+$raise: #ff6b6b;
+$call: #4ecdc4;
+$fold: #95a5a6;
+
+.analyzer-container {
+  padding: 24px;
+  min-height: 100vh;
+  background: $background;
+}
+
+.section {
+  margin-bottom: 24px;
+
+  .section-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: $primary;
+    display: block;
+    margin-bottom: 12px;
+  }
+}
+
+.positions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.position-badge {
+  padding: 12px 24px;
+  border-radius: 32px;
+  background: rgba($primary, 0.1);
+  border: 2px solid $primary;
+  color: $primary;
+  font-weight: 600;
+  font-size: 24px;
+
+  &.active {
+    background: $primary;
+    color: $background;
+  }
+}
+
+.card-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: $surface;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.suit-row {
+  display: flex;
+  gap: 4px;
+}
+
+.card-cell {
+  flex: 1;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $surface-light;
+  border-radius: 4px;
+  font-size: 20px;
+  font-weight: 600;
+
+  &.selected {
+    background: $primary;
+    color: $background;
+  }
+}
+
+.analysis-result {
+  background: $surface;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid $surface-light;
+  }
+
+  .stat-label {
+    font-size: 24px;
+    color: $text-secondary;
+  }
+
+  .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: $primary;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+
+  &.raise {
+    background: rgba($raise, 0.2);
+    border: 2px solid $raise;
+
+    .action-text {
+      color: $raise;
+    }
+  }
+
+  &.call {
+    background: rgba($call, 0.2);
+    border: 2px solid $call;
+
+    .action-text {
+      color: $call;
+    }
+  }
+
+  &.fold {
+    background: rgba($fold, 0.2);
+    border: 2px solid $fold;
+
+    .action-text {
+      color: $fold;
+    }
+  }
+
+  .action-text {
+    font-size: 24px;
+    font-weight: 700;
+    display: block;
+  }
+
+  .action-freq {
+    font-size: 20px;
+    color: $text-secondary;
+    display: block;
+    margin-top: 4px;
+  }
+}

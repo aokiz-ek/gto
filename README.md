@@ -1,2 +1,2 @@
 # gto
-GTO Play
+Aokiz GTO

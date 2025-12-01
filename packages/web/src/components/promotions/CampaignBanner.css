@@ -1,0 +1,259 @@
+.campaign-banner-container {
+  width: 100%;
+}
+
+.campaign-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(0, 245, 212, 0.1), rgba(155, 93, 229, 0.1));
+  border: 1px solid rgba(0, 245, 212, 0.2);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.campaign-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Type variations */
+.campaign-banner.flash_sale {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(251, 146, 60, 0.15));
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.campaign-banner.holiday {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(251, 191, 36, 0.1));
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.campaign-banner.special {
+  background: linear-gradient(135deg, rgba(155, 93, 229, 0.15), rgba(139, 92, 246, 0.15));
+  border-color: rgba(155, 93, 229, 0.3);
+}
+
+.campaign-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.campaign-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.campaign-badge svg {
+  width: 20px;
+  height: 20px;
+  color: #00f5d4;
+}
+
+.campaign-banner.flash_sale .campaign-badge svg {
+  color: #f97316;
+}
+
+.campaign-banner.holiday .campaign-badge svg {
+  color: #fbbf24;
+}
+
+.campaign-banner.special .campaign-badge svg {
+  color: #9b5de5;
+}
+
+.campaign-discount {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.campaign-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.campaign-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.campaign-description {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.campaign-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.timer-label {
+  font-size: 10px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timer-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #00f5d4;
+}
+
+.campaign-banner.flash_sale .timer-value {
+  color: #f97316;
+}
+
+.campaign-cta {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #00f5d4, #00d4aa);
+  color: #0a0a0f;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.campaign-banner.flash_sale .campaign-cta {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #ffffff;
+}
+
+.campaign-banner.holiday .campaign-cta {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #0a0a0f;
+}
+
+.campaign-banner.special .campaign-cta {
+  background: linear-gradient(135deg, #9b5de5, #8b5cf6);
+  color: #ffffff;
+}
+
+.campaign-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 245, 212, 0.3);
+}
+
+.campaign-dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+  z-index: 2;
+}
+
+.campaign-dismiss:hover {
+  opacity: 1;
+}
+
+.campaign-dismiss svg {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .campaign-banner {
+    padding: 12px;
+    flex-direction: column;
+  }
+
+  .campaign-content {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .campaign-badge {
+    order: 1;
+  }
+
+  .campaign-timer {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .campaign-info {
+    order: 3;
+    width: 100%;
+  }
+
+  .campaign-cta {
+    order: 4;
+    width: 100%;
+    text-align: center;
+  }
+
+  .campaign-name,
+  .campaign-description {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 480px) {
+  .campaign-badge {
+    padding: 6px 10px;
+  }
+
+  .campaign-discount {
+    font-size: 13px;
+  }
+
+  .campaign-name {
+    font-size: 14px;
+  }
+
+  .campaign-description {
+    font-size: 12px;
+  }
+
+  .campaign-cta {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}
