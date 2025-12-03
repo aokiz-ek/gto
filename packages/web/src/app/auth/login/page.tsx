@@ -73,7 +73,7 @@ export default function LoginPage() {
       justifyContent: 'center',
       padding: '24px',
     }}>
-      <Card variant="outlined" padding="lg" style={{ width: '100%', maxWidth: '400px' }}>
+      <Card variant="glass" padding="lg" animatedBorder style={{ width: '100%', maxWidth: '400px' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <h1 style={{
             fontSize: '28px',
@@ -174,10 +174,11 @@ export default function LoginPage() {
 
             <Button
               type="button"
-              variant="ghost"
+              variant="premium"
               fullWidth
               onClick={handleDemoLogin}
               disabled={isProcessing}
+              glow
               style={{ marginTop: '8px' }}
             >
               Try Demo Account

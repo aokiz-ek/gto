@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo, memo, useCallback } from 'react';
 import './AICoachFeedback.css';
 
 // Types matching the API
@@ -41,7 +41,10 @@ interface AICoachFeedbackProps {
   onToggleExpand?: () => void;
 }
 
-export function AICoachFeedback({
+// Debounce delay for API calls (ms)
+const DEBOUNCE_DELAY = 300;
+
+export const AICoachFeedback = memo(function AICoachFeedback({
   handString,
   heroPosition,
   villainPosition,
@@ -61,28 +64,52 @@ export function AICoachFeedback({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Use refs for debouncing and abort controller
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Create a stable key from props to detect meaningful changes
+  const requestKey = useMemo(() => {
+    return JSON.stringify({
+      handString,
+      heroPosition,
+      villainPosition,
+      scenario,
+      street,
+      playerAction,
+      gtoStrategy,
+      isCorrect,
+      accuracyScore,
+      board,
+      potSize,
+    });
+  }, [handString, heroPosition, villainPosition, scenario, street, playerAction, gtoStrategy, isCorrect, accuracyScore, board, potSize]);
+
   useEffect(() => {
-    async function fetchFeedback() {
+    // Clear previous debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Debounce the API call
+    debounceTimerRef.current = setTimeout(async () => {
       setLoading(true);
       setError(null);
+
+      // Create new abort controller for this request
+      abortControllerRef.current = new AbortController();
 
       try {
         const response = await fetch('/api/training/coach', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            handString,
-            heroPosition,
-            villainPosition,
-            scenario,
-            street,
-            playerAction,
-            gtoStrategy,
-            isCorrect,
-            accuracyScore,
-            board,
-            potSize,
-          }),
+          body: requestKey,
+          signal: abortControllerRef.current.signal,
         });
 
         if (!response.ok) {
@@ -96,14 +123,26 @@ export function AICoachFeedback({
           throw new Error(data.error || 'Unknown error');
         }
       } catch (err) {
+        // Ignore abort errors
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
         setError(err instanceof Error ? err.message : 'Failed to load feedback');
       } finally {
         setLoading(false);
       }
-    }
+    }, DEBOUNCE_DELAY);
 
-    fetchFeedback();
-  }, [handString, heroPosition, villainPosition, scenario, street, playerAction, gtoStrategy, isCorrect, accuracyScore, board, potSize]);
+    // Cleanup on unmount or deps change
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [requestKey]);
 
   if (loading) {
     return (
@@ -230,6 +269,6 @@ export function AICoachFeedback({
       )}
     </div>
   );
-}
+});
 
 export default AICoachFeedback;

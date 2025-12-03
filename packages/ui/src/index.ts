@@ -11,6 +11,7 @@ export { PositionBadge } from './components/PositionBadge';
 export { Slider } from './components/Slider';
 export { Toggle } from './components/Toggle';
 export { Modal } from './components/Modal';
+export { Skeleton, SkeletonGroup } from './components/Skeleton';
 
 // Styles
 export { theme } from './styles/theme';

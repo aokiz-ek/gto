@@ -18,13 +18,8 @@
   animation: spin 0.8s linear infinite;
 }
 
-/* Main practice page container */
-.practice-page {
-  min-height: calc(100vh - 60px);
-  background: var(--background);
-  padding: var(--spacing-lg);
-  position: relative;
-}
+/* Main practice page container - styles moved to inline for better control */
+/* .practice-page styles are now in styled-jsx */
 
 /* Streak indicator */
 .streak-indicator {
@@ -128,41 +123,7 @@
   border-radius: 10px;
 }
 
-/* PK Mode Button */
-.pk-mode-btn {
-  position: fixed;
-  top: 70px;
-  right: var(--spacing-lg);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%);
-  border: 1px solid rgba(139, 92, 246, 0.4);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  z-index: 100;
-  transition: all var(--transition-fast);
-  text-decoration: none;
-  color: #a78bfa;
-  font-weight: 500;
-  font-size: 13px;
-}
-
-.pk-mode-btn:hover {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(236, 72, 153, 0.3) 100%);
-  border-color: #a78bfa;
-  transform: scale(1.02);
-  box-shadow: 0 0 16px rgba(139, 92, 246, 0.3);
-}
-
-.pk-mode-btn .pk-icon {
-  font-size: 16px;
-}
-
-.pk-mode-btn .pk-text {
-  font-size: 13px;
-}
+/* PK Mode Button - now inline in top bar, styles in JSX */
 
 /* Weak spot panel */
 .weak-spot-panel {
@@ -254,12 +215,8 @@
   font-weight: 600;
 }
 
-/* Main content */
-.main-content {
-  max-width: 900px;
-  margin: 0 auto;
-  padding-top: var(--spacing-xl);
-}
+/* Main content - styles moved to styled-jsx for scalable layout */
+/* .main-content styles are now in styled-jsx */
 
 /* Scenario title */
 .scenario-title {
@@ -347,159 +304,8 @@
   color: var(--text-secondary);
 }
 
-/* Poker table */
-.poker-table {
-  position: relative;
-  width: 100%;
-  max-width: 800px;
-  height: 200px;
-  margin: 0 auto 32px;
-}
-
-.table-outline {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 85%;
-  height: 70%;
-  background: linear-gradient(180deg, #1a3d2e 0%, #0d2818 100%);
-  border: 4px solid #2a4a3a;
-  border-radius: 50%;
-  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5), 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-/* Seat positions */
-.seat {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-}
-
-.seat-content {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.hole-cards {
-  display: flex;
-  gap: 2px;
-}
-
-.seat-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background: var(--surface);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-md);
-  min-width: 40px;
-}
-
-.seat-badge .pos {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.seat-badge .stack {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text);
-}
-
-.seat.inactive .seat-badge {
-  opacity: 0.5;
-}
-
-.seat.hero .hero-badge {
-  border-color: var(--primary);
-  background: var(--primary-muted);
-}
-
-.seat.hero .hero-badge .pos {
-  color: var(--primary);
-}
-
-.dealer-btn {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #fff 0%, #ddd 100%);
-  border: 2px solid #999;
-  border-radius: 50%;
-  font-size: 10px;
-  font-weight: 700;
-  color: #333;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-/* Table center - pot and board */
-.table-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-sm);
-  z-index: 5;
-}
-
-.pot {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-xs) var(--spacing-md);
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: var(--radius-lg);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--warning);
-}
-
-.chip-stack {
-  display: flex;
-  gap: -4px;
-}
-
-.chip {
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-}
-
-.chip.c1 {
-  background: var(--error);
-  margin-right: -6px;
-}
-
-.chip.c2 {
-  background: var(--primary);
-  margin-right: -6px;
-}
-
-.chip.c3 {
-  background: var(--warning);
-}
-
-.board {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.board-cards {
-  display: flex;
-  gap: var(--spacing-xs);
-}
+/* Poker table - styles moved to styled-jsx for GTO Wizard layout */
+/* .poker-table, .seat, .seat-badge, .dealer-btn, .table-center styles are now in styled-jsx */
 
 /* Result panel */
 .result-panel {
@@ -571,89 +377,8 @@
   font-weight: 600;
 }
 
-/* Action buttons area */
-.action-area {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-.action-buttons {
-  display: flex;
-  gap: var(--spacing-sm);
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.action-btn {
-  padding: var(--spacing-md) var(--spacing-xl);
-  font-size: 14px;
-  font-weight: 600;
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  min-width: 100px;
-}
-
-.action-btn.fold {
-  background: var(--fold-muted);
-  border: 1px solid var(--fold);
-  color: var(--fold);
-}
-
-.action-btn.fold:hover {
-  background: var(--fold);
-  color: white;
-}
-
-.action-btn.check,
-.action-btn.call {
-  background: var(--call-muted);
-  border: 1px solid var(--call);
-  color: var(--call);
-}
-
-.action-btn.check:hover,
-.action-btn.call:hover {
-  background: var(--call);
-  color: white;
-}
-
-.action-btn.raise,
-.action-btn.bet {
-  background: var(--raise-muted);
-  border: 1px solid var(--raise);
-  color: var(--raise);
-}
-
-.action-btn.raise:hover,
-.action-btn.bet:hover {
-  background: var(--raise);
-  color: white;
-}
-
-.action-btn.allin {
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid var(--all-in);
-  color: var(--all-in);
-}
-
-.action-btn.allin:hover {
-  background: var(--all-in);
-  color: white;
-}
-
-.action-btn.selected {
-  transform: scale(1.05);
-  box-shadow: 0 0 10px currentColor;
-}
-
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+/* Action buttons area - styles moved to styled-jsx for GTO Wizard layout */
+/* .action-area, .action-buttons, .action-btn styles are now in styled-jsx */
 
 /* Frequency display */
 .frequency-display {
@@ -1231,9 +956,7 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .practice-page {
-    padding: var(--spacing-md);
-  }
+  /* .practice-page responsive styles moved to styled-jsx */
 
   .streak-indicator {
     top: 60px;
@@ -1245,16 +968,6 @@
     top: 60px;
     left: 90px;
     right: auto;
-  }
-
-  .pk-mode-btn {
-    top: 60px;
-    right: var(--spacing-md);
-    padding: var(--spacing-xs) var(--spacing-sm);
-  }
-
-  .pk-mode-btn .pk-text {
-    display: none;
   }
 
   .poker-table {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@gto/ui';
@@ -83,7 +83,7 @@ const navItems = [
 ];
 
 // Interactive Nav Link Component
-function NavLink({ href, isActive, icon, label, isMobile = false, highlight = false }: {
+const NavLink = memo(function NavLink({ href, isActive, icon, label, isMobile = false, highlight = false }: {
   href: string;
   isActive: boolean;
   icon: React.ReactNode;
@@ -94,55 +94,63 @@ function NavLink({ href, isActive, icon, label, isMobile = false, highlight = fa
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
 
-  const highlightColor = '#f59e0b'; // Golden color for daily challenge
-  const baseColor = highlight && !isActive ? highlightColor : '#22d3bf';
+  const highlightColor = '#f59e0b';
+
+  const handleMouseEnter = useCallback(() => setIsHovered(true), []);
+  const handleMouseLeave = useCallback(() => { setIsHovered(false); setIsPressed(false); }, []);
+  const handleMouseDown = useCallback(() => setIsPressed(true), []);
+  const handleMouseUp = useCallback(() => setIsPressed(false), []);
+
+  const linkStyle = useMemo(() => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: isMobile ? '12px' : '6px',
+    padding: isMobile ? '14px 16px' : '8px 14px',
+    borderRadius: isMobile ? '8px' : '6px',
+    textDecoration: 'none',
+    fontSize: isMobile ? '16px' : '14px',
+    fontWeight: 500,
+    color: isActive ? '#ffffff' : highlight ? highlightColor : isHovered ? '#ffffff' : '#b3b3b3',
+    background: isActive
+      ? '#1a1a1a'
+      : isHovered
+      ? highlight ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 211, 191, 0.1)'
+      : highlight ? 'rgba(245, 158, 11, 0.08)' : 'transparent',
+    transform: isPressed ? 'scale(0.98)' : isHovered ? 'translateY(-1px)' : 'translateY(0)',
+    boxShadow: isHovered && !isActive ? `0 2px 8px ${highlight ? 'rgba(245, 158, 11, 0.2)' : 'rgba(34, 211, 191, 0.15)'}` : 'none',
+    transition: 'all 0.15s ease',
+    border: highlight && !isActive ? '1px solid rgba(245, 158, 11, 0.3)' : 'none',
+  } as React.CSSProperties), [isMobile, isActive, highlight, isHovered, isPressed]);
+
+  const iconStyle = useMemo(() => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: isActive ? 1 : isHovered ? 0.9 : highlight ? 1 : 0.7,
+    transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+    transition: 'transform 0.2s ease, opacity 0.15s ease',
+    color: highlight && !isActive ? highlightColor : 'inherit',
+  } as React.CSSProperties), [isActive, isHovered, highlight]);
 
   return (
     <Link
       href={href}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: isMobile ? '12px' : '6px',
-        padding: isMobile ? '14px 16px' : '8px 14px',
-        borderRadius: isMobile ? '8px' : '6px',
-        textDecoration: 'none',
-        fontSize: isMobile ? '16px' : '14px',
-        fontWeight: 500,
-        color: isActive ? '#ffffff' : highlight ? highlightColor : isHovered ? '#ffffff' : '#b3b3b3',
-        background: isActive
-          ? '#1a1a1a'
-          : isHovered
-          ? highlight ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 211, 191, 0.1)'
-          : highlight ? 'rgba(245, 158, 11, 0.08)' : 'transparent',
-        transform: isPressed ? 'scale(0.98)' : isHovered ? 'translateY(-1px)' : 'translateY(0)',
-        boxShadow: isHovered && !isActive ? `0 2px 8px ${highlight ? 'rgba(245, 158, 11, 0.2)' : 'rgba(34, 211, 191, 0.15)'}` : 'none',
-        transition: 'all 0.15s ease',
-        border: highlight && !isActive ? '1px solid rgba(245, 158, 11, 0.3)' : 'none',
-      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      style={linkStyle}
     >
-      <span style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: isActive ? 1 : isHovered ? 0.9 : highlight ? 1 : 0.7,
-        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
-        transition: 'transform 0.2s ease, opacity 0.15s ease',
-        color: highlight && !isActive ? highlightColor : 'inherit',
-      }}>
+      <span style={iconStyle}>
         {icon}
       </span>
       <span style={{ lineHeight: 1 }}>{label}</span>
     </Link>
   );
-}
+});
 
 // Dropdown Item Component
-function DropdownItem({ icon, label, onClick, danger = false }: {
+const DropdownItem = memo(function DropdownItem({ icon, label, onClick, danger = false }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
@@ -150,43 +158,93 @@ function DropdownItem({ icon, label, onClick, danger = false }: {
 }) {
   const [isHovered, setIsHovered] = useState(false);
 
+  const handleMouseEnter = useCallback(() => setIsHovered(true), []);
+  const handleMouseLeave = useCallback(() => setIsHovered(false), []);
+
+  const buttonStyle = useMemo(() => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    width: '100%',
+    padding: '10px 12px',
+    background: isHovered ? (danger ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 211, 191, 0.1)') : 'transparent',
+    border: 'none',
+    borderRadius: '6px',
+    color: danger ? (isHovered ? '#ef4444' : '#b3b3b3') : (isHovered ? '#22d3bf' : '#b3b3b3'),
+    fontSize: '14px',
+    fontWeight: 500,
+    cursor: 'pointer',
+    textAlign: 'left' as const,
+    transition: 'all 0.15s ease',
+  }), [isHovered, danger]);
+
+  const iconStyle = useMemo(() => ({
+    display: 'flex',
+    alignItems: 'center',
+    opacity: isHovered ? 1 : 0.7,
+    transition: 'opacity 0.15s ease',
+  }), [isHovered]);
+
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        width: '100%',
-        padding: '10px 12px',
-        background: isHovered ? (danger ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 211, 191, 0.1)') : 'transparent',
-        border: 'none',
-        borderRadius: '6px',
-        color: danger ? (isHovered ? '#ef4444' : '#b3b3b3') : (isHovered ? '#22d3bf' : '#b3b3b3'),
-        fontSize: '14px',
-        fontWeight: 500,
-        cursor: 'pointer',
-        textAlign: 'left',
-        transition: 'all 0.15s ease',
-      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={buttonStyle}
     >
-      <span style={{
-        display: 'flex',
-        alignItems: 'center',
-        opacity: isHovered ? 1 : 0.7,
-        transition: 'opacity 0.15s ease',
-      }}>
+      <span style={iconStyle}>
         {icon}
       </span>
       {label}
     </button>
   );
-}
+});
 
 // Interactive Button Component
-function InteractiveButton({ children, variant = 'default', onClick, style = {} }: {
+const baseButtonStyles: Record<string, React.CSSProperties> = {
+  default: {
+    background: '#1a1a1a',
+    border: '1px solid #333333',
+    color: '#ffffff',
+  },
+  primary: {
+    background: '#22d3bf',
+    border: 'none',
+    color: '#000000',
+  },
+  premium: {
+    background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
+    border: 'none',
+    color: '#000000',
+  },
+  ghost: {
+    background: 'transparent',
+    border: '1px solid #333333',
+    color: '#ffffff',
+  },
+};
+
+const hoverButtonStyles: Record<string, React.CSSProperties> = {
+  default: {
+    background: '#242424',
+    borderColor: '#22d3bf',
+    boxShadow: '0 0 15px rgba(34, 211, 191, 0.2)',
+  },
+  primary: {
+    background: '#14b8a6',
+    boxShadow: '0 4px 15px rgba(34, 211, 191, 0.4)',
+  },
+  premium: {
+    background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+    boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)',
+  },
+  ghost: {
+    background: 'rgba(255, 255, 255, 0.05)',
+    borderColor: '#22d3bf',
+  },
+};
+
+const InteractiveButton = memo(function InteractiveButton({ children, variant = 'default', onClick, style = {} }: {
   children: React.ReactNode;
   variant?: 'default' | 'primary' | 'premium' | 'ghost';
   onClick?: () => void;
@@ -195,81 +253,47 @@ function InteractiveButton({ children, variant = 'default', onClick, style = {} 
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
 
-  const baseStyles: Record<string, React.CSSProperties> = {
-    default: {
-      background: '#1a1a1a',
-      border: '1px solid #333333',
-      color: '#ffffff',
-    },
-    primary: {
-      background: '#22d3bf',
-      border: 'none',
-      color: '#000000',
-    },
-    premium: {
-      background: 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)',
-      border: 'none',
-      color: '#000000',
-    },
-    ghost: {
-      background: 'transparent',
-      border: '1px solid #333333',
-      color: '#ffffff',
-    },
-  };
+  const handleMouseEnter = useCallback(() => setIsHovered(true), []);
+  const handleMouseLeave = useCallback(() => { setIsHovered(false); setIsPressed(false); }, []);
+  const handleMouseDown = useCallback(() => setIsPressed(true), []);
+  const handleMouseUp = useCallback(() => setIsPressed(false), []);
+  const handleTouchStart = useCallback(() => setIsPressed(true), []);
+  const handleTouchEnd = useCallback(() => setIsPressed(false), []);
 
-  const hoverStyles: Record<string, React.CSSProperties> = {
-    default: {
-      background: '#242424',
-      borderColor: '#22d3bf',
-      boxShadow: '0 0 15px rgba(34, 211, 191, 0.2)',
-    },
-    primary: {
-      background: '#14b8a6',
-      boxShadow: '0 4px 15px rgba(34, 211, 191, 0.4)',
-    },
-    premium: {
-      background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-      boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)',
-    },
-    ghost: {
-      background: 'rgba(255, 255, 255, 0.05)',
-      borderColor: '#22d3bf',
-    },
-  };
+  const buttonStyle = useMemo(() => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '14px 16px',
+    borderRadius: '8px',
+    fontSize: '15px',
+    fontWeight: 600,
+    cursor: 'pointer',
+    ...baseButtonStyles[variant],
+    ...(isHovered ? hoverButtonStyles[variant] : {}),
+    transform: isPressed ? 'scale(0.96)' : isHovered ? 'translateY(-2px)' : 'translateY(0)',
+    transition: 'all 0.15s ease',
+    ...style,
+  }), [variant, isHovered, isPressed, style]);
 
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
-      onMouseDown={() => setIsPressed(true)}
-      onMouseUp={() => setIsPressed(false)}
-      onTouchStart={() => setIsPressed(true)}
-      onTouchEnd={() => setIsPressed(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '8px',
-        padding: '14px 16px',
-        borderRadius: '8px',
-        fontSize: '15px',
-        fontWeight: 600,
-        cursor: 'pointer',
-        ...baseStyles[variant],
-        ...(isHovered ? hoverStyles[variant] : {}),
-        transform: isPressed ? 'scale(0.96)' : isHovered ? 'translateY(-2px)' : 'translateY(0)',
-        transition: 'all 0.15s ease',
-        ...style,
-      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      style={buttonStyle}
     >
       {children}
     </button>
   );
-}
+});
 
-export function Navigation() {
+export const Navigation = memo(function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, user, logout } = useUserStore();
@@ -300,8 +324,8 @@ export function Navigation() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Handle logout
-  const handleLogout = async () => {
+  // Handle logout - memoized
+  const handleLogout = useCallback(async () => {
     try {
       const supabase = createClient();
       await supabase.auth.signOut();
@@ -311,7 +335,7 @@ export function Navigation() {
     } catch (error) {
       console.error('Logout error:', error);
     }
-  };
+  }, [logout, router]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -772,4 +796,4 @@ export function Navigation() {
       )}
     </>
   );
-}
+});

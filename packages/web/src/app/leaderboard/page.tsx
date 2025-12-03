@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, Button } from '@gto/ui';
+import { Card, Button, Skeleton, SkeletonGroup } from '@gto/ui';
 import { useUserStore } from '@/store';
 import { useResponsive } from '@/hooks';
 
@@ -163,9 +163,9 @@ export default function LeaderboardPage() {
 
       {/* Leaderboard List */}
       {loading ? (
-        <div style={{ textAlign: 'center', color: '#a0a0b0', padding: '48px' }}>
-          Loading leaderboard...
-        </div>
+        <Card variant="glass" padding="lg">
+          <SkeletonGroup.List count={8} itemHeight={70} gap={8} animation="wave" />
+        </Card>
       ) : leaderboard.length === 0 ? (
         <Card variant="default" padding="lg" style={{ textAlign: 'center' }}>
           <p style={{ color: '#a0a0b0', marginBottom: '16px' }}>
@@ -274,7 +274,7 @@ export default function LeaderboardPage() {
       )}
 
       {/* Rank Tiers Info */}
-      <Card variant="default" padding="md" style={{ marginTop: isMobile ? '24px' : '32px' }}>
+      <Card variant="gradient" padding="md" hoverEffect style={{ marginTop: isMobile ? '24px' : '32px' }}>
         <h3 style={{
           fontSize: isMobile ? '14px' : '16px',
           fontWeight: 600,

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { theme } from '../styles/theme';
 import { RANKS } from '@gto/core';
 import type { RangeMatrix as RangeMatrixType } from '@gto/core';
@@ -11,9 +11,112 @@ export interface RangeMatrixProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
   colorScheme?: 'default' | 'action' | 'heatmap';
   interactive?: boolean;
+  fullWidth?: boolean;
 }
 
-export const RangeMatrix: React.FC<RangeMatrixProps> = ({
+// Memoized cell component to prevent re-renders of all 169 cells
+interface CellProps {
+  row: number;
+  col: number;
+  value: number;
+  cellSize: number;
+  fontSize: string;
+  colorScheme: 'default' | 'action' | 'heatmap';
+  isSelected: boolean;
+  isPair: boolean;
+  showLabels: boolean;
+  interactive: boolean;
+  onCellClick?: (row: number, col: number) => void;
+  fullWidth?: boolean;
+}
+
+const getComboLabel = (row: number, col: number): string => {
+  const rank1 = RANKS[row];
+  const rank2 = RANKS[col];
+
+  if (row === col) return `${rank1}${rank2}`;
+  if (row < col) return `${rank1}${rank2}s`;
+  return `${rank2}${rank1}o`;
+};
+
+const getCellColor = (value: number, colorScheme: string): string => {
+  if (value === 0) return theme.colors.rangeEmpty;
+
+  if (colorScheme === 'heatmap') {
+    if (value < 0.33) return `rgba(239, 68, 68, ${0.3 + value * 0.7})`;
+    if (value < 0.66) return `rgba(234, 179, 8, ${0.4 + value * 0.5})`;
+    return `rgba(34, 197, 94, ${0.5 + value * 0.5})`;
+  }
+
+  if (colorScheme === 'action') {
+    if (value < 0.25) return theme.colors.foldMuted;
+    if (value < 0.5) return theme.colors.callMuted;
+    if (value < 0.75) return `rgba(34, 197, 94, 0.5)`;
+    return `rgba(34, 197, 94, 0.8)`;
+  }
+
+  return `rgba(34, 211, 191, ${0.2 + value * 0.7})`;
+};
+
+const MatrixCell = memo<CellProps>(({
+  row,
+  col,
+  value,
+  cellSize,
+  fontSize,
+  colorScheme,
+  isSelected,
+  isPair,
+  showLabels,
+  interactive,
+  onCellClick,
+  fullWidth = false,
+}) => {
+  const handleClick = useCallback(() => {
+    if (interactive && onCellClick) {
+      onCellClick(row, col);
+    }
+  }, [interactive, onCellClick, row, col]);
+
+  const cellStyles: React.CSSProperties = useMemo(() => ({
+    width: fullWidth ? '100%' : cellSize,
+    height: fullWidth ? '100%' : cellSize,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: fullWidth ? 'clamp(8px, 1.2vw, 12px)' : fontSize,
+    fontWeight: theme.typography.fontWeight.medium,
+    fontFamily: theme.typography.fontFamilyMono,
+    background: getCellColor(value, colorScheme),
+    color: value > 0.5 ? theme.colors.background : theme.colors.textSecondary,
+    cursor: interactive && onCellClick ? 'pointer' : 'default',
+    border: isSelected
+      ? `2px solid ${theme.colors.primary}`
+      : isPair
+        ? `1px solid ${theme.colors.surfaceBorder}`
+        : 'none',
+    transition: `background ${theme.transitions.fast}`,
+    position: 'relative',
+    letterSpacing: '-0.5px',
+    boxSizing: 'border-box',
+  }), [cellSize, fontSize, value, colorScheme, isSelected, isPair, interactive, onCellClick, fullWidth]);
+
+  const label = useMemo(() => getComboLabel(row, col), [row, col]);
+
+  return (
+    <div
+      style={cellStyles}
+      onClick={handleClick}
+      title={label}
+    >
+      {showLabels && label}
+    </div>
+  );
+});
+
+MatrixCell.displayName = 'MatrixCell';
+
+export const RangeMatrix = memo<RangeMatrixProps>(({
   matrix,
   onCellClick,
   selectedCell,
@@ -21,6 +124,7 @@ export const RangeMatrix: React.FC<RangeMatrixProps> = ({
   size = 'md',
   colorScheme = 'default',
   interactive = true,
+  fullWidth = false,
 }) => {
   const cellSizes: Record<string, number> = {
     xs: 20,
@@ -39,98 +143,58 @@ export const RangeMatrix: React.FC<RangeMatrixProps> = ({
   const cellSize = cellSizes[size];
   const fontSize = fontSizes[size];
 
-  const getComboLabel = (row: number, col: number): string => {
-    const rank1 = RANKS[row];
-    const rank2 = RANKS[col];
+  const containerStyles: React.CSSProperties = useMemo(() => ({
+    display: fullWidth ? 'block' : 'inline-block',
+    background: fullWidth ? 'transparent' : theme.colors.background,
+    borderRadius: fullWidth ? 0 : theme.borders.radius.md,
+    padding: fullWidth ? 0 : '2px',
+    width: fullWidth ? '100%' : 'auto',
+    height: fullWidth ? '100%' : 'auto',
+  }), [fullWidth]);
 
-    if (row === col) return `${rank1}${rank2}`;
-    if (row < col) return `${rank1}${rank2}s`;
-    return `${rank2}${rank1}o`;
-  };
-
-  const getCellColor = (value: number): string => {
-    if (value === 0) return theme.colors.rangeEmpty;
-
-    if (colorScheme === 'heatmap') {
-      // Green to Yellow to Red gradient
-      if (value < 0.33) return `rgba(239, 68, 68, ${0.3 + value * 0.7})`;
-      if (value < 0.66) return `rgba(234, 179, 8, ${0.4 + value * 0.5})`;
-      return `rgba(34, 197, 94, ${0.5 + value * 0.5})`;
-    }
-
-    if (colorScheme === 'action') {
-      // Action-based colors
-      if (value < 0.25) return theme.colors.foldMuted;
-      if (value < 0.5) return theme.colors.callMuted;
-      if (value < 0.75) return `rgba(34, 197, 94, 0.5)`;
-      return `rgba(34, 197, 94, 0.8)`;
-    }
-
-    // Default: Single color with opacity
-    return `rgba(34, 211, 191, ${0.2 + value * 0.7})`;
-  };
-
-  const containerStyles: React.CSSProperties = {
-    display: 'inline-block',
-    background: theme.colors.background,
-    borderRadius: theme.borders.radius.md,
-    padding: '2px',
-  };
-
-  const gridStyles: React.CSSProperties = {
+  const gridStyles: React.CSSProperties = useMemo(() => ({
     display: 'grid',
-    gridTemplateColumns: `repeat(13, ${cellSize}px)`,
+    gridTemplateColumns: 'repeat(13, 1fr)',
+    gridTemplateRows: fullWidth ? 'repeat(13, 1fr)' : undefined,
     gap: '1px',
     background: theme.colors.surfaceBorder,
-    borderRadius: theme.borders.radius.sm,
+    borderRadius: fullWidth ? theme.borders.radius.md : theme.borders.radius.sm,
     overflow: 'hidden',
-  };
+    width: '100%',
+    height: fullWidth ? '100%' : 'auto',
+  }), [cellSize, fullWidth]);
 
-  const getCellStyles = (row: number, col: number): React.CSSProperties => {
-    const value = matrix.matrix[row][col];
-    const isSelected = selectedCell?.row === row && selectedCell?.col === col;
-    const isPair = row === col;
-    const isSuited = row < col;
-
-    return {
-      width: cellSize,
-      height: cellSize,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize,
-      fontWeight: theme.typography.fontWeight.medium,
-      fontFamily: theme.typography.fontFamilyMono,
-      background: getCellColor(value),
-      color: value > 0.5 ? theme.colors.background : theme.colors.textSecondary,
-      cursor: interactive && onCellClick ? 'pointer' : 'default',
-      border: isSelected
-        ? `2px solid ${theme.colors.primary}`
-        : isPair
-          ? `1px solid ${theme.colors.surfaceBorder}`
-          : 'none',
-      transition: `background ${theme.transitions.fast}`,
-      position: 'relative',
-      letterSpacing: '-0.5px',
-    };
-  };
+  // For fullWidth mode, we use aspect-ratio to maintain square cells
+  const cellStyles: React.CSSProperties = fullWidth ? {
+    aspectRatio: '1',
+    width: '100%',
+  } : {};
 
   return (
     <div style={containerStyles}>
       <div style={gridStyles}>
         {matrix.matrix.map((row, rowIndex) =>
-          row.map((_, colIndex) => (
-            <div
+          row.map((value, colIndex) => (
+            <MatrixCell
               key={`${rowIndex}-${colIndex}`}
-              style={getCellStyles(rowIndex, colIndex)}
-              onClick={() => interactive && onCellClick?.(rowIndex, colIndex)}
-              title={getComboLabel(rowIndex, colIndex)}
-            >
-              {showLabels && getComboLabel(rowIndex, colIndex)}
-            </div>
+              row={rowIndex}
+              col={colIndex}
+              value={value}
+              cellSize={fullWidth ? 0 : cellSize}
+              fontSize={fontSize}
+              colorScheme={colorScheme}
+              isSelected={selectedCell?.row === rowIndex && selectedCell?.col === colIndex}
+              isPair={rowIndex === colIndex}
+              showLabels={showLabels}
+              interactive={interactive}
+              onCellClick={onCellClick}
+              fullWidth={fullWidth}
+            />
           ))
         )}
       </div>
     </div>
   );
-};
+});
+
+RangeMatrix.displayName = 'RangeMatrix';

@@ -76,14 +76,15 @@ const STREET_NAMES: Record<Street, string> = {
 // Range matrix display
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
 
-// Position coordinates for 6-max table (rounded rectangle style)
+// Position coordinates for 6-max table (GTO Wizard style - ellipse layout)
+// Adjusted for aspect-ratio: 3/0.8, table-felt height: 92%
 const SEAT_POSITIONS: { pos: Position; x: number; y: number }[] = [
-  { pos: 'HJ', x: 15, y: 50 },   // Left side, middle
-  { pos: 'CO', x: 28, y: 5 },    // Top left
-  { pos: 'BTN', x: 72, y: 5 },   // Top right
-  { pos: 'SB', x: 85, y: 50 },   // Right side, middle
-  { pos: 'BB', x: 72, y: 95 },   // Bottom right
-  { pos: 'UTG', x: 28, y: 95 },  // Bottom left
+  { pos: 'HJ', x: 28, y: 8 },    // Top left
+  { pos: 'CO', x: 72, y: 8 },    // Top right
+  { pos: 'BTN', x: 92, y: 50 },  // Right side
+  { pos: 'SB', x: 72, y: 98 },   // Bottom right
+  { pos: 'BB', x: 38, y: 98 },   // Bottom center-left
+  { pos: 'UTG', x: 12, y: 50 },  // Left side
 ];
 
 // Parse weak spot string to get type and value
@@ -336,6 +337,7 @@ export default function PracticePage() {
 
   // AI Coach state
   const [coachExpanded, setCoachExpanded] = useState(false);
+  const [showAICoachModal, setShowAICoachModal] = useState(false);
 
   // Session stats (current session only)
   const [sessionStats, setSessionStats] = useState({ total: 0, correct: 0 });
@@ -748,7 +750,7 @@ export default function PracticePage() {
 
   if (!scenario) {
     return (
-      <div className="loading">
+      <div className="loading" style={{ background: '#0d0d0d', height: '100vh', width: '100vw' }}>
         <div className="spinner" />
       </div>
     );
@@ -758,46 +760,75 @@ export default function PracticePage() {
 
   return (
     <div className="practice-page">
-      {/* Top bar: Streak indicator + Weak spot toggle */}
+      {/* Top bar: Left side controls */}
       <div className="top-bar">
-        <div className="streak-indicator">
-          <span className="fire">🔥</span>
-          <span className="count">{streak}</span>
+        <div className="top-bar-left">
+          <div className="streak-indicator">
+            <span className="fire">🔥</span>
+            <span className="count">{streak}</span>
+          </div>
+
+          {/* Mini session stats */}
+          <div className="mini-stats" onClick={() => setShowProgressChart(true)}>
+            <span className="mini-stat">
+              <span className="mini-label">今日</span>
+              <span className="mini-value">{todayStats.total}</span>
+            </span>
+            <span className="mini-divider">·</span>
+            <span className="mini-stat">
+              <span className="mini-label">准确</span>
+              <span className="mini-value">{sessionStats.total > 0 ? Math.round((sessionStats.correct / sessionStats.total) * 100) : 0}%</span>
+            </span>
+          </div>
+
+          {/* Weak spot panel toggle button */}
+          {practiceStats.weakSpots.length > 0 && !weakSpotMode && (
+            <button
+              className="weak-spot-toggle"
+              onClick={() => setShowWeakSpotPanel(!showWeakSpotPanel)}
+            >
+              <span className="toggle-icon">🎯</span>
+              <span className="toggle-badge">{practiceStats.weakSpots.length}</span>
+            </button>
+          )}
+
+          {/* Weak spot mode indicator */}
+          {weakSpotMode && activeWeakSpot && (
+            <div className="weak-spot-indicator">
+              <span className="weak-spot-icon">🎯</span>
+              <span className="weak-spot-label">针对训练: {getWeakSpotDisplayName(activeWeakSpot)}</span>
+              <button
+                className="weak-spot-close"
+                onClick={() => {
+                  setWeakSpotMode(false);
+                  setActiveWeakSpot(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Weak spot panel toggle button */}
-        {practiceStats.weakSpots.length > 0 && !weakSpotMode && (
+        {/* Right side: PK button + Filter - grouped together */}
+        <div className="top-bar-right">
+          <Link href="/pk" className="pk-mode-btn">
+            <span className="pk-icon">⚔️</span>
+            <span className="pk-text">PK对战</span>
+          </Link>
           <button
-            className="weak-spot-toggle"
-            onClick={() => setShowWeakSpotPanel(!showWeakSpotPanel)}
+            className="filter-toggle-btn-inline"
+            onClick={() => setShowFilterPanel(!showFilterPanel)}
+            title="筛选设置"
           >
-            <span className="toggle-icon">🎯</span>
-            <span className="toggle-badge">{practiceStats.weakSpots.length}</span>
+            <svg className="filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+            {(handTypeFilter !== 'all' || scenarioFilter !== 'all' || timerMode) && (
+              <span className="filter-active-dot" />
+            )}
           </button>
-        )}
-
-        {/* Weak spot mode indicator */}
-        {weakSpotMode && activeWeakSpot && (
-          <div className="weak-spot-indicator">
-            <span className="weak-spot-icon">🎯</span>
-            <span className="weak-spot-label">针对训练: {getWeakSpotDisplayName(activeWeakSpot)}</span>
-            <button
-              className="weak-spot-close"
-              onClick={() => {
-                setWeakSpotMode(false);
-                setActiveWeakSpot(null);
-              }}
-            >
-              ×
-            </button>
-          </div>
-        )}
-
-        {/* PK Mode Entry Button */}
-        <Link href="/pk" className="pk-mode-btn">
-          <span className="pk-icon">⚔️</span>
-          <span className="pk-text">PK对战</span>
-        </Link>
+        </div>
       </div>
 
       {/* Weak spot selection panel */}
@@ -862,314 +893,326 @@ export default function PracticePage() {
         </div>
       )}
 
-      {/* Main content */}
+      {/* Hand History Bar - GTO Wizard style horizontal scrollable */}
+      {scenario.streetResults.length > 0 && (
+        <div className="hand-history-bar">
+          {scenario.streetResults.map((result, idx) => (
+            <div key={idx} className={`history-item ${result.isCorrect ? 'correct' : 'wrong'}`}>
+              <span className="history-street">{STREET_NAMES[result.street as Street]}</span>
+              <span className="history-stack">{scenario.heroStack}</span>
+              <span className={`history-action ${result.isCorrect ? 'correct' : 'wrong'}`}>
+                {result.isCorrect && <span className="check-icon">✓</span>}
+                {result.action} {result.score}%
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Main content - GTO Wizard style scalable layout */}
       <div className="main-content">
-        {/* Scenario title */}
-        <div className="scenario-title">
-          {scenario.heroPosition} vs. {scenario.villainPosition},
-          {scenario.preflopScenario === 'rfi' ? ' RFI' : scenario.preflopScenario === 'vs_rfi' ? ' 面对加注' : ' 面对3-Bet'}, 100bb
-          <span className="info-icon" onClick={() => setShowScenarioInfo(true)}>ⓘ</span>
-        </div>
+        {/* Table Area */}
+        <div className="table-area">
+          {/* Scenario Info - positioned above table */}
+          <div className="scenario-info-display">
+            <span className="scenario-text">
+              {scenario.heroPosition} vs. {scenario.villainPosition}, {
+                scenario.preflopScenario === 'rfi' ? 'RFI开池' :
+                scenario.preflopScenario === 'vs_rfi' ? '面对加注' : '面对3-Bet'
+              }, {scenario.heroStack}bb
+            </span>
+            <span className="info-icon-inline" onClick={() => setShowScenarioInfo(true)}>ⓘ</span>
+          </div>
 
-        {/* 当前街道指示器 */}
-        <div className="street-indicator">
-          {(['preflop', 'flop', 'turn', 'river'] as Street[]).map((street, idx) => {
-            const isCurrent = scenario.currentStreet === street;
-            const isPast = ['preflop', 'flop', 'turn', 'river'].indexOf(scenario.currentStreet) > idx;
-            return (
-              <div key={street} className={`street-step ${isCurrent ? 'current' : ''} ${isPast ? 'past' : ''}`}>
-                <span className="step-dot">{isPast ? '✓' : idx + 1}</span>
-                <span className="step-name">{STREET_NAMES[street]}</span>
-              </div>
-            );
-          })}
-        </div>
+          {/* Poker Table with dark ellipse */}
+          <div className="poker-table">
+            {/* Table felt (dark ellipse - GTO Wizard style) */}
+            <div className="table-felt" />
 
-        {/* Poker Table */}
-        <div className="poker-table">
-          {/* Table outline */}
-          <div className="table-outline" />
+            {/* All seats around the table */}
+            {SEAT_POSITIONS.map(({ pos, x, y }) => {
+              const isHero = pos === scenario.heroPosition;
+              const isVillain = pos === scenario.villainPosition;
+              const isActive = isHero || isVillain;
+              const isBTN = pos === 'BTN';
 
-          {/* All seats */}
-          {SEAT_POSITIONS.map(({ pos, x, y }) => {
-            const isHero = pos === scenario.heroPosition;
-            const isVillain = pos === scenario.villainPosition;
-            const isActive = isHero || isVillain;
-            const isBTN = pos === 'BTN';
+              return (
+                <div
+                  key={pos}
+                  className={`seat ${isActive ? 'active' : 'inactive'} ${isHero ? 'hero' : ''} ${isVillain ? 'villain' : ''}`}
+                  style={{ left: `${x}%`, top: `${y}%` }}
+                >
+                  {/* Seat badge - circular style */}
+                  <div className="seat-badge">
+                    <span className="pos">{pos}</span>
+                    <span className="stack">{isActive ? (isHero ? scenario.heroStack : scenario.villainStack) : 100}</span>
+                  </div>
 
-            return (
-              <div
-                key={pos}
-                className={`seat ${isActive ? 'active' : 'inactive'} ${isHero ? 'hero' : ''}`}
-                style={{ left: `${x}%`, top: `${y}%` }}
-              >
-                {/* Horizontal layout: cards + badge */}
-                <div className="seat-content">
-                  {/* Cards - only for active players */}
+                  {/* Cards - show for hero always, villain when result shown */}
+                  {/* Cards position: left side seats (UTG, HJ) show cards on right, right side seats (BTN, CO, SB) show cards on left */}
                   {isHero && (
-                    <div className="hole-cards">
+                    <div className={`hole-cards hero-cards ${x > 50 ? 'cards-left' : 'cards-right'}`}>
                       <PokerCard card={scenario.heroHand[0]} size="sm" variant="dark" />
                       <PokerCard card={scenario.heroHand[1]} size="sm" variant="dark" />
                     </div>
                   )}
-                  {isVillain && showResult && scenario.villainHand && (
-                    <div className="hole-cards">
-                      <PokerCard card={scenario.villainHand[0]} size="sm" variant="dark" />
-                      <PokerCard card={scenario.villainHand[1]} size="sm" variant="dark" />
+                  {isVillain && (
+                    <div className={`hole-cards villain-cards ${x > 50 ? 'cards-left' : 'cards-right'}`}>
+                      {showResult && scenario.villainHand ? (
+                        <>
+                          <PokerCard card={scenario.villainHand[0]} size="sm" variant="dark" />
+                          <PokerCard card={scenario.villainHand[1]} size="sm" variant="dark" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="card-back" />
+                          <div className="card-back" />
+                        </>
+                      )}
                     </div>
                   )}
 
-                  {/* Seat badge */}
-                  <div className={`seat-badge ${isHero ? 'hero-badge' : ''}`}>
-                    <span className="pos">{pos}</span>
-                    <span className="stack">{isActive ? (isHero ? scenario.heroStack : scenario.villainStack) : 100}</span>
-                  </div>
+                  {/* Dealer button - next to BTN position */}
+                  {isBTN && <div className="dealer-btn">D</div>}
                 </div>
+              );
+            })}
 
-                {/* Dealer button */}
-                {isBTN && <div className="dealer-btn">D</div>}
+            {/* Center: Pot and Board */}
+            <div className="table-center">
+              {/* Pot amount */}
+              <div className="pot-display">
+                <span className="pot-value">{scenario.potSize.toFixed(0)} bb</span>
               </div>
-            );
-          })}
 
-          {/* Center: Pot + Board */}
-          <div className="table-center">
-            <div className="pot">
-              <div className="chip-stack">
-                <div className="chip c1"></div>
-                <div className="chip c2"></div>
-                <div className="chip c3"></div>
-              </div>
-              {scenario.potSize.toFixed(0)} BB
-            </div>
-            {scenario.board.length > 0 && (
-              <div className="board">
+              {/* Board cards */}
+              {scenario.board.length > 0 && (
                 <div className="board-cards">
                   {scenario.board.map((card, idx) => (
-                    <PokerCard key={idx} card={card} size="sm" variant="dark" />
+                    <PokerCard key={idx} card={card} size="md" variant="dark" />
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Pot chip indicator */}
+              {scenario.board.length > 0 && (
+                <div className="pot-chip-display">
+                  <span className="chip-icon" />
+                  <span className="chip-amount">{scenario.potSize.toFixed(0)} bb</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Action Buttons - always visible */}
-        <div className="action-buttons">
-          {availableActions.map(({ action, label, color, hotkey }) => (
-            <button
-              key={action}
-              className={`action-btn ${showResult && mapActionType(selectedAction || '') === action ? 'selected' : ''}`}
-              style={{ backgroundColor: color, opacity: showResult ? 0.6 : 1 }}
-              onClick={() => !showResult && handleAction(action)}
-              disabled={showResult}
-            >
-              {label}
-              <span className="hotkey">{hotkey}</span>
-            </button>
-          ))}
-        </div>
+        {/* Action Buttons - only show when not showing result */}
+        {!showResult && (
+          <div className="action-buttons">
+            {availableActions.map(({ action, label, color, hotkey }) => (
+              <button
+                key={action}
+                className="action-btn"
+                style={{ backgroundColor: color }}
+                onClick={() => handleAction(action)}
+              >
+                {label}
+                <span className="hotkey">{hotkey}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Result Panel - shown below action buttons after selection */}
+        {/* Result Panel - GTO Wizard style */}
         {showResult && (
-          <div className="result-panel-wrapper">
-            <button className="result-nav-btn prev" onClick={repeatCurrentScenario} title="重复这一手">
-              <span>‹</span>
-            </button>
+          <div className="result-panel-wizard">
+            {/* Navigation arrow left */}
+            <button className="result-nav prev" onClick={repeatCurrentScenario} title="重复这一手">‹</button>
 
-            <div className="result-panel">
-              <div className="result-content">
-                {/* 左侧：你的选择 */}
-                <div className="result-section your-section">
-                  <div className="section-header">你的选择</div>
-                  <div className={`your-action ${isCorrect ? 'correct' : 'wrong'}`}>
-                    {selectedAction?.toUpperCase()}
-                  </div>
-                  <div className="your-score">
-                    <span className="score-value" style={{ color: isCorrect ? '#22c55e' : '#f87171' }}>
-                      {accuracyScore}%
-                    </span>
-                    <span className="score-label">{isCorrect ? '正确' : '失误'}</span>
-                  </div>
+            <div className="result-card-wizard">
+              {/* Score circle */}
+              <div className="score-circle-container">
+                <svg className="score-ring" viewBox="0 0 100 100">
+                  <circle className="ring-bg" cx="50" cy="50" r="42" />
+                  <circle
+                    className="ring-progress"
+                    cx="50" cy="50" r="42"
+                    style={{
+                      stroke: '#f59e0b',
+                      strokeDasharray: `${accuracyScore * 2.64} 264`
+                    }}
+                  />
+                </svg>
+                <div className="score-inner">
+                  <span className="score-label">GTO得分</span>
+                  <span className="score-value" style={{ color: '#f59e0b' }}>
+                    {accuracyScore}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Right side info */}
+              <div className="result-info-wizard">
+                <div className="result-status">
+                  <span className="status-icon" style={{ color: isCorrect ? '#22d3bf' : '#ef4444' }}>
+                    {isCorrect ? '✓' : '✗'}
+                  </span>
+                  <span className="status-text">{isCorrect ? '正确的行动' : '错误的行动'}</span>
                 </div>
 
-                {/* 中间：分隔线 */}
-                <div className="result-divider" />
-
-                {/* 右侧：GTO策略 */}
-                <div className="result-section gto-section">
-                  <div className="section-header">GTO最优策略</div>
-                  <div className="gto-actions-row">
-                    {currentActions
-                      .filter(a => a.frequency > 0)
-                      .sort((a, b) => b.frequency - a.frequency)
-                      .map(action => {
-                        const isSelected = mapActionType(selectedAction || '') === action.action;
-                        const actionColor = action.action === 'fold' ? '#3b82f6' :
-                                           action.action === 'call' || action.action === 'check' ? '#22c55e' :
-                                           '#ef4444';
-                        return (
-                          <div
-                            key={action.action}
-                            className={`gto-action-chip ${isSelected ? 'selected' : ''}`}
-                            style={{ borderColor: isSelected ? actionColor : 'transparent' }}
-                          >
-                            <span className="action-name" style={{ color: actionColor }}>
-                              {action.action.toUpperCase()}
-                            </span>
-                            <span className="action-freq">{action.frequency}%</span>
-                          </div>
-                        );
-                      })}
-                  </div>
-                  {/* 策略原因 */}
-                  <div className="gto-reason">
-                    {scenario.handString} 在 {scenario.heroPosition} 位置
-                    {scenario.preflopScenario === 'rfi' ? '开池' :
-                     scenario.preflopScenario === 'vs_rfi' ? `面对${scenario.villainPosition}加注` :
-                     `面对${scenario.villainPosition}的3-Bet`}
-                    {currentActions.find(a => a.frequency >= 80) ?
-                      `，应${currentActions.find(a => a.frequency >= 80)?.action === 'fold' ? '弃牌' :
-                            currentActions.find(a => a.frequency >= 80)?.action === 'raise' ? '加注' :
-                            currentActions.find(a => a.frequency >= 80)?.action === 'call' ? '跟注' : '过牌'}` :
-                      '，是混合策略'}
-                  </div>
-                </div>
-
-                {/* 街道进度 */}
-                <div className="street-progress">
-                  {(['preflop', 'flop', 'turn', 'river'] as Street[]).map(street => {
+                {/* Street progress tabs */}
+                <div className="street-tabs">
+                  {(['preflop', 'flop', 'turn', 'river'] as Street[]).map((street) => {
                     const result = scenario.streetResults.find(r => r.street === street);
+                    const isCurrent = scenario.currentStreet === street;
                     return (
-                      <span
+                      <div
                         key={street}
-                        className={`progress-dot ${result?.isCorrect ? 'correct' : result ? 'wrong' : ''}`}
-                        title={STREET_NAMES[street]}
-                      />
+                        className={`street-tab ${result?.isCorrect ? 'correct' : result ? 'wrong' : ''} ${isCurrent ? 'current' : ''}`}
+                      >
+                        {result && <span className="tab-check" style={{ color: result.isCorrect ? '#22d3bf' : '#ef4444' }}>✓</span>}
+                        {STREET_NAMES[street]}
+                      </div>
                     );
                   })}
                 </div>
               </div>
+
+              {/* AI Coach Icon Button */}
+              <button
+                className="ai-coach-btn"
+                onClick={() => setShowAICoachModal(true)}
+                title="AI教练分析"
+              >
+                <span className="ai-icon">🤖</span>
+              </button>
             </div>
 
-            <button className="result-nav-btn next" onClick={canContinue ? dealNextStreet : generateNewScenario} title={canContinue ? '继续下一街' : '下一手'}>
-              <span>›</span>
-            </button>
+            {/* Navigation arrow right */}
+            <button className="result-nav next" onClick={canContinue ? dealNextStreet : generateNewScenario} title={canContinue ? '继续下一街' : '下一手'}>›</button>
           </div>
         )}
 
-        {/* AI Coach Feedback */}
-        {showResult && scenario && selectedAction && (
-          <AICoachFeedback
-            handString={scenario.handString}
-            heroPosition={scenario.heroPosition}
-            villainPosition={scenario.villainPosition}
-            scenario={scenario.preflopScenario}
-            street={scenario.currentStreet}
-            playerAction={selectedAction}
-            gtoStrategy={currentActions.map(a => ({ action: a.action, frequency: a.frequency }))}
-            isCorrect={isCorrect}
-            accuracyScore={accuracyScore}
-            board={scenario.board?.map(c => `${c.rank}${c.suit}`)}
-            potSize={scenario.potSize}
-            language="zh"
-            expanded={coachExpanded}
-            onToggleExpand={() => setCoachExpanded(!coachExpanded)}
-          />
+        {/* AI Coach Modal */}
+        {showAICoachModal && showResult && scenario && selectedAction && (
+          <div className="modal-overlay" onClick={() => setShowAICoachModal(false)}>
+            <div className="ai-coach-modal" onClick={e => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>🤖 AI 教练分析</h3>
+                <button className="modal-close" onClick={() => setShowAICoachModal(false)}>×</button>
+              </div>
+              <div className="modal-body ai-coach-modal-body">
+                <AICoachFeedback
+                  handString={scenario.handString}
+                  heroPosition={scenario.heroPosition}
+                  villainPosition={scenario.villainPosition}
+                  scenario={scenario.preflopScenario}
+                  street={scenario.currentStreet}
+                  playerAction={selectedAction}
+                  gtoStrategy={currentActions.map(a => ({ action: a.action, frequency: a.frequency }))}
+                  isCorrect={isCorrect}
+                  accuracyScore={accuracyScore}
+                  board={scenario.board?.map(c => `${c.rank}${c.suit}`)}
+                  potSize={scenario.potSize}
+                  language="zh"
+                  expanded={true}
+                />
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* Bottom bar */}
+        {/* Bottom control bar - GTO Wizard style */}
         <div className="bottom-bar">
           <button className="btn-secondary" onClick={repeatCurrentScenario}>
-            <span>↻</span> 重复这一手
+            <span className="btn-icon">↻</span> 重复这一手
           </button>
           {showResult && scenario.streetResults.length > 0 && (
             <button className="btn-save" onClick={handleSaveHand}>
-              <span>💾</span> 保存
+              <span className="btn-icon">💾</span> 保存
             </button>
           )}
           {canContinue ? (
             <button className="btn-primary" onClick={dealNextStreet}>
-              <span>▶▶</span> 继续下一街
+              <span className="btn-icon">▶▶</span> 继续下一街
             </button>
           ) : showResult && scenario.streetResults.length > 1 ? (
             <>
               <button className="btn-summary" onClick={() => setShowSessionSummary(true)}>
-                <span>📊</span> 查看总结
+                <span className="btn-icon">📊</span> 查看总结
               </button>
               <button className="btn-primary" onClick={generateNewScenario}>
-                <span>▶▶</span> 下一手
+                <span className="btn-icon">▶▶</span> 下一手
               </button>
             </>
           ) : (
             <button className="btn-primary" onClick={generateNewScenario}>
-              <span>▶▶</span> 下一手
+              <span className="btn-icon">▶▶</span> 下一手
             </button>
           )}
           <div className="more-menu-wrapper">
-            <button className="btn-more" onClick={() => setShowMoreMenu(!showMoreMenu)}>⋮</button>
-            {showMoreMenu && (
-              <div className="more-menu">
-                <div className="menu-section">
-                  <div className="menu-section-title">导航</div>
-                  <Link href="/" className="menu-item">
-                    <span className="menu-icon">🏠</span>
-                    首页
-                  </Link>
-                  <div className="menu-item" onClick={() => { setShowProgressChart(true); setShowMoreMenu(false); }}>
-                    <span className="menu-icon">📊</span>
-                    进度图表
+              <button className="btn-more" onClick={() => setShowMoreMenu(!showMoreMenu)}>⋮</button>
+              {showMoreMenu && (
+                <div className="more-menu">
+                  <div className="menu-section">
+                    <div className="menu-section-title">导航</div>
+                    <Link href="/" className="menu-item">
+                      <span className="menu-icon">🏠</span>
+                      首页
+                    </Link>
+                    <div className="menu-item" onClick={() => { setShowProgressChart(true); setShowMoreMenu(false); }}>
+                      <span className="menu-icon">📊</span>
+                      进度图表
+                    </div>
+                    <div className="menu-item" onClick={() => { setShowHandHistory(true); setShowMoreMenu(false); }}>
+                      <span className="menu-icon">📜</span>
+                      手牌历史 ({savedHands.length})
+                    </div>
+                    <Link href="/solutions" className="menu-item">
+                      <span className="menu-icon">📚</span>
+                      范围
+                    </Link>
+                    <div className="menu-item" onClick={() => { setShowAchievements(true); setShowMoreMenu(false); }}>
+                      <span className="menu-icon">🏆</span>
+                      成就 ({achievements.unlockedCount}/{achievements.totalCount})
+                    </div>
                   </div>
-                  <div className="menu-item" onClick={() => { setShowHandHistory(true); setShowMoreMenu(false); }}>
-                    <span className="menu-icon">📜</span>
-                    手牌历史 ({savedHands.length})
+                  <div className="menu-divider" />
+                  <div className="menu-section">
+                    <div className="menu-section-title">设置</div>
+                    <div
+                      className="menu-item toggle-item"
+                      onClick={() => updateSettings({ soundEnabled: !settings.soundEnabled })}
+                    >
+                      <span className="menu-label">
+                        <span className="menu-icon">{settings.soundEnabled ? '🔊' : '🔇'}</span>
+                        声音
+                      </span>
+                      <span className={`toggle-switch ${settings.soundEnabled ? 'on' : ''}`}>
+                        <span className="toggle-knob" />
+                      </span>
+                    </div>
+                    <div className="menu-item" onClick={() => { setShowTutorial(true); setTutorialStep(0); setShowMoreMenu(false); }}>
+                      <span className="menu-icon">📖</span>
+                      新手教程
+                    </div>
+                    <Link href="/settings" className="menu-item">
+                      <span className="menu-icon">⚙️</span>
+                      更多设置
+                    </Link>
                   </div>
-                  <Link href="/solutions" className="menu-item">
-                    <span className="menu-icon">📚</span>
-                    范围
-                  </Link>
-                  <div className="menu-item" onClick={() => { setShowAchievements(true); setShowMoreMenu(false); }}>
-                    <span className="menu-icon">🏆</span>
-                    成就 ({achievements.unlockedCount}/{achievements.totalCount})
+                  <div className="menu-divider" />
+                  <div className="menu-hint" onClick={() => { setShowKeyboardHelp(true); setShowMoreMenu(false); }} style={{ cursor: 'pointer' }}>
+                    <span className="hint-icon">⌨️</span>
+                    快捷键：按 ? 查看全部
                   </div>
                 </div>
-                <div className="menu-divider" />
-                <div className="menu-section">
-                  <div className="menu-section-title">设置</div>
-                  <div
-                    className="menu-item toggle-item"
-                    onClick={() => updateSettings({ soundEnabled: !settings.soundEnabled })}
-                  >
-                    <span className="menu-label">
-                      <span className="menu-icon">{settings.soundEnabled ? '🔊' : '🔇'}</span>
-                      声音
-                    </span>
-                    <span className={`toggle-switch ${settings.soundEnabled ? 'on' : ''}`}>
-                      <span className="toggle-knob" />
-                    </span>
-                  </div>
-                  <div className="menu-item" onClick={() => { setShowTutorial(true); setTutorialStep(0); setShowMoreMenu(false); }}>
-                    <span className="menu-icon">📖</span>
-                    新手教程
-                  </div>
-                  <Link href="/settings" className="menu-item">
-                    <span className="menu-icon">⚙️</span>
-                    更多设置
-                  </Link>
-                </div>
-                <div className="menu-divider" />
-                <div className="menu-hint" onClick={() => { setShowKeyboardHelp(true); setShowMoreMenu(false); }} style={{ cursor: 'pointer' }}>
-                  <span className="hint-icon">⌨️</span>
-                  快捷键：按 ? 查看全部
-                </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
-      </div>
 
-      {/* 点击外部关闭菜单 */}
-      {showMoreMenu && <div className="menu-overlay" onClick={() => setShowMoreMenu(false)} />}
+        {/* Click outside to close menu */}
+        {showMoreMenu && <div className="menu-overlay" onClick={() => setShowMoreMenu(false)} />}
+      </div>
 
       {/* 场景信息弹窗 */}
       {showScenarioInfo && (
@@ -1689,7 +1732,7 @@ export default function PracticePage() {
                             {hand.board.length > 0 && (
                               <div className="detail-board">
                                 <span className="board-label">公共牌:</span>
-                                <span className="board-cards">{hand.board.join(' ')}</span>
+                                <span className="board-cards-text">{hand.board.join(' ')}</span>
                               </div>
                             )}
 
@@ -1867,19 +1910,6 @@ export default function PracticePage() {
         </div>
       )}
 
-      {/* Filter toggle button */}
-      <button
-        className="filter-toggle-btn"
-        onClick={() => setShowFilterPanel(!showFilterPanel)}
-        title="筛选设置"
-      >
-        <svg className="filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-        </svg>
-        {(handTypeFilter !== 'all' || scenarioFilter !== 'all' || timerMode) && (
-          <span className="filter-active-dot" />
-        )}
-      </button>
 
       {/* Filter panel - top right */}
       {showFilterPanel && (
@@ -2009,39 +2039,6 @@ export default function PracticePage() {
         </div>
       )}
 
-      {/* Quick Stats Bar */}
-      <div className="quick-stats-bar">
-        <div className="quick-stat" onClick={() => setShowProgressChart(true)}>
-          <span className="stat-icon">📊</span>
-          <span className="stat-label">今日</span>
-          <span className="stat-main">{todayStats.total}/{dailyGoal}</span>
-          <div className="stat-progress">
-            <div
-              className="stat-progress-fill"
-              style={{
-                width: `${Math.min((todayStats.total / dailyGoal) * 100, 100)}%`,
-                background: todayStats.total >= dailyGoal ? '#22c55e' : '#22d3bf'
-              }}
-            />
-          </div>
-        </div>
-        <div className="quick-stat-divider" />
-        <div className="quick-stat">
-          <span className="stat-icon">🎯</span>
-          <span className="stat-label">本次</span>
-          <span className="stat-main">{sessionStats.correct}/{sessionStats.total}</span>
-          <span className="stat-pct">
-            {sessionStats.total > 0 ? Math.round((sessionStats.correct / sessionStats.total) * 100) : 0}%
-          </span>
-        </div>
-        <div className="quick-stat-divider" />
-        <div className="quick-stat" onClick={() => setShowDailyGoalModal(true)}>
-          <span className="stat-icon">🏆</span>
-          <span className="stat-label">目标</span>
-          <span className="stat-main">{dailyGoal}手</span>
-          <span className="stat-edit">✏️</span>
-        </div>
-      </div>
 
       {/* Daily Goal Modal */}
       {showDailyGoalModal && (
@@ -2105,20 +2102,23 @@ export default function PracticePage() {
 
       <style jsx>{`
         .practice-page {
-          min-height: 100vh;
+          height: 100vh;
+          height: 100dvh;
           width: 100vw;
-          background: #0d0d0d;
-          display: flex;
-          align-items: flex-start;
-          justify-content: center;
-          overflow-y: auto;
-          overflow-x: hidden;
+          background: #0a0a0f;
+          display: grid;
+          grid-template-rows: auto 1fr;
+          grid-template-areas:
+            "header"
+            "main";
+          overflow: hidden;
           position: relative;
-          padding-top: 0;
+          box-sizing: border-box;
         }
 
         .loading {
           height: 100vh;
+          width: 100vw;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -2138,24 +2138,157 @@ export default function PracticePage() {
 
         /* Top bar container */
         .top-bar {
+          grid-area: header;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 8px 16px;
+          background: rgba(10, 10, 15, 0.95);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          z-index: 20;
+        }
+
+        .top-bar-left {
           display: flex;
           align-items: center;
           gap: 16px;
-          margin-bottom: 16px;
+        }
+
+        .top-bar-right {
+          display: flex;
+          align-items: center;
+          gap: 10px;
         }
 
         /* Streak indicator */
         .streak-indicator {
+          position: fixed;
+          top: 100px;
+          left: 16px;
           display: flex;
           align-items: center;
           gap: 6px;
+          z-index: 50;
         }
 
-        .streak-indicator .fire { font-size: 20px; }
-        .streak-indicator .count { font-size: 16px; color: #fff; font-weight: 600; }
+        .streak-indicator .fire { font-size: 18px; }
+        .streak-indicator .count { font-size: 14px; color: #fff; font-weight: 600; }
+
+        /* Mini stats in top bar */
+        .mini-stats {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 10px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .mini-stats:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .mini-stat {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .mini-label {
+          font-size: 10px;
+          color: #666;
+        }
+
+        .mini-value {
+          font-size: 12px;
+          font-weight: 600;
+          color: #22d3bf;
+        }
+
+        .mini-divider {
+          color: #444;
+          font-size: 10px;
+        }
+
+        @media (max-width: 480px) {
+          .mini-stats {
+            display: none;
+          }
+        }
+
+        /* PK Mode Button - inline style */
+        .pk-mode-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%);
+          border: 1px solid rgba(139, 92, 246, 0.4);
+          border-radius: 20px;
+          text-decoration: none;
+          color: #a78bfa;
+          font-weight: 500;
+          font-size: 12px;
+          transition: all 0.2s;
+        }
+
+        .pk-mode-btn:hover {
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(236, 72, 153, 0.3) 100%);
+          border-color: #a78bfa;
+        }
+
+        .pk-mode-btn .pk-icon { font-size: 14px; }
+        .pk-mode-btn .pk-text { font-size: 12px; }
+
+        /* Inline filter toggle button */
+        .filter-toggle-btn-inline {
+          position: relative;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid #333;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .filter-toggle-btn-inline:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: #22d3bf;
+        }
+
+        .filter-toggle-btn-inline .filter-icon {
+          width: 16px;
+          height: 16px;
+          color: #888;
+        }
+
+        .filter-toggle-btn-inline:hover .filter-icon {
+          color: #22d3bf;
+        }
+
+        .filter-toggle-btn-inline .filter-active-dot {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          width: 6px;
+          height: 6px;
+          background: #22d3bf;
+          border-radius: 50%;
+          box-shadow: 0 0 6px #22d3bf;
+        }
 
         /* Weak spot toggle button */
         .weak-spot-toggle {
+          position: fixed;
+          top: 110px;
+          right: 16px;
           display: inline-flex;
           align-items: center;
           gap: 6px;
@@ -2165,42 +2298,43 @@ export default function PracticePage() {
           cursor: pointer;
           min-height: unset !important;
           height: auto !important;
+          z-index: 50;
         }
 
         .weak-spot-toggle:hover .toggle-badge {
           background: rgba(245, 158, 11, 0.3);
         }
 
-        .weak-spot-toggle .toggle-icon { font-size: 20px; }
+        .weak-spot-toggle .toggle-icon { font-size: 18px; }
 
         .weak-spot-toggle .toggle-badge {
-          font-size: 16px;
+          font-size: 14px;
           font-weight: 600;
           color: #f59e0b;
           background: rgba(245, 158, 11, 0.15);
-          padding: 4px 10px;
-          border-radius: 12px;
+          padding: 3px 8px;
+          border-radius: 10px;
         }
 
         /* Weak spot indicator (active mode) */
         .weak-spot-indicator {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
           background: rgba(245, 158, 11, 0.15);
           border: 1px solid #f59e0b;
-          padding: 8px 16px;
-          border-radius: 20px;
+          padding: 6px 12px;
+          border-radius: 16px;
         }
 
-        .weak-spot-icon { font-size: 16px; }
-        .weak-spot-label { font-size: 13px; color: #f59e0b; font-weight: 500; }
+        .weak-spot-icon { font-size: 14px; }
+        .weak-spot-label { font-size: 12px; color: #f59e0b; font-weight: 500; }
 
         .weak-spot-close {
           background: none;
           border: none;
           color: #f59e0b;
-          font-size: 18px;
+          font-size: 16px;
           cursor: pointer;
           padding: 0;
           line-height: 1;
@@ -2208,6 +2342,11 @@ export default function PracticePage() {
         }
 
         .weak-spot-close:hover { opacity: 1; }
+
+        @media (max-width: 480px) {
+          .pk-mode-btn .pk-text { display: none; }
+          .pk-mode-btn { padding: 6px 10px; }
+        }
 
         /* Weak spot panel */
         .weak-spot-panel {
@@ -2292,45 +2431,6 @@ export default function PracticePage() {
           font-weight: 600;
         }
 
-        /* Filter toggle button */
-        .filter-toggle-btn {
-          position: fixed;
-          top: 60px;
-          right: 16px;
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          background: transparent;
-          border: none;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          z-index: 60;
-          transition: all 0.2s;
-        }
-
-        .filter-toggle-btn:hover {
-          opacity: 0.7;
-        }
-
-        .filter-toggle-btn .filter-icon {
-          width: 20px;
-          height: 20px;
-          color: #fff;
-        }
-
-        .filter-toggle-btn .filter-active-dot {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          width: 8px;
-          height: 8px;
-          background: #22d3bf;
-          border-radius: 50%;
-          box-shadow: 0 0 6px #22d3bf;
-        }
-
         /* Filter overlay */
         .filter-overlay {
           position: fixed;
@@ -2345,21 +2445,22 @@ export default function PracticePage() {
         /* Filter panel */
         .filter-panel {
           position: fixed;
-          top: 114px;
+          top: 56px;
           right: 16px;
           display: flex;
           flex-direction: column;
           gap: 8px;
           background: rgba(26, 26, 26, 0.98);
-          padding: 16px;
+          padding: 14px;
           border-radius: 12px;
           border: 1px solid #333;
           z-index: 100;
-          max-height: calc(100vh - 120px);
+          max-height: calc(100vh - 80px);
           overflow-y: auto;
           backdrop-filter: blur(8px);
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
           animation: filterSlideIn 0.2s ease;
+          min-width: 220px;
         }
 
         @keyframes filterSlideIn {
@@ -2374,18 +2475,19 @@ export default function PracticePage() {
         }
 
         /* Mobile: collapse filter panel to avoid overlap */
-        @media (max-width: 768px) {
+        @media (max-width: 639px) {
           .filter-panel {
             top: auto;
-            bottom: 80px;
+            bottom: 70px;
             right: 8px;
             left: 8px;
             flex-direction: row;
             flex-wrap: wrap;
             justify-content: center;
             gap: 6px;
-            padding: 8px;
+            padding: 10px;
             max-height: none;
+            min-width: auto;
           }
 
           .filter-panel .filter-group {
@@ -2511,171 +2613,289 @@ export default function PracticePage() {
           50% { transform: scale(1.1); }
         }
 
-        /* Main content */
-        .main-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          width: 100%;
-          max-width: 1100px;
-          padding: 16px 40px 120px;
-          box-sizing: border-box;
-          position: relative;
-          z-index: 1;
-        }
-
-        /* Scenario title */
-        .scenario-title {
-          font-size: 14px;
-          color: #888;
-          margin-bottom: 4px;
-        }
-
-        .info-icon {
-          margin-left: 6px;
-          color: #555;
-          cursor: pointer;
-          transition: color 0.15s;
-        }
-
-        .info-icon:hover {
-          color: #22d3bf;
-        }
-
-        /* 街道指示器 */
-        .street-indicator {
+        /* Hand History Bar - GTO Wizard style */
+        .hand-history-bar {
           display: flex;
           align-items: center;
           gap: 4px;
-          margin-bottom: 24px;
+          padding: 8px 16px;
+          background: #0d0d0d;
+          border-bottom: 1px solid #222;
+          overflow-x: auto;
+          white-space: nowrap;
+          flex-shrink: 0;
         }
 
-        .street-step {
+        .hand-history-bar .history-item {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           padding: 4px 12px;
           background: #1a1a1a;
-          border-radius: 20px;
+          border-radius: 4px;
           font-size: 12px;
-          color: #555;
-          transition: all 0.2s;
         }
 
-        .street-step .step-dot {
-          width: 18px;
-          height: 18px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #333;
-          border-radius: 50%;
-          font-size: 10px;
-          font-weight: 600;
+        .hand-history-bar .history-street {
+          color: #888;
         }
 
-        .street-step .step-name {
-          font-weight: 500;
-        }
-
-        .street-step.current {
-          background: rgba(34, 211, 191, 0.15);
-          color: #22d3bf;
-        }
-
-        .street-step.current .step-dot {
-          background: #22d3bf;
-          color: #000;
-        }
-
-        .street-step.past {
+        .hand-history-bar .history-stack {
           color: #666;
         }
 
-        .street-step.past .step-dot {
-          background: #22c55e;
-          color: #fff;
-          font-size: 11px;
+        .hand-history-bar .history-action {
+          display: flex;
+          align-items: center;
+          gap: 4px;
         }
 
-        /* Poker Table */
+        .hand-history-bar .history-action.correct {
+          color: #22d3bf;
+        }
+
+        .hand-history-bar .history-action.wrong {
+          color: #ef4444;
+        }
+
+        .hand-history-bar .check-icon {
+          font-size: 10px;
+        }
+
+        /* Main content - GTO Wizard scalable container */
+        .main-content {
+          grid-area: main;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: flex-start;
+          width: 100%;
+          min-height: 0;
+          padding: 20px 16px;
+          box-sizing: border-box;
+          position: relative;
+          z-index: 1;
+          overflow-y: auto;
+          overflow-x: hidden;
+          gap: 24px;
+        }
+
+        /* Table Area - scalable based on viewport */
+        .table-area {
+          width: 100%;
+          flex: 0 0 auto;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 0;
+          margin: 16px 0;
+        }
+
+        /* Scenario Info Display - above table */
+        .scenario-info-display {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 12px;
+          font-size: 13px;
+          color: #888;
+        }
+
+        .scenario-text {
+          color: #aaa;
+        }
+
+        .info-icon-inline {
+          cursor: pointer;
+          opacity: 0.6;
+          font-size: 12px;
+        }
+
+        .info-icon-inline:hover {
+          opacity: 1;
+        }
+
+        /* Poker Table - GTO Wizard style dark ellipse */
         .poker-table {
           position: relative;
           width: 100%;
-          flex: 0 0 auto;
-          height: 200px;
-          min-height: 200px;
-          max-height: 200px;
-          margin-bottom: 32px;
+          max-width: min(92vw, 880px);
+          aspect-ratio: 3 / 0.8;
+          margin: 0 auto;
         }
 
-        .table-outline {
+        @media (max-width: 639px) {
+          .poker-table {
+            max-width: min(95vw, 480px);
+          }
+
+          /* Scale down board cards on mobile */
+          .board-cards {
+            gap: 2px;
+            transform: scale(0.75);
+          }
+
+          /* Scale down hole cards on mobile */
+          .hole-cards {
+            transform: scale(0.7);
+          }
+
+          .hole-cards.cards-right {
+            left: 44px;
+            transform: scale(0.7) translateY(-50%);
+            transform-origin: left center;
+          }
+
+          .hole-cards.cards-left {
+            right: 44px;
+            transform: scale(0.7) translateY(-50%);
+            transform-origin: right center;
+          }
+
+          /* Scale down card back */
+          .card-back {
+            width: 28px;
+            height: 40px;
+          }
+
+          /* Adjust pot display */
+          .pot-display .pot-value {
+            font-size: 16px;
+          }
+
+          /* Adjust seat badge */
+          .seat-badge {
+            width: 38px;
+            height: 38px;
+          }
+
+          .seat-badge .pos {
+            font-size: 10px;
+          }
+
+          .seat-badge .stack {
+            font-size: 10px;
+          }
+        }
+
+        @media (max-height: 700px) {
+          .poker-table {
+            max-width: min(85vw, 720px);
+          }
+        }
+
+        /* Table felt - Dark ellipse (GTO Wizard style) */
+        .table-felt {
           position: absolute;
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 70%;
-          height: 90%;
-          border: 2px solid #2a2a2a;
+          width: 75%;
+          height: 92%;
+          border: 2px solid rgba(60, 60, 80, 0.6);
           border-radius: 100px;
+          background: radial-gradient(ellipse at center, #1a1a24 0%, #12121a 70%, #0a0a0f 100%);
+          box-shadow:
+            inset 0 0 40px rgba(0, 0, 0, 0.5),
+            0 0 30px rgba(0, 0, 0, 0.3);
         }
 
-        /* Seats */
+        /* Seats - GTO Wizard style */
         .seat {
           position: absolute;
           transform: translate(-50%, -50%);
-        }
-
-        .seat.inactive { opacity: 0.4; }
-
-        .seat-content {
+          z-index: 10;
           display: flex;
+          flex-direction: column;
           align-items: center;
-          gap: 6px;
+          gap: 4px;
+          transition: opacity 0.2s;
         }
 
-        .hole-cards {
-          display: flex;
-          gap: 2px;
-        }
+        .seat.inactive { opacity: 0.35; }
+        .seat.inactive:hover { opacity: 0.5; }
 
+        /* Seat badge - Circular style like GTO Wizard */
         .seat-badge {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 6px 12px;
-          background: #222;
-          border: 2px solid #333;
-          border-radius: 16px;
-          min-width: 44px;
+          justify-content: center;
+          width: clamp(36px, 5vw, 48px);
+          height: clamp(36px, 5vw, 48px);
+          background: linear-gradient(180deg, #2a2a34 0%, #1e1e26 100%);
+          border: 2px solid #3a3a44;
+          border-radius: 50%;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          transition: all 0.2s;
         }
 
         .seat.hero .seat-badge {
           border-color: #22d3bf;
-          background: rgba(34, 211, 191, 0.1);
+          background: linear-gradient(180deg, rgba(34, 211, 191, 0.15) 0%, rgba(34, 211, 191, 0.05) 100%);
+          box-shadow: 0 0 12px rgba(34, 211, 191, 0.2);
+        }
+
+        .seat.villain .seat-badge {
+          border-color: #ef4444;
+          background: linear-gradient(180deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.02) 100%);
         }
 
         .seat-badge .pos {
-          font-size: 11px;
+          font-size: clamp(9px, 1.2vw, 11px);
           color: #888;
           font-weight: 600;
+          line-height: 1;
         }
 
         .seat.hero .seat-badge .pos { color: #22d3bf; }
+        .seat.villain .seat-badge .pos { color: #ef4444; }
 
         .seat-badge .stack {
-          font-size: 12px;
+          font-size: clamp(9px, 1.2vw, 11px);
           color: #fff;
           font-weight: 700;
+          line-height: 1;
         }
 
-        .dealer-btn {
+        /* Hole cards - positioned relative to seat */
+        .hole-cards {
+          display: flex;
+          gap: 2px;
           position: absolute;
-          right: -20px;
+        }
+
+        /* Cards positioned based on seat location */
+        .hole-cards.cards-right {
+          left: 54px;
           top: 50%;
           transform: translateY(-50%);
-          width: 20px;
-          height: 20px;
+        }
+
+        .hole-cards.cards-left {
+          right: 54px;
+          top: 50%;
+          transform: translateY(-50%);
+        }
+
+        /* Card back styling */
+        .card-back {
+          width: 36px;
+          height: 50px;
+          background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+          border-radius: 4px;
+          border: 1px solid #60a5fa;
+        }
+
+        /* Dealer button - positioned next to BTN seat */
+        .dealer-btn {
+          position: absolute;
+          left: -20px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 22px;
+          height: 22px;
           background: #fff;
           border-radius: 50%;
           display: flex;
@@ -2684,9 +2904,11 @@ export default function PracticePage() {
           font-size: 10px;
           font-weight: 700;
           color: #000;
+          border: 2px solid #ccc;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
-        /* Table center */
+        /* Table center - Pot and Board */
         .table-center {
           position: absolute;
           top: 50%;
@@ -2695,54 +2917,18 @@ export default function PracticePage() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
+          z-index: 5;
         }
 
-        .pot {
-          font-size: 22px;
+        .pot-display {
+          text-align: center;
+        }
+
+        .pot-display .pot-value {
+          font-size: 20px;
           font-weight: 700;
           color: #fff;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .chip-stack {
-          position: relative;
-          width: 28px;
-          height: 24px;
-        }
-
-        .chip-stack .chip {
-          position: absolute;
-          width: 26px;
-          height: 6px;
-          border-radius: 3px;
-          left: 0;
-        }
-
-        .chip-stack .chip.c1 {
-          background: linear-gradient(90deg, #1e40af 0%, #3b82f6 50%, #1e40af 100%);
-          bottom: 0;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-        }
-
-        .chip-stack .chip.c2 {
-          background: linear-gradient(90deg, #dc2626 0%, #ef4444 50%, #dc2626 100%);
-          bottom: 6px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-        }
-
-        .chip-stack .chip.c3 {
-          background: linear-gradient(90deg, #15803d 0%, #22c55e 50%, #15803d 100%);
-          bottom: 12px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-        }
-
-        .board {
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
 
         .board-cards {
@@ -2750,25 +2936,51 @@ export default function PracticePage() {
           gap: 4px;
         }
 
-        /* Result Panel Wrapper */
-        .result-panel-wrapper {
+        .pot-chip-display {
           display: flex;
-          align-items: stretch;
-          justify-content: center;
-          gap: 0;
-          width: 100%;
-          max-width: 800px;
-          margin-top: 24px;
-          position: static !important;
-          z-index: 1;
+          align-items: center;
+          gap: 4px;
+          margin-top: 4px;
         }
 
-        .result-nav-btn {
-          width: 48px;
+        .chip-icon {
+          width: 12px;
+          height: 12px;
+          background: #3b82f6;
+          border-radius: 50%;
+          border: 1px solid #60a5fa;
+        }
+
+        .chip-amount {
+          font-size: 12px;
+          color: #fff;
+        }
+
+        .pot-percent {
+          font-size: 11px;
+          color: #888;
+        }
+
+        /* Result Panel - GTO Wizard style */
+        .result-panel-wizard {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          width: 100%;
+          max-width: 520px;
+          padding: 0;
+          flex-shrink: 0;
+        }
+
+        .result-nav {
+          width: 36px;
+          height: 70px;
           border: none;
-          background: transparent;
-          color: #555;
-          font-size: 28px;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 8px;
+          color: #444;
+          font-size: 24px;
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -2777,60 +2989,48 @@ export default function PracticePage() {
           flex-shrink: 0;
         }
 
-        .result-nav-btn:hover {
+        .result-nav:hover {
           color: #fff;
+          background: rgba(255, 255, 255, 0.08);
         }
 
-        /* Result Panel */
-        .result-panel {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 16px;
+        .result-card-wizard {
           flex: 1;
-          min-width: 0;
-          position: static !important;
-        }
-
-        @media (max-width: 768px) {
-          .result-panel-wrapper {
-            padding: 0;
-          }
-
-          .result-nav-btn {
-            width: 36px;
-            font-size: 24px;
-          }
-
-          .result-panel {
-            padding: 16px 20px;
-          }
-        }
-
-        .result-content {
-          display: flex;
-          align-items: flex-start;
-          gap: 20px;
-          padding: 12px 16px;
-          background: rgba(26, 26, 26, 0.95);
-          border-radius: 12px;
-          border: 1px solid #333;
-        }
-
-        .score-circle-wrapper {
           display: flex;
           align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
+          gap: 16px;
+          background: linear-gradient(180deg, #1a1a24 0%, #14141c 100%);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 12px;
+          padding: 14px 20px;
         }
 
-        .score-circle {
+        /* Score circle */
+        .score-circle-container {
           position: relative;
           width: 80px;
           height: 80px;
+          flex-shrink: 0;
         }
 
-        .score-circle svg { width: 100%; height: 100%; }
+        .score-ring {
+          width: 100%;
+          height: 100%;
+          transform: rotate(-90deg);
+        }
+
+        .ring-bg {
+          fill: none;
+          stroke: #333;
+          stroke-width: 6;
+        }
+
+        .ring-progress {
+          fill: none;
+          stroke-width: 6;
+          stroke-linecap: round;
+          transition: stroke-dasharray 0.3s ease;
+        }
 
         .score-inner {
           position: absolute;
@@ -2840,27 +3040,209 @@ export default function PracticePage() {
           text-align: center;
         }
 
-        .score-inner .label { font-size: 10px; color: #888; margin-bottom: 2px; }
-        .score-inner .value { font-size: 20px; font-weight: 700; }
-
-        @media (max-width: 768px) {
-          .result-content {
-            gap: 12px;
-            padding: 10px 12px;
-          }
-          .score-circle {
-            width: 60px;
-            height: 60px;
-          }
-          .score-inner .label { font-size: 8px; }
-          .score-inner .value { font-size: 16px; }
+        .score-label {
+          display: block;
+          font-size: 9px;
+          color: #666;
+          margin-bottom: 1px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
-        .result-info {
+        .score-value {
+          font-size: 18px;
+          font-weight: 700;
+        }
+
+        /* Result info */
+        .result-info-wizard {
+          flex: 1;
+        }
+
+        .result-status {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+
+        .status-icon {
+          color: #22d3bf;
+          font-size: 16px;
+        }
+
+        .status-text {
+          font-size: 18px;
+          font-weight: 600;
+          color: #fff;
+        }
+
+        /* Street tabs */
+        .street-tabs {
+          display: flex;
+          gap: 8px;
+        }
+
+        .street-tab {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 6px 12px;
+          background: #2a2a34;
+          border-radius: 6px;
+          font-size: 12px;
+          color: #888;
+        }
+
+        .street-tab.current {
+          background: #3b82f6;
+          color: #fff;
+          font-weight: 600;
+        }
+
+        .street-tab.correct {
+          color: #22d3bf;
+        }
+
+        .street-tab.wrong {
+          color: #ef4444;
+        }
+
+        .tab-check {
+          font-size: 10px;
+        }
+
+        /* AI Coach Button in Result Panel */
+        .ai-coach-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 44px;
+          height: 44px;
+          background: linear-gradient(135deg, rgba(0, 245, 212, 0.15) 0%, rgba(155, 93, 229, 0.15) 100%);
+          border: 2px solid rgba(0, 245, 212, 0.4);
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .ai-coach-btn:hover {
+          background: linear-gradient(135deg, rgba(0, 245, 212, 0.25) 0%, rgba(155, 93, 229, 0.25) 100%);
+          border-color: rgba(0, 245, 212, 0.7);
+          transform: scale(1.05);
+          box-shadow: 0 0 16px rgba(0, 245, 212, 0.3);
+        }
+
+        .ai-coach-btn .ai-icon {
+          font-size: 22px;
+        }
+
+        /* AI Coach Modal */
+        .ai-coach-modal {
+          background: #12121a;
+          border: 1px solid rgba(0, 245, 212, 0.3);
+          border-radius: 16px;
+          width: 95%;
+          max-width: 560px;
+          max-height: 85vh;
+          overflow: hidden;
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          min-width: 180px;
+          box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 32px rgba(0, 245, 212, 0.1);
+          animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        /* AI Coach Modal Overlay with fade animation */
+        .modal-overlay:has(.ai-coach-modal) {
+          animation: overlayFadeIn 0.3s ease-out;
+        }
+
+        @keyframes overlayFadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        .ai-coach-modal .modal-header {
+          background: linear-gradient(135deg, rgba(0, 245, 212, 0.1) 0%, rgba(155, 93, 229, 0.1) 100%);
+          border-bottom: 1px solid rgba(0, 245, 212, 0.2);
+        }
+
+        .ai-coach-modal .modal-header h3 {
+          color: #00f5d4;
+        }
+
+        .ai-coach-modal-body {
+          overflow-y: auto;
+          padding: 0 !important;
+        }
+
+        .ai-coach-modal-body .ai-coach-feedback {
+          max-width: 100%;
+          border-radius: 0;
+          border-left: none;
+          margin: 0;
+        }
+
+        @media (max-width: 639px) {
+          .ai-coach-btn {
+            width: 38px;
+            height: 38px;
+          }
+
+          .ai-coach-btn .ai-icon {
+            font-size: 18px;
+          }
+
+          .ai-coach-modal {
+            width: 98%;
+            max-height: 90vh;
+          }
+        }
+
+        @media (max-width: 639px) {
+          .result-card-wizard {
+            padding: 12px 16px;
+            gap: 12px;
+          }
+
+          .score-circle-container {
+            width: 70px;
+            height: 70px;
+          }
+
+          .score-value {
+            font-size: 18px;
+          }
+
+          .status-text {
+            font-size: 16px;
+          }
+
+          .street-tabs {
+            flex-wrap: wrap;
+            gap: 4px;
+          }
+
+          .street-tab {
+            padding: 4px 8px;
+            font-size: 11px;
+          }
         }
 
         /* 用户选择 */
@@ -2958,28 +3340,6 @@ export default function PracticePage() {
           color: #22d3bf;
           min-width: 30px;
           text-align: right;
-        }
-
-        /* 结果状态 */
-        .result-status {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .result-status .status-icon {
-          font-size: 24px;
-        }
-
-        .result-status .status-text {
-          font-size: 22px;
-          font-weight: 600;
-          color: #fff;
-        }
-
-        @media (max-width: 768px) {
-          .result-status .status-icon { font-size: 20px; }
-          .result-status .status-text { font-size: 18px; }
         }
 
         /* 5级评级样式 */
@@ -3109,24 +3469,50 @@ export default function PracticePage() {
         /* Action Buttons */
         .action-buttons {
           display: flex;
+          flex-direction: row;
           gap: 10px;
+          flex-wrap: wrap;
+          justify-content: center;
+          align-items: center;
+          padding: 8px 16px;
+          width: 100%;
         }
 
         .action-btn {
-          padding: 12px 32px;
+          padding: 12px 28px;
           border: none;
-          border-radius: 8px;
+          border-radius: 10px;
           font-size: 13px;
           font-weight: 600;
           color: #fff;
           cursor: pointer;
-          transition: transform 0.1s, filter 0.1s;
+          transition: all 0.15s ease;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          flex-shrink: 0;
+          width: auto;
         }
 
-        .action-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
-        .action-btn:active:not(:disabled) { transform: translateY(0); }
-        .action-btn:disabled { cursor: not-allowed; }
-        .action-btn.selected { box-shadow: 0 0 0 3px #22d3bf, 0 0 15px rgba(34, 211, 191, 0.5); }
+        .action-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          filter: brightness(1.15);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        .action-btn:active:not(:disabled) {
+          transform: translateY(0);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .action-btn:disabled {
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
+
+        .action-btn.selected {
+          box-shadow: 0 0 0 3px #22d3bf, 0 0 20px rgba(34, 211, 191, 0.4);
+        }
 
         .action-btn .hotkey {
           display: inline-flex;
@@ -3135,43 +3521,79 @@ export default function PracticePage() {
           width: 20px;
           height: 20px;
           margin-left: 8px;
-          background: rgba(0,0,0,0.3);
+          background: rgba(0, 0, 0, 0.25);
           border-radius: 4px;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 700;
-          opacity: 0.8;
+          opacity: 0.7;
+        }
+
+        @media (max-width: 639px) {
+          .action-buttons {
+            gap: 8px;
+            padding: 8px 12px;
+          }
+
+          .action-btn {
+            padding: 10px 20px;
+            font-size: 12px;
+            width: auto;
+            flex: 0 0 auto;
+          }
+
+          .action-btn .hotkey {
+            display: none;
+          }
         }
 
         /* Bottom bar */
         .bottom-bar {
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 10px;
-          margin-top: 12px;
+          padding: 12px 16px;
+          padding-bottom: max(12px, env(safe-area-inset-bottom));
+          background: rgba(10, 10, 15, 0.95);
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          margin-top: 16px;
+          z-index: 20;
         }
 
         .btn-secondary {
-          padding: 12px 20px;
-          background: transparent;
-          border: 1px solid #333;
+          padding: 10px 16px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 8px;
           color: #888;
-          font-size: 13px;
+          font-size: 12px;
+          font-weight: 500;
           cursor: pointer;
           display: flex;
           align-items: center;
           gap: 6px;
+          transition: all 0.15s;
         }
 
-        .btn-secondary:hover { border-color: #555; color: #aaa; }
+        .btn-secondary:hover {
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.15);
+          color: #aaa;
+        }
+
+        .btn-icon {
+          font-size: 14px;
+        }
 
         .btn-save {
-          padding: 12px 16px;
-          background: transparent;
-          border: 1px solid #f59e0b;
+          padding: 10px 14px;
+          background: rgba(245, 158, 11, 0.08);
+          border: 1px solid rgba(245, 158, 11, 0.3);
           border-radius: 8px;
           color: #f59e0b;
-          font-size: 13px;
+          font-size: 12px;
+          font-weight: 500;
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -3180,16 +3602,18 @@ export default function PracticePage() {
         }
 
         .btn-save:hover {
-          background: rgba(245, 158, 11, 0.1);
+          background: rgba(245, 158, 11, 0.15);
+          border-color: rgba(245, 158, 11, 0.5);
         }
 
         .btn-summary {
-          padding: 12px 16px;
-          background: transparent;
-          border: 1px solid #8b5cf6;
+          padding: 10px 14px;
+          background: rgba(139, 92, 246, 0.08);
+          border: 1px solid rgba(139, 92, 246, 0.3);
           border-radius: 8px;
-          color: #8b5cf6;
-          font-size: 13px;
+          color: #a78bfa;
+          font-size: 12px;
+          font-weight: 500;
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -3198,36 +3622,69 @@ export default function PracticePage() {
         }
 
         .btn-summary:hover {
-          background: rgba(139, 92, 246, 0.1);
+          background: rgba(139, 92, 246, 0.15);
+          border-color: rgba(139, 92, 246, 0.5);
         }
 
         .btn-primary {
-          padding: 12px 40px;
-          background: #22d3bf;
+          padding: 10px 24px;
+          background: linear-gradient(135deg, #22d3bf 0%, #1eb8a6 100%);
           border: none;
           border-radius: 8px;
           color: #000;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 600;
           cursor: pointer;
           display: flex;
           align-items: center;
           gap: 6px;
+          transition: all 0.15s;
+          box-shadow: 0 2px 8px rgba(34, 211, 191, 0.25);
         }
 
-        .btn-primary:hover { background: #1eb8a6; }
+        .btn-primary:hover {
+          filter: brightness(1.1);
+          box-shadow: 0 4px 12px rgba(34, 211, 191, 0.35);
+        }
 
         .btn-more {
-          padding: 12px 14px;
-          background: transparent;
-          border: 1px solid #333;
+          padding: 10px 12px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 8px;
-          color: #888;
+          color: #666;
           font-size: 16px;
           cursor: pointer;
+          transition: all 0.15s;
         }
 
-        .btn-more:hover { border-color: #555; }
+        .btn-more:hover {
+          background: rgba(255, 255, 255, 0.06);
+          color: #888;
+        }
+
+        @media (max-width: 480px) {
+          .bottom-bar {
+            gap: 8px;
+            padding: 8px 12px;
+          }
+
+          .btn-secondary,
+          .btn-save,
+          .btn-summary,
+          .btn-primary {
+            padding: 8px 12px;
+            font-size: 11px;
+          }
+
+          .btn-primary {
+            padding: 8px 18px;
+          }
+
+          .btn-icon {
+            font-size: 12px;
+          }
+        }
 
         /* More Menu */
         .more-menu-wrapper {
@@ -3352,7 +3809,7 @@ export default function PracticePage() {
           left: 0;
           right: 0;
           bottom: 0;
-          z-index: 50;
+          z-index: 1;
         }
 
         /* Modal */
@@ -4283,7 +4740,7 @@ export default function PracticePage() {
           color: #666;
         }
 
-        .board-cards {
+        .detail-board .board-cards-text {
           font-size: 12px;
           color: #aaa;
           font-family: monospace;
@@ -4553,88 +5010,6 @@ export default function PracticePage() {
           background: #1fb8a6;
         }
 
-        /* Quick Stats Bar */
-        .quick-stats-bar {
-          position: fixed;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          background: rgba(20, 20, 20, 0.95);
-          backdrop-filter: blur(10px);
-          border-top: 1px solid #333;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0;
-          padding: 8px 16px;
-          z-index: 50;
-        }
-
-        .quick-stat {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          cursor: pointer;
-          transition: background 0.2s;
-          border-radius: 8px;
-        }
-
-        .quick-stat:hover {
-          background: rgba(255, 255, 255, 0.05);
-        }
-
-        .stat-icon {
-          font-size: 16px;
-        }
-
-        .stat-label {
-          font-size: 11px;
-          color: #888;
-        }
-
-        .stat-main {
-          font-size: 14px;
-          font-weight: 600;
-          color: #fff;
-        }
-
-        .stat-pct {
-          font-size: 12px;
-          color: #22d3bf;
-          font-weight: 500;
-        }
-
-        .stat-edit {
-          font-size: 12px;
-          opacity: 0.5;
-          transition: opacity 0.2s;
-        }
-
-        .quick-stat:hover .stat-edit {
-          opacity: 1;
-        }
-
-        .stat-progress {
-          width: 50px;
-          height: 4px;
-          background: #333;
-          border-radius: 2px;
-          overflow: hidden;
-        }
-
-        .stat-progress-fill {
-          height: 100%;
-          border-radius: 2px;
-          transition: width 0.3s ease;
-        }
-
-        .quick-stat-divider {
-          width: 1px;
-          height: 24px;
-          background: #333;
-          margin: 0 4px;
-        }
 
         /* Daily Goal Modal */
         .daily-goal-modal {

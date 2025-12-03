@@ -78,7 +78,7 @@ export default function RegisterPage() {
       justifyContent: 'center',
       padding: '24px',
     }}>
-      <Card variant="outlined" padding="lg" style={{ width: '100%', maxWidth: '400px' }}>
+      <Card variant="glass" padding="lg" animatedBorder style={{ width: '100%', maxWidth: '400px' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
           <h1 style={{
             fontSize: '28px',
@@ -163,9 +163,10 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              variant="primary"
+              variant="success"
               fullWidth
               loading={isProcessing}
+              glow
             >
               Create Account
             </Button>

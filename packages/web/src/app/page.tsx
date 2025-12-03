@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Button } from '@gto/ui';
+import { Button, Card } from '@gto/ui';
 import { useResponsive } from '@/hooks';
 import { CampaignBanner } from '@/components';
 
@@ -538,13 +538,12 @@ function AnimatedSection({
   );
 }
 
-// Interactive Feature Card
+// Interactive Feature Card - Using Card component with glass effect
 function FeatureCard({ feature, index }: {
   feature: { title: string; description: string; icon: React.ReactNode; href: string; color: string };
   index: number;
 }) {
   const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
   const { isMobile } = useResponsive();
 
   return (
@@ -552,84 +551,84 @@ function FeatureCard({ feature, index }: {
       <Link href={feature.href} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
         <div
           onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => { setIsHovered(false); setIsPressed(false); }}
-          onMouseDown={() => setIsPressed(true)}
-          onMouseUp={() => setIsPressed(false)}
-          style={{
-            padding: isMobile ? '24px' : '32px',
-            background: isHovered ? '#242424' : '#1a1a1a',
-            border: `1px solid ${isHovered ? feature.color : '#333333'}`,
-            borderRadius: '16px',
-            height: '100%',
-            cursor: 'pointer',
-            transform: isPressed ? 'scale(0.98)' : isHovered ? 'translateY(-8px)' : 'translateY(0)',
-            boxShadow: isHovered ? `0 20px 40px ${feature.color}20` : 'none',
-            transition: 'all 0.25s ease',
-          }}
+          onMouseLeave={() => setIsHovered(false)}
+          style={{ height: '100%' }}
         >
-          <div style={{
-            width: isMobile ? '48px' : '64px',
-            height: isMobile ? '48px' : '64px',
-            borderRadius: '12px',
-            background: `${feature.color}15`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: isMobile ? '16px' : '24px',
-            color: feature.color,
-            transform: isHovered ? 'scale(1.1) rotate(5deg)' : 'scale(1)',
-            transition: 'transform 0.25s ease',
-          }}>
-            {feature.icon}
-          </div>
-          <h3 style={{
-            fontSize: isMobile ? '18px' : '20px',
-            fontWeight: 600,
-            color: '#ffffff',
-            marginBottom: '8px',
-          }}>
-            {feature.title}
-          </h3>
-          <p style={{
-            fontSize: isMobile ? '14px' : '15px',
-            color: isHovered ? '#ffffff' : '#b3b3b3',
-            lineHeight: 1.6,
-            transition: 'color 0.2s ease',
-          }}>
-            {feature.description}
-          </p>
-          <div style={{
-            marginTop: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: feature.color,
-            fontSize: '14px',
-            fontWeight: 500,
-          }}>
-            Learn more
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              style={{
-                transform: isHovered ? 'translateX(4px)' : 'translateX(0)',
-                transition: 'transform 0.2s ease',
-              }}
-            >
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </div>
+          <Card
+            variant="glass"
+            padding={isMobile ? 'md' : 'lg'}
+            hoverEffect
+            animatedBorder={isHovered}
+            glowColor={feature.color}
+            style={{
+              height: '100%',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{
+              width: isMobile ? '48px' : '64px',
+              height: isMobile ? '48px' : '64px',
+              borderRadius: '12px',
+              background: `${feature.color}15`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: isMobile ? '16px' : '24px',
+              color: feature.color,
+              transform: isHovered ? 'scale(1.1) rotate(5deg)' : 'scale(1)',
+              transition: 'transform 0.25s ease',
+            }}>
+              {feature.icon}
+            </div>
+            <h3 style={{
+              fontSize: isMobile ? '18px' : '20px',
+              fontWeight: 600,
+              color: '#ffffff',
+              marginBottom: '8px',
+            }}>
+              {feature.title}
+            </h3>
+            <p style={{
+              fontSize: isMobile ? '14px' : '15px',
+              color: isHovered ? '#ffffff' : '#b3b3b3',
+              lineHeight: 1.6,
+              transition: 'color 0.2s ease',
+            }}>
+              {feature.description}
+            </p>
+            <div style={{
+              marginTop: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: feature.color,
+              fontSize: '14px',
+              fontWeight: 500,
+            }}>
+              Learn more
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                style={{
+                  transform: isHovered ? 'translateX(4px)' : 'translateX(0)',
+                  transition: 'transform 0.2s ease',
+                }}
+              >
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </div>
+          </Card>
         </div>
       </Link>
     </AnimatedSection>
   );
 }
 
-// Interactive Stat Card
+// Interactive Stat Card - Using Card component with gradient effect
 function StatCard({ stat, index }: { stat: { value: string; label: string }; index: number }) {
   const [isHovered, setIsHovered] = useState(false);
   const { isMobile } = useResponsive();
@@ -639,35 +638,38 @@ function StatCard({ stat, index }: { stat: { value: string; label: string }; ind
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        style={{
-          textAlign: 'center',
-          padding: '16px',
-          borderRadius: '12px',
-          background: isHovered ? 'rgba(34, 211, 191, 0.05)' : 'transparent',
-          transform: isHovered ? 'scale(1.05)' : 'scale(1)',
-          transition: 'all 0.2s ease',
-          cursor: 'default',
-        }}
       >
-        <div style={{
-          fontSize: isMobile ? '28px' : '40px',
-          fontWeight: 700,
-          color: '#22d3bf',
-          marginBottom: '4px',
-          fontFamily: "'SF Mono', monospace",
-          textShadow: isHovered ? '0 0 20px rgba(34, 211, 191, 0.5)' : 'none',
-          transition: 'text-shadow 0.2s ease',
-        }}>
-          <AnimatedCounter value={stat.value} duration={1500} />
-        </div>
-        <div style={{
-          fontSize: isMobile ? '12px' : '14px',
-          color: isHovered ? '#ffffff' : '#666666',
-          fontWeight: 500,
-          transition: 'color 0.2s ease',
-        }}>
-          {stat.label}
-        </div>
+        <Card
+          variant={isHovered ? 'gradient' : 'default'}
+          padding="sm"
+          hoverEffect={false}
+          style={{
+            textAlign: 'center',
+            cursor: 'default',
+            transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <div style={{
+            fontSize: isMobile ? '28px' : '40px',
+            fontWeight: 700,
+            color: '#22d3bf',
+            marginBottom: '4px',
+            fontFamily: "'SF Mono', monospace",
+            textShadow: isHovered ? '0 0 20px rgba(34, 211, 191, 0.5)' : 'none',
+            transition: 'text-shadow 0.2s ease',
+          }}>
+            <AnimatedCounter value={stat.value} duration={1500} />
+          </div>
+          <div style={{
+            fontSize: isMobile ? '12px' : '14px',
+            color: isHovered ? '#ffffff' : '#666666',
+            fontWeight: 500,
+            transition: 'color 0.2s ease',
+          }}>
+            {stat.label}
+          </div>
+        </Card>
       </div>
     </AnimatedSection>
   );
@@ -957,47 +959,46 @@ function RangeMatrixPreview({ size = 'md' }: { size?: 'sm' | 'md' }) {
   };
 
   return (
-    <div
-      ref={ref}
-      style={{
-        padding: size === 'sm' ? '16px' : '24px',
-        background: '#0d0d0d',
-        borderRadius: '16px',
-        border: '1px solid #333333',
-      }}
-    >
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
-        gap: '2px',
-        width: containerWidth,
-      }}>
-        {Array.from({ length: gridSize * gridSize }).map((_, i) => {
-          const opacity = getCellOpacity(i);
-          const isAnimated = cells.includes(i);
-          const isHovered = hoveredCell === i;
+    <div ref={ref}>
+      <Card
+        variant="neon"
+        padding={size === 'sm' ? 'sm' : 'md'}
+        glowColor="#22d3bf"
+        hoverEffect={false}
+      >
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
+          gap: '2px',
+          width: containerWidth,
+        }}>
+          {Array.from({ length: gridSize * gridSize }).map((_, i) => {
+            const opacity = getCellOpacity(i);
+            const isAnimated = cells.includes(i);
+            const isHovered = hoveredCell === i;
 
-          return (
-            <div
-              key={i}
-              onMouseEnter={() => setHoveredCell(i)}
-              onMouseLeave={() => setHoveredCell(null)}
-              style={{
-                width: cellSize,
-                height: cellSize,
-                borderRadius: '3px',
-                background: opacity > 0
-                  ? `rgba(34, 211, 191, ${isAnimated ? (isHovered ? Math.min(opacity + 0.2, 1) : opacity) : 0})`
-                  : isHovered ? '#2a2a2a' : '#1a1a1a',
-                border: opacity > 0 ? 'none' : `1px solid ${isHovered ? '#444' : '#333333'}`,
-                transform: isHovered ? 'scale(1.15)' : 'scale(1)',
-                transition: 'all 0.15s ease',
-                cursor: 'pointer',
-              }}
-            />
-          );
-        })}
-      </div>
+            return (
+              <div
+                key={i}
+                onMouseEnter={() => setHoveredCell(i)}
+                onMouseLeave={() => setHoveredCell(null)}
+                style={{
+                  width: cellSize,
+                  height: cellSize,
+                  borderRadius: '3px',
+                  background: opacity > 0
+                    ? `rgba(34, 211, 191, ${isAnimated ? (isHovered ? Math.min(opacity + 0.2, 1) : opacity) : 0})`
+                    : isHovered ? '#2a2a2a' : '#1a1a1a',
+                  border: opacity > 0 ? 'none' : `1px solid ${isHovered ? '#444' : '#333333'}`,
+                  transform: isHovered ? 'scale(1.15)' : 'scale(1)',
+                  transition: 'all 0.15s ease',
+                  cursor: 'pointer',
+                }}
+              />
+            );
+          })}
+        </div>
+      </Card>
     </div>
   );
 }
