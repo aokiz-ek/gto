@@ -7,6 +7,7 @@ export interface RangeMatrixProps {
   matrix: RangeMatrixType;
   onCellClick?: (row: number, col: number) => void;
   selectedCell?: { row: number; col: number } | null;
+  highlightedCell?: { row: number; col: number } | null;
   showLabels?: boolean;
   size?: 'xs' | 'sm' | 'md' | 'lg';
   colorScheme?: 'default' | 'action' | 'heatmap';
@@ -23,6 +24,7 @@ interface CellProps {
   fontSize: string;
   colorScheme: 'default' | 'action' | 'heatmap';
   isSelected: boolean;
+  isHighlighted: boolean;
   isPair: boolean;
   showLabels: boolean;
   interactive: boolean;
@@ -66,6 +68,7 @@ const MatrixCell = memo<CellProps>(({
   fontSize,
   colorScheme,
   isSelected,
+  isHighlighted,
   isPair,
   showLabels,
   interactive,
@@ -87,19 +90,22 @@ const MatrixCell = memo<CellProps>(({
     fontSize: fullWidth ? 'clamp(8px, 1.2vw, 12px)' : fontSize,
     fontWeight: theme.typography.fontWeight.medium,
     fontFamily: theme.typography.fontFamilyMono,
-    background: getCellColor(value, colorScheme),
-    color: value > 0.5 ? theme.colors.background : theme.colors.textSecondary,
+    background: isHighlighted ? 'rgba(245, 158, 11, 0.6)' : getCellColor(value, colorScheme),
+    color: isHighlighted ? '#000' : (value > 0.5 ? theme.colors.background : theme.colors.textSecondary),
     cursor: interactive && onCellClick ? 'pointer' : 'default',
     border: isSelected
       ? `2px solid ${theme.colors.primary}`
-      : isPair
-        ? `1px solid ${theme.colors.surfaceBorder}`
-        : 'none',
+      : isHighlighted
+        ? '2px solid #f59e0b'
+        : isPair
+          ? `1px solid ${theme.colors.surfaceBorder}`
+          : 'none',
     transition: `background ${theme.transitions.fast}`,
     position: 'relative',
     letterSpacing: '-0.5px',
     boxSizing: 'border-box',
-  }), [cellSize, fontSize, value, colorScheme, isSelected, isPair, interactive, onCellClick, fullWidth]);
+    boxShadow: isHighlighted ? '0 0 8px rgba(245, 158, 11, 0.5)' : 'none',
+  }), [cellSize, fontSize, value, colorScheme, isSelected, isHighlighted, isPair, interactive, onCellClick, fullWidth]);
 
   const label = useMemo(() => getComboLabel(row, col), [row, col]);
 
@@ -120,6 +126,7 @@ export const RangeMatrix = memo<RangeMatrixProps>(({
   matrix,
   onCellClick,
   selectedCell,
+  highlightedCell,
   showLabels = true,
   size = 'md',
   colorScheme = 'default',
@@ -128,7 +135,7 @@ export const RangeMatrix = memo<RangeMatrixProps>(({
 }) => {
   const cellSizes: Record<string, number> = {
     xs: 20,
-    sm: 26,
+    sm: 31,
     md: 32,
     lg: 38,
   };
@@ -184,6 +191,7 @@ export const RangeMatrix = memo<RangeMatrixProps>(({
               fontSize={fontSize}
               colorScheme={colorScheme}
               isSelected={selectedCell?.row === rowIndex && selectedCell?.col === colIndex}
+              isHighlighted={highlightedCell?.row === rowIndex && highlightedCell?.col === colIndex}
               isPair={rowIndex === colIndex}
               showLabels={showLabels}
               interactive={interactive}

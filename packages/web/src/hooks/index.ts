@@ -7,3 +7,4 @@ export * from './useWechatShare';
 export * from './useServiceWorker';
 export * from './usePushNotifications';
 export * from './useMembership';
+export * from './useLocalStorage';

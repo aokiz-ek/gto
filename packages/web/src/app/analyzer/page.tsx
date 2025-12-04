@@ -1,11 +1,22 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { PokerCard, ActionButton, RangeMatrix, Skeleton, SkeletonGroup } from '@gto/ui';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { PokerCard, RangeMatrix, Skeleton, SkeletonGroup } from '@gto/ui';
 import { useGameStore } from '@/store';
-import { parseCard, RANKS, SUITS, createEmptyMatrix, setMatrixValue, HAND_CATEGORIES } from '@gto/core';
+import { parseCard, RANKS, SUITS, createEmptyMatrix, setMatrixValue, HAND_CATEGORIES, countCombos, rangePercentage } from '@gto/core';
 import type { Card as CardType, Position, Street } from '@gto/core';
-import { useResponsive } from '@/hooks';
+import { useResponsive, useLocalStorage } from '@/hooks';
+import {
+  BoardTexturePanel,
+  StrategyExplainer,
+  BetSizingSelector,
+  ActionLine,
+  ActionFilter,
+  HandAnnotation,
+  EquityCalculator,
+  GTOReports,
+  SizingAdvisor,
+} from '@/components/analyzer';
 
 const SUIT_SYMBOLS: Record<string, string> = {
   h: '♥',
@@ -71,6 +82,59 @@ interface HistoryItem {
 // Step definition for guided flow
 type Step = 'position' | 'hero' | 'board' | 'complete';
 
+// Default mock analysis result for fallback
+const createMockAnalysisResult = (): AnalysisResult => ({
+  actions: [
+    { action: 'raise', frequency: 0.65, ev: 2.8 },
+    { action: 'call', frequency: 0.25, ev: 1.2 },
+    { action: 'fold', frequency: 0.10, ev: 0 },
+  ],
+  equity: 62.3,
+  potOdds: 33.3,
+  spr: 4.2,
+  villainRange: 18.5,
+  combos: 248,
+  streetAnalysis: [
+    {
+      street: 'preflop',
+      actions: [
+        { action: 'raise', frequency: 0.85, ev: 1.5 },
+        { action: 'call', frequency: 0.10, ev: 0.3 },
+        { action: 'fold', frequency: 0.05, ev: 0 },
+      ],
+      equity: 58.2,
+      potOdds: 0,
+    },
+    {
+      street: 'flop',
+      actions: [
+        { action: 'bet', frequency: 0.70, ev: 2.1 },
+        { action: 'check', frequency: 0.30, ev: 0.8 },
+      ],
+      equity: 62.3,
+      potOdds: 33.3,
+    },
+    {
+      street: 'turn',
+      actions: [
+        { action: 'bet', frequency: 0.55, ev: 3.2 },
+        { action: 'check', frequency: 0.45, ev: 1.5 },
+      ],
+      equity: 68.5,
+      potOdds: 25.0,
+    },
+    {
+      street: 'river',
+      actions: [
+        { action: 'bet', frequency: 0.40, ev: 4.5 },
+        { action: 'check', frequency: 0.60, ev: 2.8 },
+      ],
+      equity: 72.1,
+      potOdds: 20.0,
+    },
+  ],
+});
+
 export default function AnalyzerPage() {
   const {
     street,
@@ -89,13 +153,31 @@ export default function AnalyzerPage() {
   const [selectionMode, setSelectionMode] = useState<'hero' | 'board'>('hero');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [history, setHistory] = useLocalStorage<HistoryItem[]>('gto-analyzer-history', []);
   const [showHistory, setShowHistory] = useState(false);
   const [quickInput, setQuickInput] = useState('');
   const hasAutoAnalyzed = useRef(false);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [betSize, setBetSize] = useState(0.66); // Default 66% pot
+  const [potSize] = useState(10); // Default pot size in BB
+  const [effectiveStack] = useState(100); // Default effective stack in BB
+  const [selectedActions, setSelectedActions] = useState<string[]>([]);
+  const [userActions, setUserActions] = useState<{ street: Street; action: string }[]>([]);
 
   const { isMobile, isMobileOrTablet } = useResponsive();
+
+  // Determine position advantage
+  const heroPositionAdvantage = useMemo((): 'IP' | 'OOP' | null => {
+    if (!heroPosition || !villainPosition) return null;
+    const positionOrder = ['UTG', 'UTG1', 'UTG2', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
+    const heroIdx = positionOrder.indexOf(heroPosition);
+    const villainIdx = positionOrder.indexOf(villainPosition);
+    // BTN is last to act postflop, SB/BB act first
+    if (heroPosition === 'SB' || heroPosition === 'BB') {
+      return villainPosition === 'SB' || villainPosition === 'BB' ? (heroIdx > villainIdx ? 'IP' : 'OOP') : 'OOP';
+    }
+    return heroIdx > villainIdx ? 'IP' : 'OOP';
+  }, [heroPosition, villainPosition]);
 
   // Handle tooltip positioning
   const handleTooltipEnter = (e: React.MouseEvent) => {
@@ -137,8 +219,8 @@ export default function AnalyzerPage() {
 
   const currentStep = getCurrentStep();
 
-  // Step hints
-  const getStepHint = (): string => {
+  // Step hints (memoized)
+  const stepHint = useMemo((): string => {
     switch (currentStep) {
       case 'position': return '第1步：选择你和对手的位置';
       case 'hero': return '第2步：选择你的两张手牌';
@@ -148,7 +230,7 @@ export default function AnalyzerPage() {
       }
       case 'complete': return '✓ 分析完成';
     }
-  };
+  }, [currentStep, street, board.length]);
 
   // Check if ready for analysis
   const isReadyForAnalysis = currentStep === 'complete';
@@ -179,7 +261,96 @@ export default function AnalyzerPage() {
     return matrix;
   }, []);
 
-  const villainRange = getVillainRange(villainPosition);
+  const villainRange = useMemo(() => getVillainRange(villainPosition), [villainPosition, getVillainRange]);
+
+  // Calculate hero hand's position in range matrix for highlighting
+  const heroHandCell = useMemo(() => {
+    if (!heroHand) return null;
+
+    // RANKS order in matrix: A, K, Q, J, T, 9, 8, 7, 6, 5, 4, 3, 2
+    const rankOrder = 'AKQJT98765432';
+    const r1 = rankOrder.indexOf(heroHand[0].rank);
+    const r2 = rankOrder.indexOf(heroHand[1].rank);
+
+    if (r1 === -1 || r2 === -1) return null;
+
+    const isPair = r1 === r2;
+    const isSuited = heroHand[0].suit === heroHand[1].suit;
+
+    // In the matrix:
+    // - Diagonal (row === col): Pairs
+    // - Above diagonal (row < col): Suited hands (higher rank first)
+    // - Below diagonal (row > col): Offsuit hands (higher rank first)
+    if (isPair) {
+      return { row: r1, col: r1 };
+    } else if (isSuited) {
+      // Suited: smaller index (higher rank) is row
+      return { row: Math.min(r1, r2), col: Math.max(r1, r2) };
+    } else {
+      // Offsuit: smaller index (higher rank) is col (below diagonal)
+      return { row: Math.max(r1, r2), col: Math.min(r1, r2) };
+    }
+  }, [heroHand]);
+
+  // Calculate range stats based on villain range and hero hand
+  const rangeStats = useMemo(() => {
+    const totalCombos = Math.round(countCombos(villainRange));
+    const rangePercent = rangePercentage(villainRange).toFixed(1);
+
+    // Calculate effective combos (excluding hero's blockers)
+    let effectiveCombos = totalCombos;
+    if (heroHand) {
+      // Rough blocker adjustment: each card blocks some combos
+      // This is a simplified calculation
+      const heroCards = heroHand.map(c => c.rank);
+      const uniqueRanks = new Set(heroCards);
+      // Each rank in hero hand blocks roughly 4-8% of villain's combos
+      effectiveCombos = Math.round(totalCombos * (1 - uniqueRanks.size * 0.04));
+    }
+
+    // Calculate equity vs villain range (simplified estimation based on hero hand strength)
+    let estimatedEquity = 50; // Default
+    if (heroHand) {
+      const rankValues: Record<string, number> = {
+        'A': 14, 'K': 13, 'Q': 12, 'J': 11, 'T': 10,
+        '9': 9, '8': 8, '7': 7, '6': 6, '5': 5, '4': 4, '3': 3, '2': 2
+      };
+      const r1 = rankValues[heroHand[0].rank] || 0;
+      const r2 = rankValues[heroHand[1].rank] || 0;
+      const highCard = Math.max(r1, r2);
+      const lowCard = Math.min(r1, r2);
+      const isPair = r1 === r2;
+      const isSuited = heroHand[0].suit === heroHand[1].suit;
+      const isConnected = Math.abs(r1 - r2) <= 2;
+
+      // Base equity on hand strength
+      if (isPair) {
+        // Pairs: 50-85% equity based on rank
+        estimatedEquity = 50 + (highCard / 14) * 35;
+      } else if (highCard >= 12 && lowCard >= 10) {
+        // Premium broadway: 55-65%
+        estimatedEquity = 55 + (isSuited ? 5 : 0) + (isConnected ? 3 : 0);
+      } else if (highCard >= 12) {
+        // High card hands: 45-55%
+        estimatedEquity = 45 + (lowCard / 14) * 10 + (isSuited ? 3 : 0);
+      } else {
+        // Weaker hands: 35-50%
+        estimatedEquity = 35 + ((highCard + lowCard) / 28) * 15 + (isSuited ? 3 : 0);
+      }
+
+      // Adjust for board if post-flop
+      if (board.length > 0) {
+        // Simplified: assume equity narrows as board develops
+        estimatedEquity = estimatedEquity * 0.95 + 2.5; // Slight regression to mean
+      }
+    }
+
+    return {
+      combos: effectiveCombos,
+      rangePercent,
+      equity: Math.round(estimatedEquity * 10) / 10,
+    };
+  }, [villainRange, heroHand, board.length]);
 
   // Analyze hand
   const analyzeHand = useCallback(async (isAuto = false) => {
@@ -275,111 +446,11 @@ export default function AnalyzerPage() {
         }
       } else {
         // Fallback to mock data with street analysis
-        setAnalysisResult({
-          actions: [
-            { action: 'raise', frequency: 0.65, ev: 2.8 },
-            { action: 'call', frequency: 0.25, ev: 1.2 },
-            { action: 'fold', frequency: 0.10, ev: 0 },
-          ],
-          equity: 62.3,
-          potOdds: 33.3,
-          spr: 4.2,
-          villainRange: 18.5,
-          combos: 248,
-          streetAnalysis: [
-            {
-              street: 'preflop',
-              actions: [
-                { action: 'raise', frequency: 0.85, ev: 1.5 },
-                { action: 'call', frequency: 0.10, ev: 0.3 },
-                { action: 'fold', frequency: 0.05, ev: 0 },
-              ],
-              equity: 58.2,
-              potOdds: 0,
-            },
-            {
-              street: 'flop',
-              actions: [
-                { action: 'bet', frequency: 0.70, ev: 2.1 },
-                { action: 'check', frequency: 0.30, ev: 0.8 },
-              ],
-              equity: 62.3,
-              potOdds: 33.3,
-            },
-            {
-              street: 'turn',
-              actions: [
-                { action: 'bet', frequency: 0.55, ev: 3.2 },
-                { action: 'check', frequency: 0.45, ev: 1.5 },
-              ],
-              equity: 68.5,
-              potOdds: 25.0,
-            },
-            {
-              street: 'river',
-              actions: [
-                { action: 'bet', frequency: 0.40, ev: 4.5 },
-                { action: 'check', frequency: 0.60, ev: 2.8 },
-              ],
-              equity: 72.1,
-              potOdds: 20.0,
-            },
-          ],
-        });
+        setAnalysisResult(createMockAnalysisResult());
       }
     } catch {
       // Mock fallback with street analysis
-      setAnalysisResult({
-        actions: [
-          { action: 'raise', frequency: 0.65, ev: 2.8 },
-          { action: 'call', frequency: 0.25, ev: 1.2 },
-          { action: 'fold', frequency: 0.10, ev: 0 },
-        ],
-        equity: 62.3,
-        potOdds: 33.3,
-        spr: 4.2,
-        villainRange: 18.5,
-        combos: 248,
-        streetAnalysis: [
-          {
-            street: 'preflop',
-            actions: [
-              { action: 'raise', frequency: 0.85, ev: 1.5 },
-              { action: 'call', frequency: 0.10, ev: 0.3 },
-              { action: 'fold', frequency: 0.05, ev: 0 },
-            ],
-            equity: 58.2,
-            potOdds: 0,
-          },
-          {
-            street: 'flop',
-            actions: [
-              { action: 'bet', frequency: 0.70, ev: 2.1 },
-              { action: 'check', frequency: 0.30, ev: 0.8 },
-            ],
-            equity: 62.3,
-            potOdds: 33.3,
-          },
-          {
-            street: 'turn',
-            actions: [
-              { action: 'bet', frequency: 0.55, ev: 3.2 },
-              { action: 'check', frequency: 0.45, ev: 1.5 },
-            ],
-            equity: 68.5,
-            potOdds: 25.0,
-          },
-          {
-            street: 'river',
-            actions: [
-              { action: 'bet', frequency: 0.40, ev: 4.5 },
-              { action: 'check', frequency: 0.60, ev: 2.8 },
-            ],
-            equity: 72.1,
-            potOdds: 20.0,
-          },
-        ],
-      });
+      setAnalysisResult(createMockAnalysisResult());
     } finally {
       setIsAnalyzing(false);
     }
@@ -516,7 +587,7 @@ export default function AnalyzerPage() {
           height: calc(100vh - 56px);
           background: #0a0a0f;
           padding: ${isMobile ? '8px' : '12px'};
-          overflow: hidden;
+          overflow-y: auto;
           display: flex;
           flex-direction: column;
         }
@@ -596,14 +667,14 @@ export default function AnalyzerPage() {
           gap: 12px;
           flex: 1;
           min-height: 0;
-          overflow: hidden;
         }
 
         .left-section {
           display: flex;
           flex-direction: column;
           gap: 10px;
-          overflow: hidden;
+          overflow-y: auto;
+          min-height: 0;
         }
 
         /* Setup Card */
@@ -951,9 +1022,6 @@ export default function AnalyzerPage() {
           border-radius: 10px;
           padding: 10px;
           border: 1px solid rgba(255, 255, 255, 0.05);
-          flex-shrink: 0;
-          max-height: 280px;
-          overflow-y: auto;
         }
 
         .analysis-title {
@@ -1092,6 +1160,126 @@ export default function AnalyzerPage() {
           white-space: nowrap;
         }
 
+        /* Action Comparison with EV Loss */
+        .action-comparison {
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .action-comparison-title {
+          font-size: 11px;
+          font-weight: 600;
+          color: #888;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 8px;
+        }
+
+        .action-bars {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .action-bar-row {
+          display: grid;
+          grid-template-columns: 70px 1fr 90px;
+          gap: 8px;
+          align-items: center;
+        }
+
+        .action-bar-label {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .action-name {
+          font-size: 11px;
+          font-weight: 600;
+        }
+
+        .action-name.raise,
+        .action-name.bet,
+        .action-name.allin {
+          color: #ef4444;
+        }
+
+        .action-name.call,
+        .action-name.check {
+          color: #22c55e;
+        }
+
+        .action-name.fold {
+          color: #9ca3af;
+        }
+
+        .action-freq {
+          font-size: 10px;
+          color: #666;
+        }
+
+        .action-bar-container {
+          height: 8px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 4px;
+          overflow: hidden;
+        }
+
+        .action-bar {
+          height: 100%;
+          border-radius: 4px;
+          transition: width 0.3s ease;
+        }
+
+        .action-bar.raise,
+        .action-bar.bet,
+        .action-bar.allin {
+          background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+        }
+
+        .action-bar.call,
+        .action-bar.check {
+          background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
+        }
+
+        .action-bar.fold {
+          background: linear-gradient(90deg, #6b7280 0%, #9ca3af 100%);
+        }
+
+        .action-ev-info {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          justify-content: flex-end;
+        }
+
+        .action-ev {
+          font-size: 10px;
+          font-weight: 600;
+          color: #888;
+          font-family: 'SF Mono', monospace;
+        }
+
+        .action-ev-loss {
+          font-size: 9px;
+          font-weight: 600;
+          color: #ef4444;
+          padding: 1px 4px;
+          background: rgba(239, 68, 68, 0.15);
+          border-radius: 3px;
+        }
+
+        .action-ev-optimal {
+          font-size: 9px;
+          font-weight: 600;
+          color: #22c55e;
+          padding: 1px 4px;
+          background: rgba(34, 197, 94, 0.15);
+          border-radius: 3px;
+        }
+
         /* Analysis Placeholder */
         .analysis-placeholder {
           display: flex;
@@ -1119,8 +1307,9 @@ export default function AnalyzerPage() {
           display: flex;
           flex-direction: column;
           gap: 10px;
-          overflow: hidden;
           min-width: 280px;
+          overflow-y: auto;
+          min-height: 0;
         }
 
         .range-card {
@@ -1130,8 +1319,7 @@ export default function AnalyzerPage() {
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          flex: 1;
-          min-height: 0;
+          flex: 0 0 auto;
         }
 
         .range-card-header {
@@ -1142,6 +1330,7 @@ export default function AnalyzerPage() {
         .range-card-footer {
           padding: 8px 10px 10px;
           flex-shrink: 0;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .range-header {
@@ -1243,12 +1432,8 @@ export default function AnalyzerPage() {
           width: 100%;
           flex: 1;
           min-height: 0;
-        }
-
-        .range-matrix-wrapper > div,
-        .range-matrix-wrapper > div > div {
-          width: 100% !important;
-          height: 100% !important;
+          overflow: hidden;
+          padding: 0 10px;
         }
 
         .range-stats {
@@ -1258,7 +1443,6 @@ export default function AnalyzerPage() {
           background: rgba(255, 255, 255, 0.03);
           border-radius: 6px;
           flex-shrink: 0;
-          margin-top: 8px;
         }
 
         .range-stat {
@@ -1384,7 +1568,7 @@ export default function AnalyzerPage() {
       <div className="analyzer-header">
         <div className="header-left">
           <h1 className="header-title">手牌分析器</h1>
-          <span className="step-hint-inline">{getStepHint()}</span>
+          <span className="step-hint-inline">{stepHint}</span>
         </div>
         <div className="header-actions">
           <button className="btn btn-ghost" onClick={() => setShowHistory(!showHistory)}>
@@ -1550,6 +1734,17 @@ export default function AnalyzerPage() {
             </div>
           </div>
 
+          {/* Action Line - Shows betting sequence */}
+          {heroPosition && villainPosition && (
+            <ActionLine
+              actions={[]}
+              currentStreet={street}
+              heroPosition={heroPosition}
+              villainPosition={villainPosition}
+              potSize={potSize}
+            />
+          )}
+
           {/* Card Selector */}
           <div className="card-selector">
             <div className="selector-header">
@@ -1691,6 +1886,7 @@ export default function AnalyzerPage() {
                 showLabels={true}
                 interactive={false}
                 fullWidth={true}
+                highlightedCell={heroHandCell}
               />
             </div>
 
@@ -1698,19 +1894,87 @@ export default function AnalyzerPage() {
               <div className="range-stats">
                 <div className="range-stat">
                   <div className="range-stat-label">范围</div>
-                  <div className="range-stat-value">{analysisResult?.villainRange || 18.5}%</div>
+                  <div className="range-stat-value">{rangeStats.rangePercent}%</div>
                 </div>
                 <div className="range-stat">
                   <div className="range-stat-label">组合</div>
-                  <div className="range-stat-value">{analysisResult?.combos || 248}</div>
+                  <div className="range-stat-value">{rangeStats.combos}</div>
                 </div>
                 <div className="range-stat">
-                  <div className="range-stat-label">平均权益</div>
-                  <div className="range-stat-value">54.2%</div>
+                  <div className="range-stat-label">vs范围权益</div>
+                  <div className="range-stat-value" style={{ color: heroHand ? '#22d3bf' : '#666' }}>
+                    {heroHand ? `${rangeStats.equity}%` : '--'}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Board Texture Panel - Only show for postflop */}
+          {street !== 'preflop' && (
+            <BoardTexturePanel board={board} heroHand={heroHand} street={street} />
+          )}
+
+          {/* Bet Sizing Selector - Only show for postflop */}
+          {street !== 'preflop' && (
+            <BetSizingSelector
+              selectedSize={betSize}
+              onSizeChange={setBetSize}
+              potSize={potSize}
+              disabled={!heroHand}
+            />
+          )}
+
+          {/* Strategy Explainer */}
+          <StrategyExplainer
+            heroHand={heroHand}
+            heroPosition={heroPosition}
+            villainPosition={villainPosition}
+            board={board}
+            street={street}
+            analysisResult={analysisResult}
+          />
+
+          {/* Equity Calculator */}
+          <EquityCalculator
+            heroHand={heroHand}
+            board={board}
+            villainRangePercent={rangeStats.rangePercent}
+          />
+
+          {/* Sizing Advisor - Only show for postflop */}
+          {street !== 'preflop' && (
+            <SizingAdvisor
+              heroHand={heroHand}
+              board={board}
+              street={street}
+              position={heroPositionAdvantage}
+              potSize={potSize}
+              effectiveStack={effectiveStack}
+            />
+          )}
+
+          {/* Action Filter - Only show for postflop */}
+          {street !== 'preflop' && (
+            <ActionFilter
+              street={street}
+              selectedActions={selectedActions}
+              onActionsChange={setSelectedActions}
+            />
+          )}
+
+          {/* Hand Annotation */}
+          <HandAnnotation
+            heroHand={heroHand}
+            board={board}
+          />
+
+          {/* GTO Reports */}
+          <GTOReports
+            analysisResult={analysisResult}
+            userActions={userActions}
+            street={street}
+          />
 
           {/* Analysis Result - with Skeleton loading state */}
           {isAnalyzing ? (
@@ -1766,6 +2030,47 @@ export default function AnalyzerPage() {
                 <div className="stat-item">
                   <div className="stat-label">最佳EV</div>
                   <div className="stat-value" style={{ color: '#22c55e' }}>+{analysisResult.actions[0]?.ev} BB</div>
+                </div>
+              </div>
+
+              {/* Action Comparison with EV Loss */}
+              <div className="action-comparison">
+                <div className="action-comparison-title">行动对比 (EV损失)</div>
+                <div className="action-bars">
+                  {analysisResult.actions.map((action, i) => {
+                    const maxEv = Math.max(...analysisResult.actions.map(a => a.ev));
+                    const evLoss = maxEv - action.ev;
+                    const barWidth = action.frequency * 100;
+                    const actionLabel = action.action === 'raise' ? '加注' :
+                      action.action === 'call' ? '跟注' :
+                      action.action === 'fold' ? '弃牌' :
+                      action.action === 'bet' ? '下注' :
+                      action.action === 'check' ? '过牌' :
+                      action.action === 'allin' ? '全下' : action.action;
+                    return (
+                      <div key={i} className="action-bar-row">
+                        <div className="action-bar-label">
+                          <span className={`action-name ${action.action}`}>{actionLabel}</span>
+                          <span className="action-freq">{Math.round(action.frequency * 100)}%</span>
+                        </div>
+                        <div className="action-bar-container">
+                          <div
+                            className={`action-bar ${action.action}`}
+                            style={{ width: `${barWidth}%` }}
+                          />
+                        </div>
+                        <div className="action-ev-info">
+                          <span className="action-ev">EV: {action.ev > 0 ? '+' : ''}{action.ev.toFixed(1)}</span>
+                          {evLoss > 0 && (
+                            <span className="action-ev-loss">-{evLoss.toFixed(1)} BB</span>
+                          )}
+                          {evLoss === 0 && (
+                            <span className="action-ev-optimal">最优</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

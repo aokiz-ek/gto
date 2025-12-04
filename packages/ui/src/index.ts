@@ -5,6 +5,7 @@ export { Button } from './components/Button';
 export { Card } from './components/Card';
 export { Input } from './components/Input';
 export { RangeMatrix } from './components/RangeMatrix';
+export type { RangeMatrixProps } from './components/RangeMatrix';
 export { PokerCard } from './components/PokerCard';
 export { ActionButton } from './components/ActionButton';
 export { PositionBadge } from './components/PositionBadge';

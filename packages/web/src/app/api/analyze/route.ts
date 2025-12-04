@@ -5,6 +5,8 @@ import {
   GTO_VS_3BET_RANGES,
   GTO_RANGES_100BB,
   analyzeBoardTexture,
+  gtoStrategyToMatrix,
+  calculateRangeStats,
 } from '@gto/core';
 import type {
   Position,
@@ -16,6 +18,7 @@ import type {
   Card,
   Rank,
   Suit,
+  RangeMatrix,
 } from '@gto/core';
 
 interface CardInput {
@@ -47,10 +50,12 @@ interface AnalysisResult {
   spr: number;
   villainRange: number;
   combos: number;
+  avgEquity: number;
   handStrength: string;
   handStrengthZh: string;
   gtoSource: 'database' | 'heuristic';
   boardTexture?: string; // Board texture type: 'dry', 'wet', 'monotone', etc.
+  villainRangeMatrix?: number[][]; // 13x13 range matrix for visualization
 }
 
 // Position-based opening ranges (% of hands) for fallback
@@ -138,26 +143,42 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Get villain's GTO opening range based on position
+    const villainGTOData = stackSize <= 100 ? GTO_RANGES_100BB : GTO_RANGES;
+    const villainStrategy = villainGTOData[villainPosition];
+
+    // Generate villain range matrix from GTO data
+    let villainRangeMatrix: RangeMatrix | null = null;
+    let rangeStats = { rangePercent: POSITION_RANGES[villainPosition] || 20, combos: 248, avgEquity: 54.2 };
+
+    if (villainStrategy) {
+      villainRangeMatrix = gtoStrategyToMatrix(villainStrategy.ranges);
+      rangeStats = calculateRangeStats(villainRangeMatrix);
+    }
+
     // Build analysis result
     let analysis: AnalysisResult;
 
     if (gtoStrategy) {
       // Use real GTO data
       const actions = convertGTOActions(gtoStrategy.actions);
-      const villainRangePercent = POSITION_RANGES[villainPosition] || 20;
-      const totalCombos = Math.round(villainRangePercent * 12.69);
 
       analysis = {
         actions,
         equity: gtoStrategy.equity,
         potOdds: calculatePotOdds(potSize),
         spr: parseFloat(spr.toFixed(1)),
-        villainRange: villainRangePercent,
-        combos: totalCombos,
+        villainRange: rangeStats.rangePercent,
+        combos: rangeStats.combos,
+        avgEquity: rangeStats.avgEquity,
         handStrength: getHandStrengthFromEquity(gtoStrategy.equity),
         handStrengthZh: getHandStrengthZhFromEquity(gtoStrategy.equity),
         gtoSource: 'database',
       };
+
+      if (villainRangeMatrix) {
+        analysis.villainRangeMatrix = villainRangeMatrix.matrix;
+      }
 
       if (boardTexture) {
         analysis.boardTexture = boardTexture;
@@ -176,8 +197,13 @@ export async function POST(request: NextRequest) {
 
       analysis = {
         ...heuristicResult,
+        avgEquity: rangeStats.avgEquity,
         gtoSource: 'heuristic',
       };
+
+      if (villainRangeMatrix) {
+        analysis.villainRangeMatrix = villainRangeMatrix.matrix;
+      }
 
       if (boardTexture) {
         analysis.boardTexture = boardTexture;

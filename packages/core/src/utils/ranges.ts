@@ -1,4 +1,4 @@
-import type { RangeMatrix, HandCombo, Action } from '../types';
+import type { RangeMatrix, HandCombo, Action, GTOStrategy, GTOHandStrategy } from '../types';
 import { RANKS } from '../constants';
 
 /**
@@ -134,4 +134,80 @@ export function getAllStartingHands(): string[] {
   }
 
   return hands;
+}
+
+/**
+ * Convert GTO strategy ranges to a range matrix
+ * Uses the non-fold frequency as the matrix value (0-1)
+ */
+export function gtoStrategyToMatrix(
+  ranges: Record<string, GTOHandStrategy> | Map<string, GTOHandStrategy>
+): RangeMatrix {
+  const matrix = createEmptyMatrix();
+
+  const entries = ranges instanceof Map
+    ? Array.from(ranges.entries())
+    : Object.entries(ranges);
+
+  for (const [hand, strategy] of entries) {
+    // Calculate non-fold frequency (raise + call frequency)
+    const nonFoldFreq = strategy.actions
+      .filter(a => a.action !== 'fold')
+      .reduce((sum, a) => sum + a.frequency, 0);
+
+    // Convert from 0-100 to 0-1
+    const value = nonFoldFreq / 100;
+
+    try {
+      setMatrixValue(matrix, hand, value);
+    } catch {
+      // Skip invalid hands
+    }
+  }
+
+  return matrix;
+}
+
+/**
+ * Calculate statistics for a range matrix
+ */
+export function calculateRangeStats(matrix: RangeMatrix): {
+  rangePercent: number;
+  combos: number;
+  avgEquity: number;
+} {
+  const combos = countCombos(matrix);
+  const rangePercent = rangePercentage(matrix);
+
+  // Calculate weighted average (simplified - assumes linear equity distribution)
+  let totalWeight = 0;
+  let weightedEquity = 0;
+
+  for (let row = 0; row < 13; row++) {
+    for (let col = 0; col < 13; col++) {
+      const freq = matrix.matrix[row][col];
+      if (freq > 0) {
+        // Estimate equity based on position in matrix (premium hands top-left)
+        const handStrength = (26 - row - col) / 26;
+        const baseEquity = 0.35 + handStrength * 0.35;
+
+        let combosForHand: number;
+        if (row === col) combosForHand = 6;
+        else if (row < col) combosForHand = 4;
+        else combosForHand = 12;
+
+        const weight = combosForHand * freq;
+        totalWeight += weight;
+        weightedEquity += baseEquity * weight;
+      }
+    }
+  }
+
+  const avgEquity = totalWeight > 0 ? (weightedEquity / totalWeight) * 100 : 50;
+
+  return {
+    rangePercent: parseFloat(rangePercent.toFixed(1)),
+    combos: Math.round(combos),
+    avgEquity: parseFloat(avgEquity.toFixed(1)),
+  };
 }
