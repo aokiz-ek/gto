@@ -86,7 +86,6 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: '12px',
     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
     border: `1px solid ${COLORS.border}`,
-    overflow: 'hidden',
   },
   header: {
     display: 'flex',
@@ -417,21 +416,8 @@ export function OpponentRangeAdjuster({ board, onRangeChange }: OpponentRangeAdj
 
   const currentOpponent = OPPONENT_TYPES.find(o => o.id === selectedOpponent);
 
-  if (!board || board.length === 0) {
-    return (
-      <div style={styles.emptyState}>
-        <div style={styles.emptyIcon}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 16v-4" />
-            <path d="M12 8h.01" />
-          </svg>
-        </div>
-        <div style={styles.emptyTitle}>对手范围调整</div>
-        <div style={styles.emptyHint}>添加公共牌后调整对手范围</div>
-      </div>
-    );
-  }
+  // 判断是否在翻前阶段（没有公共牌）
+  const isPreflop = !board || board.length === 0;
 
   return (
     <div style={styles.card}>
@@ -444,7 +430,7 @@ export function OpponentRangeAdjuster({ board, onRangeChange }: OpponentRangeAdj
       >
         <div style={styles.headerLeft}>
           <span style={styles.headerIcon}>🎯</span>
-          <span style={styles.title}>对手范围调整</span>
+          <span style={styles.title}>对手范围调整{isPreflop ? ' (翻前)' : ''}</span>
         </div>
         <div style={styles.headerRight}>
           <span style={styles.rangeValue}>{adjustedRange}%</span>

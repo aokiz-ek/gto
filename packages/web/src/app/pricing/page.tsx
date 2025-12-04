@@ -136,13 +136,12 @@ function PricingContent() {
           {/* Promo Code Input */}
           <div style={{ marginTop: '24px', maxWidth: '400px', marginLeft: 'auto', marginRight: 'auto' }}>
             <PromoCodeInput
-              onApply={(code, discount) => {
-                setAppliedPromoCode(code);
-                setPromoDiscount(discount);
-              }}
-              onRemove={() => {
-                setAppliedPromoCode(null);
-                setPromoDiscount(0);
+              tier="pro"
+              interval={isYearly ? 'yearly' : 'monthly'}
+              originalPrice={isYearly ? 708 : 68}
+              onApply={(promoCode, finalPrice) => {
+                setAppliedPromoCode(promoCode?.code || null);
+                setPromoDiscount(promoCode ? (isYearly ? 708 : 68) - finalPrice : 0);
               }}
             />
           </div>

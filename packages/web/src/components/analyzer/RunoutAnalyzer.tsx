@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, CSSProperties } from 'react';
-import type { Card as CardType } from '@gto/core';
+import type { Card as CardType, Suit } from '@gto/core';
 
 // 项目统一色系
 const COLORS = {
@@ -35,7 +35,7 @@ interface RunoutCard {
 }
 
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-const SUITS = ['h', 'd', 'c', 's'];
+const SUITS: Suit[] = ['h', 'd', 'c', 's'];
 const SUIT_SYMBOLS: Record<string, string> = { h: '♥', d: '♦', c: '♣', s: '♠' };
 const SUIT_COLORS: Record<string, string> = { h: '#ef4444', d: '#3b82f6', c: '#22c55e', s: '#e5e5e5' };
 

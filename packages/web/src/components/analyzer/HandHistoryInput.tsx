@@ -157,7 +157,6 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: '12px',
     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
     border: `1px solid ${COLORS.border}`,
-    overflow: 'hidden',
   },
   header: {
     display: 'flex',

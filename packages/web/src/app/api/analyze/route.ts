@@ -411,6 +411,7 @@ function calculateHeuristicStrategy(
     spr: parseFloat(spr.toFixed(1)),
     villainRange: villainRangePercent,
     combos: totalCombos,
+    avgEquity: parseFloat((baseEquity * 100).toFixed(1)),
     handStrength: getHandStrengthFromEquity(baseEquity * 100),
     handStrengthZh: getHandStrengthZhFromEquity(baseEquity * 100),
   };

@@ -191,7 +191,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Referral Panel - 邀请奖励 */}
-        <ReferralPanel userId={user.id} />
+        <ReferralPanel />
 
         {/* Actions */}
         <div style={{

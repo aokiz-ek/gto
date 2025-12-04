@@ -5,7 +5,21 @@
  * Uses a BB (big blind) based model for standardized comparison across stakes.
  */
 
-import type { GTOHandStrategy } from '../types';
+import type { GTOHandStrategy, GTOAction } from '../types';
+
+// Helper function to extract action frequency from GTOHandStrategy
+function getActionFrequency(strategy: GTOHandStrategy, action: string): number {
+  if (!strategy?.actions) return 0;
+  const found = strategy.actions.find((a: GTOAction) => a.action === action);
+  return found ? found.frequency : 0;
+}
+
+// Helper function to extract action EV from GTOHandStrategy
+function getActionEV(strategy: GTOHandStrategy, action: string): number {
+  if (!strategy?.actions) return 0;
+  const found = strategy.actions.find((a: GTOAction) => a.action === action);
+  return found ? found.ev : 0;
+}
 
 // Action types for normalization
 export type NormalizedAction = 'fold' | 'check' | 'call' | 'raise' | 'allin';
@@ -179,9 +193,9 @@ function estimateActionEVs(
   const { potSizeBB, effectiveStackBB, facingBetBB = 0 } = context;
 
   // Simplified EV model based on frequencies and pot geometry
-  const foldFreq = gtoStrategy.fold || 0;
-  const callFreq = gtoStrategy.call || 0;
-  const raiseFreq = gtoStrategy.raise || 0;
+  const foldFreq = getActionFrequency(gtoStrategy, 'fold');
+  const callFreq = getActionFrequency(gtoStrategy, 'call');
+  const raiseFreq = getActionFrequency(gtoStrategy, 'raise');
 
   // Fold EV is always 0 (baseline)
   const foldEV = 0;
@@ -234,14 +248,14 @@ export function calculatePreflopEVLoss(
   // Get frequency for player's action
   let actionFrequency = 0;
   if (normalizedAction === 'fold' || normalizedAction === 'check') {
-    actionFrequency = gtoStrategy.fold || 0;
+    actionFrequency = getActionFrequency(gtoStrategy, 'fold');
   } else if (normalizedAction === 'call') {
-    actionFrequency = gtoStrategy.call || 0;
+    actionFrequency = getActionFrequency(gtoStrategy, 'call');
   } else if (normalizedAction === 'raise') {
-    actionFrequency = gtoStrategy.raise || 0;
+    actionFrequency = getActionFrequency(gtoStrategy, 'raise');
   } else if (normalizedAction === 'allin') {
     // All-in is typically part of the raise range at certain frequencies
-    actionFrequency = (gtoStrategy.raise || 0) * 0.3;
+    actionFrequency = getActionFrequency(gtoStrategy, 'raise') * 0.3;
   }
 
   // Estimate EVs for each action
@@ -259,9 +273,9 @@ export function calculatePreflopEVLoss(
 
   // Find optimal action and its EV
   const actions = [
-    { action: 'fold' as NormalizedAction, freq: gtoStrategy.fold || 0, ev: actionEVs.fold },
-    { action: 'call' as NormalizedAction, freq: gtoStrategy.call || 0, ev: actionEVs.call },
-    { action: 'raise' as NormalizedAction, freq: gtoStrategy.raise || 0, ev: actionEVs.raise },
+    { action: 'fold' as NormalizedAction, freq: getActionFrequency(gtoStrategy, 'fold'), ev: actionEVs.fold },
+    { action: 'call' as NormalizedAction, freq: getActionFrequency(gtoStrategy, 'call'), ev: actionEVs.call },
+    { action: 'raise' as NormalizedAction, freq: getActionFrequency(gtoStrategy, 'raise'), ev: actionEVs.raise },
   ].sort((a, b) => b.freq - a.freq);
 
   const optimalAction = actions[0];
@@ -322,9 +336,9 @@ export function calculatePreflopEVLoss(
       potSize: context.potSizeBB,
       effectiveStack: context.effectiveStackBB,
       spr: context.effectiveStackBB / context.potSizeBB,
-      gtoFoldFreq: gtoStrategy.fold || 0,
-      gtoCallFreq: gtoStrategy.call || 0,
-      gtoRaiseFreq: gtoStrategy.raise || 0,
+      gtoFoldFreq: getActionFrequency(gtoStrategy, 'fold'),
+      gtoCallFreq: getActionFrequency(gtoStrategy, 'call'),
+      gtoRaiseFreq: getActionFrequency(gtoStrategy, 'raise'),
       foldEV: actionEVs.fold,
       callEV: actionEVs.call,
       raiseEV: actionEVs.raise,
@@ -376,11 +390,11 @@ export function calculatePostflopEVLoss(
 
   let actionFrequency = 0;
   if (normalizedAction === 'fold' || normalizedAction === 'check') {
-    actionFrequency = gtoStrategy.fold || gtoStrategy.check || 0;
+    actionFrequency = getActionFrequency(gtoStrategy, 'fold') || getActionFrequency(gtoStrategy, 'check');
   } else if (normalizedAction === 'call') {
-    actionFrequency = gtoStrategy.call || 0;
+    actionFrequency = getActionFrequency(gtoStrategy, 'call');
   } else if (normalizedAction === 'raise') {
-    actionFrequency = gtoStrategy.raise || gtoStrategy.bet || 0;
+    actionFrequency = getActionFrequency(gtoStrategy, 'raise') || getActionFrequency(gtoStrategy, 'bet');
   }
 
   const actionEVs = estimateActionEVs(gtoStrategy, context, false);
@@ -411,9 +425,9 @@ export function calculatePostflopEVLoss(
       potSize: context.potSizeBB,
       effectiveStack: context.effectiveStackBB,
       spr: context.effectiveStackBB / context.potSizeBB,
-      gtoFoldFreq: gtoStrategy.fold || 0,
-      gtoCallFreq: gtoStrategy.call || 0,
-      gtoRaiseFreq: gtoStrategy.raise || 0,
+      gtoFoldFreq: getActionFrequency(gtoStrategy, 'fold'),
+      gtoCallFreq: getActionFrequency(gtoStrategy, 'call'),
+      gtoRaiseFreq: getActionFrequency(gtoStrategy, 'raise'),
       foldEV: actionEVs.fold,
       callEV: actionEVs.call,
       raiseEV: actionEVs.raise,

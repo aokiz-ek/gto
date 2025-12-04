@@ -63,8 +63,8 @@ export type {
   StrategyExplanation,
   StrategyFactor,
   AlternativeAction,
-  PreflopContext,
-  PostflopContext,
+  PreflopContext as ExplainerPreflopContext,
+  PostflopContext as ExplainerPostflopContext,
 } from './utils/strategy-explainer';
 
 // Hand History Parser - Parse hand histories from PokerStars, 888poker, etc.

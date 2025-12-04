@@ -53,7 +53,6 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: '12px',
     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
     border: `1px solid ${COLORS.border}`,
-    overflow: 'hidden',
   },
   header: {
     display: 'flex',
@@ -167,8 +166,6 @@ const styles: Record<string, CSSProperties> = {
     display: 'flex',
     flexDirection: 'column' as const,
     gap: '6px',
-    maxHeight: '180px',
-    overflowY: 'auto' as const,
   },
   listEmpty: {
     padding: '16px',

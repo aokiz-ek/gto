@@ -1,13 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, CSSProperties } from 'react';
 import type { Street } from '@gto/core';
+
+interface AnalysisAction {
+  action: string;
+  frequency: number;
+  ev: number;
+}
 
 interface ActionFilterProps {
   street: Street;
   selectedActions: string[];
   onActionsChange: (actions: string[]) => void;
   previousActions?: { street: Street; action: string; position: string }[];
+  analysisActions?: AnalysisAction[];
+  onFilteredActionsChange?: (filteredActions: AnalysisAction[]) => void;
 }
 
 const STREET_ACTIONS: Record<Street, { id: string; label: string; color: string }[]> = {
@@ -56,15 +64,63 @@ const STREET_LABELS: Record<Street, string> = {
   river: '河牌',
 };
 
+// Map analysis action names to filter IDs
+const ACTION_MAP: Record<string, string[]> = {
+  'raise': ['raise', '3bet', '4bet'],
+  'call': ['call'],
+  'fold': ['fold'],
+  'bet': ['bet_small', 'bet_medium', 'bet_large', 'bet_overbet'],
+  'check': ['check'],
+  'allin': ['allin'],
+};
+
+const REVERSE_ACTION_MAP: Record<string, string> = {
+  'raise': 'raise',
+  '3bet': 'raise',
+  '4bet': 'raise',
+  'call': 'call',
+  'fold': 'fold',
+  'bet_small': 'bet',
+  'bet_medium': 'bet',
+  'bet_large': 'bet',
+  'bet_overbet': 'bet',
+  'check': 'check',
+  'allin': 'allin',
+};
+
 export function ActionFilter({
   street,
   selectedActions,
   onActionsChange,
   previousActions = [],
+  analysisActions = [],
+  onFilteredActionsChange,
 }: ActionFilterProps) {
   const [expanded, setExpanded] = useState(true);
 
   const actions = STREET_ACTIONS[street];
+
+  // Calculate which actions from analysis match our filter
+  const filteredAnalysisActions = useMemo(() => {
+    if (!analysisActions.length || !selectedActions.length) return analysisActions;
+
+    return analysisActions.filter(action => {
+      const mappedIds = ACTION_MAP[action.action] || [action.action];
+      return mappedIds.some(id => selectedActions.includes(id));
+    });
+  }, [analysisActions, selectedActions]);
+
+  // Notify parent of filtered actions
+  useMemo(() => {
+    if (onFilteredActionsChange && selectedActions.length > 0) {
+      onFilteredActionsChange(filteredAnalysisActions);
+    }
+  }, [filteredAnalysisActions, onFilteredActionsChange, selectedActions.length]);
+
+  // Calculate frequency sum for selected actions
+  const selectedFrequencySum = useMemo(() => {
+    return filteredAnalysisActions.reduce((sum, a) => sum + a.frequency, 0);
+  }, [filteredAnalysisActions]);
 
   const toggleAction = (actionId: string) => {
     if (selectedActions.includes(actionId)) {
@@ -80,6 +136,15 @@ export function ActionFilter({
 
   const clearAll = () => {
     onActionsChange([]);
+  };
+
+  // Get frequency for an action from analysis results
+  const getActionFrequency = (actionId: string): number | null => {
+    const analysisActionName = REVERSE_ACTION_MAP[actionId];
+    if (!analysisActionName) return null;
+
+    const found = analysisActions.find(a => a.action === analysisActionName);
+    return found ? found.frequency : null;
   };
 
   return (
@@ -278,6 +343,66 @@ export function ActionFilter({
           color: #888;
           margin-top: 8px;
           text-align: right;
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .frequency-sum {
+          color: #22d3bf;
+          font-weight: 600;
+        }
+
+        .filtered-summary {
+          margin-top: 12px;
+          padding: 10px;
+          background: rgba(34, 211, 191, 0.08);
+          border: 1px solid rgba(34, 211, 191, 0.2);
+          border-radius: 8px;
+        }
+
+        .filtered-title {
+          font-size: 10px;
+          color: #22d3bf;
+          font-weight: 600;
+          margin-bottom: 8px;
+        }
+
+        .filtered-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .filtered-action-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 8px;
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 4px;
+        }
+
+        .filtered-action-name {
+          font-size: 11px;
+          font-weight: 600;
+          min-width: 40px;
+        }
+
+        .filtered-action-freq {
+          font-size: 11px;
+          color: #fff;
+          font-weight: 700;
+          background: rgba(255, 255, 255, 0.1);
+          padding: 2px 6px;
+          border-radius: 3px;
+        }
+
+        .filtered-action-ev {
+          font-size: 10px;
+          font-weight: 500;
+          margin-left: auto;
         }
       `}</style>
 
@@ -333,7 +458,45 @@ export function ActionFilter({
 
         <div className="selected-count">
           已选择 {selectedActions.length}/{actions.length} 个行动
+          {selectedActions.length > 0 && analysisActions.length > 0 && (
+            <span className="frequency-sum">
+              • 频率合计: {Math.round(selectedFrequencySum * 100)}%
+            </span>
+          )}
         </div>
+
+        {/* Filtered Actions Summary */}
+        {selectedActions.length > 0 && filteredAnalysisActions.length > 0 && (
+          <div className="filtered-summary">
+            <div className="filtered-title">过滤后的策略:</div>
+            <div className="filtered-actions">
+              {filteredAnalysisActions.map((action, i) => {
+                const actionLabel = action.action === 'raise' ? '加注' :
+                  action.action === 'call' ? '跟注' :
+                  action.action === 'fold' ? '弃牌' :
+                  action.action === 'bet' ? '下注' :
+                  action.action === 'check' ? '过牌' :
+                  action.action === 'allin' ? '全下' : action.action;
+                const actionColor = action.action === 'raise' || action.action === 'bet' ? '#ef4444' :
+                  action.action === 'call' || action.action === 'check' ? '#22c55e' :
+                  action.action === 'fold' ? '#6b7280' : '#8b5cf6';
+                return (
+                  <div key={i} className="filtered-action-item">
+                    <span className="filtered-action-name" style={{ color: actionColor }}>
+                      {actionLabel}
+                    </span>
+                    <span className="filtered-action-freq">
+                      {Math.round(action.frequency * 100)}%
+                    </span>
+                    <span className="filtered-action-ev" style={{ color: action.ev >= 0 ? '#22c55e' : '#ef4444' }}>
+                      EV: {action.ev > 0 ? '+' : ''}{action.ev.toFixed(1)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

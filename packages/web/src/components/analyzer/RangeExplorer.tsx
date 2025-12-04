@@ -91,7 +91,6 @@ const styles: Record<string, CSSProperties> = {
     borderRadius: '12px',
     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
     border: `1px solid ${COLORS.border}`,
-    overflow: 'hidden',
   },
   header: {
     display: 'flex',
@@ -409,21 +408,8 @@ export function RangeExplorer({
     }
   }, [heroHand]);
 
-  if (!board || board.length === 0) {
-    return (
-      <div style={styles.emptyState}>
-        <div style={styles.emptyIcon}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <line x1="3" y1="9" x2="21" y2="9" />
-            <line x1="9" y1="21" x2="9" y2="9" />
-          </svg>
-        </div>
-        <div style={styles.emptyTitle}>范围浏览器</div>
-        <div style={styles.emptyHint}>添加公共牌后显示范围EV</div>
-      </div>
-    );
-  }
+  // 判断是否在翻前阶段（没有公共牌）
+  const isPreflop = !board || board.length === 0;
 
   return (
     <div style={styles.card}>
@@ -436,7 +422,7 @@ export function RangeExplorer({
       >
         <div style={styles.headerLeft}>
           <span style={styles.headerIcon}>🎯</span>
-          <span style={styles.title}>范围浏览器 - {position}</span>
+          <span style={styles.title}>范围浏览器 - {position}{isPreflop ? ' (翻前)' : ''}</span>
         </div>
         <span style={{
           ...styles.toggle,

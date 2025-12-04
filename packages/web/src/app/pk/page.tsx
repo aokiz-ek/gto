@@ -11,7 +11,14 @@ import {
   GTO_VS_RFI_RANGES,
   GTO_VS_3BET_RANGES,
 } from '@gto/core';
-import type { Position, GTOHandStrategy } from '@gto/core';
+import type { Position, GTOHandStrategy, GTOAction } from '@gto/core';
+
+// Helper function to extract action frequency from GTOHandStrategy
+function getActionFrequency(strategy: GTOHandStrategy | null, action: string): number {
+  if (!strategy?.actions) return 0;
+  const found = strategy.actions.find((a: GTOAction) => a.action === action);
+  return found ? found.frequency : 0;
+}
 
 // Constants
 const ROUND_TIME_LIMIT = 15; // seconds per round
@@ -233,10 +240,7 @@ export default function PKPage() {
     // Calculate frequency and score
     let frequency = 0;
     if (strategy) {
-      if (action === 'fold') frequency = strategy.fold || 0;
-      else if (action === 'call') frequency = strategy.call || 0;
-      else if (action === 'raise') frequency = strategy.raise || 0;
-      else if (action === 'allin') frequency = strategy.allin || 0;
+      frequency = getActionFrequency(strategy, action);
     }
 
     const score = calculateScore(frequency, timeMs);
@@ -464,31 +468,31 @@ export default function PKPage() {
               <div className="gto-strategy">
                 <h4>GTO策略</h4>
                 <div className="strategy-bars">
-                  {gtoStrategy.fold && gtoStrategy.fold > 0 && (
+                  {getActionFrequency(gtoStrategy, 'fold') > 0 && (
                     <div className="strategy-bar">
                       <span className="bar-label">Fold</span>
                       <div className="bar-container">
-                        <div className="bar fold" style={{ width: `${gtoStrategy.fold * 100}%` }} />
+                        <div className="bar fold" style={{ width: `${getActionFrequency(gtoStrategy, 'fold') * 100}%` }} />
                       </div>
-                      <span className="bar-value">{Math.round(gtoStrategy.fold * 100)}%</span>
+                      <span className="bar-value">{Math.round(getActionFrequency(gtoStrategy, 'fold') * 100)}%</span>
                     </div>
                   )}
-                  {gtoStrategy.call && gtoStrategy.call > 0 && (
+                  {getActionFrequency(gtoStrategy, 'call') > 0 && (
                     <div className="strategy-bar">
                       <span className="bar-label">Call</span>
                       <div className="bar-container">
-                        <div className="bar call" style={{ width: `${gtoStrategy.call * 100}%` }} />
+                        <div className="bar call" style={{ width: `${getActionFrequency(gtoStrategy, 'call') * 100}%` }} />
                       </div>
-                      <span className="bar-value">{Math.round(gtoStrategy.call * 100)}%</span>
+                      <span className="bar-value">{Math.round(getActionFrequency(gtoStrategy, 'call') * 100)}%</span>
                     </div>
                   )}
-                  {gtoStrategy.raise && gtoStrategy.raise > 0 && (
+                  {getActionFrequency(gtoStrategy, 'raise') > 0 && (
                     <div className="strategy-bar">
                       <span className="bar-label">Raise</span>
                       <div className="bar-container">
-                        <div className="bar raise" style={{ width: `${gtoStrategy.raise * 100}%` }} />
+                        <div className="bar raise" style={{ width: `${getActionFrequency(gtoStrategy, 'raise') * 100}%` }} />
                       </div>
-                      <span className="bar-value">{Math.round(gtoStrategy.raise * 100)}%</span>
+                      <span className="bar-value">{Math.round(getActionFrequency(gtoStrategy, 'raise') * 100)}%</span>
                     </div>
                   )}
                 </div>
@@ -553,7 +557,11 @@ export default function PKPage() {
                   round.scenario
                 );
                 const gtoAction = roundStrategy
-                  ? Object.entries({ fold: roundStrategy.fold, call: roundStrategy.call, raise: roundStrategy.raise })
+                  ? Object.entries({
+                      fold: getActionFrequency(roundStrategy, 'fold'),
+                      call: getActionFrequency(roundStrategy, 'call'),
+                      raise: getActionFrequency(roundStrategy, 'raise')
+                    })
                       .filter(([_, v]) => v && v > 0)
                       .sort(([, a], [, b]) => (b || 0) - (a || 0))[0]?.[0] || 'N/A'
                   : 'N/A';

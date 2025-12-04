@@ -367,7 +367,10 @@ export function getCampaignDiscount(
     return null;
   }
 
-  return campaign.discount;
+  return {
+    discount: campaign.discount.value,
+    type: campaign.discount.type,
+  };
 }
 
 /**
