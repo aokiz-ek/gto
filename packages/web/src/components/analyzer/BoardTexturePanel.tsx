@@ -1,9 +1,26 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, CSSProperties } from 'react';
 import type { Card as CardType } from '@gto/core';
 import { analyzeBoardTexture } from '@gto/core';
 import type { BoardTexture } from '@gto/core';
+
+// Color system
+const COLORS = {
+  primary: '#00f5d4',
+  secondary: '#9b5de5',
+  success: '#06d6a0',
+  warning: '#ffd166',
+  danger: '#ef4444',
+  info: '#118ab2',
+  background: '#0a0a0f',
+  surface: '#12121a',
+  surfaceLight: '#1a1a24',
+  textPrimary: '#ffffff',
+  textSecondary: '#888888',
+  textMuted: '#555555',
+  border: 'rgba(255, 255, 255, 0.08)',
+};
 
 // Chinese translations for board textures
 const TEXTURE_LABELS: Record<BoardTexture, string> = {
@@ -15,28 +32,6 @@ const TEXTURE_LABELS: Record<BoardTexture, string> = {
   high: '高牌',
   low: '低牌',
   ace_high: 'A高',
-};
-
-const TEXTURE_ICONS: Record<BoardTexture, string> = {
-  dry: '🏜️',
-  wet: '💧',
-  monotone: '🎨',
-  paired: '👯',
-  connected: '🔗',
-  high: '👑',
-  low: '🃏',
-  ace_high: '🅰️',
-};
-
-const TEXTURE_COLORS: Record<BoardTexture, string> = {
-  dry: '#22c55e',
-  wet: '#f97316',
-  monotone: '#ef4444',
-  paired: '#8b5cf6',
-  connected: '#f59e0b',
-  high: '#3b82f6',
-  low: '#6b7280',
-  ace_high: '#22d3bf',
 };
 
 interface BoardTexturePanelProps {
@@ -147,31 +142,56 @@ export function BoardTexturePanel({ board, heroHand, street }: BoardTexturePanel
       // Determine hand strength
       let handStrength = '';
       let strengthLevel = 0; // 0-100
+      let handCategory: 'strong' | 'medium' | 'draw' | 'weak' = 'weak';
 
-      if (hasQuads) { handStrength = '四条'; strengthLevel = 95; }
-      else if (hasFullHouse) { handStrength = '葫芦'; strengthLevel = 90; }
-      else if (hasFlush) { handStrength = '同花'; strengthLevel = 85; }
-      else if (hasStraight) { handStrength = '顺子'; strengthLevel = 80; }
-      else if (hasTrips) { handStrength = '三条'; strengthLevel = 70; }
-      else if (hasTwoPair) { handStrength = '两对'; strengthLevel = 60; }
-      else if (hasOverpair) { handStrength = '超对'; strengthLevel = 55; }
-      else if (hasTopPair) { handStrength = '顶对'; strengthLevel = 50; }
-      else if (hasMiddlePair) { handStrength = '中对'; strengthLevel = 35; }
-      else if (hasBottomPair) { handStrength = '底对'; strengthLevel = 25; }
-      else if (hasPair) { handStrength = '一对'; strengthLevel = 30; }
-      else { handStrength = '高牌'; strengthLevel = 15; }
+      if (hasQuads) { handStrength = '四条'; strengthLevel = 95; handCategory = 'strong'; }
+      else if (hasFullHouse) { handStrength = '葫芦'; strengthLevel = 90; handCategory = 'strong'; }
+      else if (hasFlush) { handStrength = '同花'; strengthLevel = 85; handCategory = 'strong'; }
+      else if (hasStraight) { handStrength = '顺子'; strengthLevel = 80; handCategory = 'strong'; }
+      else if (hasTrips) { handStrength = '三条'; strengthLevel = 70; handCategory = 'strong'; }
+      else if (hasTwoPair) { handStrength = '两对'; strengthLevel = 60; handCategory = 'medium'; }
+      else if (hasOverpair) { handStrength = '超对'; strengthLevel = 55; handCategory = 'medium'; }
+      else if (hasTopPair) { handStrength = '顶对'; strengthLevel = 50; handCategory = 'medium'; }
+      else if (hasMiddlePair) { handStrength = '中对'; strengthLevel = 35; handCategory = 'medium'; }
+      else if (hasBottomPair) { handStrength = '底对'; strengthLevel = 25; handCategory = 'weak'; }
+      else if (hasPair) { handStrength = '一对'; strengthLevel = 30; handCategory = 'medium'; }
+      else { handStrength = '高牌'; strengthLevel = 15; handCategory = 'weak'; }
 
       // Add draw info
       let drawInfo = '';
-      if (hasFlushDraw && hasOESD) { drawInfo = '同花顺听牌'; strengthLevel += 25; }
-      else if (hasFlushDraw) { drawInfo = '同花听牌'; strengthLevel += 15; }
-      else if (hasOESD) { drawInfo = '两头顺听'; strengthLevel += 12; }
+      if (hasFlushDraw && hasOESD) { drawInfo = '同花顺听牌'; strengthLevel += 25; handCategory = 'draw'; }
+      else if (hasFlushDraw) { drawInfo = '同花听牌'; strengthLevel += 15; handCategory = 'draw'; }
+      else if (hasOESD) { drawInfo = '两头顺听'; strengthLevel += 12; handCategory = 'draw'; }
       else if (hasGutShotDraw) { drawInfo = '卡顺听牌'; strengthLevel += 6; }
+
+      // Generate tags based on hand strength
+      const tags: string[] = [];
+      if (strengthLevel >= 70) {
+        tags.push('强成手牌');
+        if (hasFullHouse || hasQuads || hasFlush || hasStraight) tags.push('坚果优势');
+        tags.push('价值下注');
+      } else if (strengthLevel >= 50) {
+        tags.push('中等成牌');
+        if (drawInfo) tags.push('攻守兼备');
+        else tags.push('保护下注');
+      } else if (drawInfo) {
+        tags.push('强听牌');
+        tags.push('半诈唬');
+        tags.push('有潜力');
+      } else if (strengthLevel >= 30) {
+        tags.push('边缘牌');
+        tags.push('过牌优先');
+      } else {
+        tags.push('弱牌');
+        tags.push('放弃价值');
+      }
 
       heroAnalysis = {
         handStrength,
         strengthLevel: Math.min(strengthLevel, 100),
+        handCategory,
         drawInfo,
+        tags,
         hasFlush,
         hasFlushDraw,
         flushDrawSuit,
@@ -231,6 +251,38 @@ export function BoardTexturePanel({ board, heroHand, street }: BoardTexturePanel
       }
     }
 
+    // Generate board analysis points
+    const analysisPoints: { text: string; type: 'positive' | 'negative' | 'neutral' }[] = [];
+
+    if (isMonotone) {
+      analysisPoints.push({ text: '单一花色，同花可能性高', type: 'negative' });
+      analysisPoints.push({ text: '无同花需谨慎', type: 'neutral' });
+    } else if (isTwoTone) {
+      analysisPoints.push({ text: '双色牌面，可能存在听牌', type: 'neutral' });
+    } else {
+      analysisPoints.push({ text: '彩虹牌面，同花威胁低', type: 'positive' });
+    }
+
+    if (isConnected) {
+      analysisPoints.push({ text: '牌面连接紧密，顺子可能性高', type: 'negative' });
+    } else if (hasGutshot) {
+      analysisPoints.push({ text: '存在卡顺听牌可能', type: 'neutral' });
+    } else {
+      analysisPoints.push({ text: '牌面分散，顺子威胁低', type: 'positive' });
+    }
+
+    if (isPaired) {
+      analysisPoints.push({ text: `牌面有对子${pairedRank ? rankOrder[parseInt(pairedRank)] : ''}，葫芦/四条可能`, type: 'neutral' });
+    }
+
+    if (hasAce) {
+      analysisPoints.push({ text: 'A高牌面，顶对范围窄', type: 'positive' });
+    } else if (hasBroadway) {
+      analysisPoints.push({ text: '高牌面，高牌强度增加', type: 'neutral' });
+    } else if (isLowBoard) {
+      analysisPoints.push({ text: '低牌面，超对价值高', type: 'positive' });
+    }
+
     return {
       primaryTexture,
       board: {
@@ -256,319 +308,314 @@ export function BoardTexturePanel({ board, heroHand, street }: BoardTexturePanel
       recommendation,
       recommendedSizing,
       sizingReason,
+      analysisPoints,
     };
   }, [board, heroHand, street]);
 
+  // Styles
+  const containerStyle: CSSProperties = {
+    background: 'linear-gradient(180deg, #14141e 0%, #12121a 100%)',
+    borderRadius: '12px',
+    padding: '16px',
+    border: `1px solid ${COLORS.border}`,
+  };
+
+  const emptyContainerStyle: CSSProperties = {
+    ...containerStyle,
+    textAlign: 'center',
+    padding: '24px 16px',
+  };
+
+  const headerStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '16px',
+  };
+
+  const headerIconStyle: CSSProperties = {
+    width: '20px',
+    height: '20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: COLORS.info,
+    fontSize: '14px',
+  };
+
+  const headerTitleStyle: CSSProperties = {
+    fontSize: '14px',
+    fontWeight: 600,
+    color: COLORS.info,
+  };
+
+  const subHeaderStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    marginBottom: '12px',
+    paddingLeft: '4px',
+  };
+
+  const subHeaderIconStyle: CSSProperties = {
+    fontSize: '12px',
+    color: COLORS.textSecondary,
+  };
+
+  const subHeaderTextStyle: CSSProperties = {
+    fontSize: '12px',
+    color: COLORS.textSecondary,
+  };
+
+  const analysisListStyle: CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    marginBottom: '16px',
+  };
+
+  const analysisItemStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    fontSize: '12px',
+    color: COLORS.textSecondary,
+  };
+
+  const getIconStyle = (type: 'positive' | 'negative' | 'neutral'): CSSProperties => ({
+    width: '16px',
+    height: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    color: type === 'positive' ? COLORS.success : type === 'negative' ? COLORS.danger : COLORS.textMuted,
+  });
+
+  const dividerStyle: CSSProperties = {
+    height: '1px',
+    background: COLORS.border,
+    margin: '16px 0',
+  };
+
+  const handStrengthSectionStyle: CSSProperties = {
+    marginBottom: '12px',
+  };
+
+  const handStrengthHeaderStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '12px',
+    color: COLORS.textPrimary,
+    fontSize: '14px',
+    fontWeight: 600,
+  };
+
+  const handStrengthBoxStyle: CSSProperties = {
+    background: 'rgba(255, 209, 102, 0.08)',
+    borderLeft: `3px solid ${COLORS.warning}`,
+    borderRadius: '8px',
+    padding: '12px',
+    marginBottom: '12px',
+  };
+
+  const handStrengthRowStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '10px',
+  };
+
+  const handStrengthLabelStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '13px',
+    color: COLORS.textSecondary,
+  };
+
+  const handStrengthBadgeStyle: CSSProperties = {
+    background: 'rgba(255, 209, 102, 0.2)',
+    color: COLORS.warning,
+    padding: '4px 10px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: 700,
+  };
+
+  const tagsContainerStyle: CSSProperties = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+  };
+
+  const tagStyle: CSSProperties = {
+    background: 'rgba(255, 255, 255, 0.06)',
+    color: COLORS.textSecondary,
+    padding: '4px 10px',
+    borderRadius: '4px',
+    fontSize: '11px',
+    fontWeight: 500,
+  };
+
+  const recommendationBoxStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    background: 'rgba(6, 214, 160, 0.08)',
+    padding: '10px 12px',
+    borderRadius: '8px',
+    marginBottom: '10px',
+  };
+
+  const recommendationIconStyle: CSSProperties = {
+    color: COLORS.success,
+    fontSize: '14px',
+  };
+
+  const recommendationTextStyle: CSSProperties = {
+    fontSize: '13px',
+    fontWeight: 600,
+    color: COLORS.success,
+  };
+
+  const descriptionStyle: CSSProperties = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '8px',
+    fontSize: '12px',
+    color: COLORS.textMuted,
+    lineHeight: 1.5,
+    paddingLeft: '4px',
+  };
+
+  const descriptionIconStyle: CSSProperties = {
+    color: COLORS.warning,
+    fontSize: '12px',
+    marginTop: '2px',
+    flexShrink: 0,
+  };
+
+  const emptyTextStyle: CSSProperties = {
+    fontSize: '12px',
+    color: COLORS.textMuted,
+    padding: '12px 0',
+  };
+
   if (!analysis) {
     return (
-      <div className="texture-panel texture-panel-empty">
-        <style jsx>{styles}</style>
-        <div className="texture-header">
-          <span className="texture-icon">📊</span>
-          <span className="texture-title">牌面分析</span>
+      <div style={emptyContainerStyle}>
+        <div style={headerStyle}>
+          <span style={headerIconStyle}>📊</span>
+          <span style={{ ...headerTitleStyle, color: COLORS.textPrimary }}>牌面分析</span>
         </div>
-        <div className="texture-empty">选择公共牌后显示动态分析</div>
+        <div style={emptyTextStyle}>选择公共牌后显示动态分析</div>
       </div>
     );
   }
 
-  const { primaryTexture, board: boardInfo, heroAnalysis, recommendation, recommendedSizing, sizingReason } = analysis;
-  const color = TEXTURE_COLORS[primaryTexture];
+  const { primaryTexture, heroAnalysis, recommendation, recommendedSizing, sizingReason, analysisPoints } = analysis;
+
+  // Determine texture display name
+  const textureLabel = TEXTURE_LABELS[primaryTexture];
+  const suitLabel = analysis.board.isMonotone ? '花色单色' : analysis.board.isTwoTone ? '花色双色' : '花色彩虹';
 
   return (
-    <div className="texture-panel">
-      <style jsx>{styles}</style>
-
-      {/* Header with texture badge */}
-      <div className="texture-header">
-        <div className="header-left">
-          <span className="texture-icon">{TEXTURE_ICONS[primaryTexture]}</span>
-          <span className="texture-title">牌面分析</span>
-        </div>
-        <div className="texture-badge" style={{ backgroundColor: color + '20', color, borderColor: color + '40' }}>
-          {TEXTURE_LABELS[primaryTexture]}
-        </div>
+    <div style={containerStyle}>
+      {/* Header */}
+      <div style={headerStyle}>
+        <span style={headerIconStyle}>🎨</span>
+        <span style={headerTitleStyle}>{textureLabel}分析</span>
       </div>
 
-      {/* Board characteristics */}
-      <div className="characteristics">
-        <div className="char-row">
-          <div className="char-item">
-            <span className="char-icon" style={{ color: boardInfo.isMonotone ? '#ef4444' : boardInfo.isTwoTone ? '#f59e0b' : '#22c55e' }}>
-              {boardInfo.isMonotone ? '🔴' : boardInfo.isTwoTone ? '🟡' : '🟢'}
-            </span>
-            <span className="char-label">花色</span>
-            <span className="char-value">
-              {boardInfo.isMonotone ? '单色' : boardInfo.isTwoTone ? '双色' : '彩虹'}
-            </span>
-          </div>
-          <div className="char-item">
-            <span className="char-icon" style={{ color: boardInfo.isConnected ? '#ef4444' : boardInfo.hasGutshot ? '#f59e0b' : '#22c55e' }}>
-              {boardInfo.isConnected ? '🔗' : boardInfo.hasGutshot ? '⛓️' : '📍'}
-            </span>
-            <span className="char-label">连接</span>
-            <span className="char-value">
-              {boardInfo.isConnected ? '紧密' : boardInfo.hasGutshot ? '有间隔' : '分散'}
-            </span>
-          </div>
-        </div>
-        <div className="char-row">
-          <div className="char-item">
-            <span className="char-icon" style={{ color: boardInfo.isPaired ? '#8b5cf6' : '#666' }}>
-              {boardInfo.isPaired ? '👯' : '➖'}
-            </span>
-            <span className="char-label">对子</span>
-            <span className="char-value">
-              {boardInfo.isTrips ? `三条${boardInfo.pairedRank}` : boardInfo.isPaired ? `对${boardInfo.pairedRank}` : '无'}
-            </span>
-          </div>
-          <div className="char-item">
-            <span className="char-icon" style={{ color: boardInfo.hasAce ? '#22d3bf' : boardInfo.hasBroadway ? '#3b82f6' : '#666' }}>
-              {boardInfo.hasAce ? '🅰️' : boardInfo.hasBroadway ? '👑' : '🃏'}
-            </span>
-            <span className="char-label">高牌</span>
-            <span className="char-value">
-              {boardInfo.hasAce ? 'A高' : boardInfo.hasBroadway ? boardInfo.highCard + '高' : '低牌面'}
-            </span>
-          </div>
-        </div>
+      {/* Suit subheader */}
+      <div style={subHeaderStyle}>
+        <span style={subHeaderIconStyle}>🎭</span>
+        <span style={subHeaderTextStyle}>{suitLabel}</span>
       </div>
 
-      {/* Hero hand analysis - only show if hand selected */}
+      {/* Analysis points */}
+      <div style={analysisListStyle}>
+        {analysisPoints.map((point, index) => (
+          <div key={index} style={analysisItemStyle}>
+            <span style={getIconStyle(point.type)}>
+              {point.type === 'positive' ? '✓' : point.type === 'negative' ? '✗' : '○'}
+            </span>
+            <span>{point.text}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Divider */}
+      <div style={dividerStyle} />
+
+      {/* Hero hand analysis */}
       {heroAnalysis && (
-        <div className="hero-analysis">
-          <div className="hero-header">
+        <div style={handStrengthSectionStyle}>
+          <div style={handStrengthHeaderStyle}>
+            <span>👑</span>
             <span>你的牌力</span>
-            <span className="hero-strength" style={{
-              color: heroAnalysis.strengthLevel >= 60 ? '#22c55e' :
-                     heroAnalysis.strengthLevel >= 40 ? '#f59e0b' : '#ef4444'
-            }}>
-              {heroAnalysis.handStrength}
-            </span>
           </div>
 
-          {/* Strength bar */}
-          <div className="strength-bar-container">
-            <div
-              className="strength-bar"
-              style={{
-                width: `${heroAnalysis.strengthLevel}%`,
-                background: heroAnalysis.strengthLevel >= 60
-                  ? 'linear-gradient(90deg, #22c55e, #4ade80)'
-                  : heroAnalysis.strengthLevel >= 40
-                    ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
-                    : 'linear-gradient(90deg, #ef4444, #f87171)'
-              }}
-            />
+          <div style={handStrengthBoxStyle}>
+            <div style={handStrengthRowStyle}>
+              <span style={handStrengthLabelStyle}>
+                <span>🃏</span>
+                <span>牌力分析:</span>
+              </span>
+              <span style={handStrengthBadgeStyle}>{heroAnalysis.handStrength}</span>
+            </div>
+
+            <div style={tagsContainerStyle}>
+              {heroAnalysis.tags.map((tag, index) => (
+                <span key={index} style={tagStyle}>{tag}</span>
+              ))}
+              {heroAnalysis.drawInfo && (
+                <span style={{ ...tagStyle, background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
+                  {heroAnalysis.drawInfo}
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Draw info */}
-          {heroAnalysis.drawInfo && (
-            <div className="draw-badge">
-              <span className="draw-icon">🎯</span>
-              <span>{heroAnalysis.drawInfo}</span>
+          {/* Recommendation */}
+          {recommendedSizing && recommendedSizing !== '0%' && (
+            <div style={recommendationBoxStyle}>
+              <span style={recommendationIconStyle}>📊</span>
+              <span style={recommendationTextStyle}>建议{recommendedSizing}底池</span>
             </div>
           )}
+
+          {/* Description */}
+          <div style={descriptionStyle}>
+            <span style={descriptionIconStyle}>💡</span>
+            <span>{recommendation || sizingReason}</span>
+          </div>
         </div>
       )}
 
-      {/* Recommendation */}
-      <div className="recommendation">
-        <div className="rec-header">
-          <span className="rec-label">💡 建议</span>
-          {recommendedSizing && recommendedSizing !== '0%' && (
-            <span className="rec-sizing">{recommendedSizing} 底池</span>
+      {/* Board-only recommendation when no hero hand */}
+      {!heroAnalysis && (
+        <div>
+          <div style={handStrengthHeaderStyle}>
+            <span>💡</span>
+            <span>下注建议</span>
+          </div>
+
+          {recommendedSizing && (
+            <div style={recommendationBoxStyle}>
+              <span style={recommendationIconStyle}>📊</span>
+              <span style={recommendationTextStyle}>建议{recommendedSizing}底池</span>
+            </div>
           )}
+
+          <div style={descriptionStyle}>
+            <span style={descriptionIconStyle}>🎯</span>
+            <span>{sizingReason}</span>
+          </div>
         </div>
-        <div className="rec-content">
-          {recommendation || sizingReason}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
-
-const styles = `
-  .texture-panel {
-    background: linear-gradient(180deg, #14141e 0%, #12121a 100%);
-    border-radius: 12px;
-    padding: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  }
-
-  .texture-panel-empty {
-    text-align: center;
-    padding: 20px 14px;
-  }
-
-  .texture-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .texture-icon {
-    font-size: 16px;
-  }
-
-  .texture-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #fff;
-  }
-
-  .texture-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    border: 1px solid;
-    letter-spacing: 0.5px;
-  }
-
-  .texture-empty {
-    font-size: 12px;
-    color: #555;
-    padding: 12px 0;
-  }
-
-  .characteristics {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  }
-
-  .char-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .char-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 10px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-  }
-
-  .char-icon {
-    font-size: 12px;
-    width: 16px;
-    text-align: center;
-  }
-
-  .char-label {
-    font-size: 10px;
-    color: #666;
-    flex-shrink: 0;
-  }
-
-  .char-value {
-    font-size: 11px;
-    font-weight: 600;
-    color: #ccc;
-    margin-left: auto;
-  }
-
-  .hero-analysis {
-    background: rgba(139, 92, 246, 0.08);
-    border: 1px solid rgba(139, 92, 246, 0.15);
-    border-radius: 10px;
-    padding: 12px;
-    margin-bottom: 12px;
-  }
-
-  .hero-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    font-size: 11px;
-    color: #888;
-  }
-
-  .hero-strength {
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .strength-bar-container {
-    height: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-bottom: 8px;
-  }
-
-  .strength-bar {
-    height: 100%;
-    border-radius: 3px;
-    transition: width 0.3s ease;
-  }
-
-  .draw-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    background: rgba(245, 158, 11, 0.15);
-    border: 1px solid rgba(245, 158, 11, 0.25);
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #f59e0b;
-  }
-
-  .draw-icon {
-    font-size: 10px;
-  }
-
-  .recommendation {
-    background: rgba(34, 211, 191, 0.06);
-    border: 1px solid rgba(34, 211, 191, 0.12);
-    border-radius: 10px;
-    padding: 12px;
-  }
-
-  .rec-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 6px;
-  }
-
-  .rec-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: #22d3bf;
-  }
-
-  .rec-sizing {
-    font-size: 12px;
-    font-weight: 700;
-    color: #22d3bf;
-    padding: 2px 8px;
-    background: rgba(34, 211, 191, 0.15);
-    border-radius: 4px;
-  }
-
-  .rec-content {
-    font-size: 12px;
-    color: #aaa;
-    line-height: 1.5;
-  }
-`;

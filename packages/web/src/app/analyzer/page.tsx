@@ -16,6 +16,10 @@ import {
   EquityCalculator,
   GTOReports,
   SizingAdvisor,
+  RunoutAnalyzer,
+  RangeExplorer,
+  HandHistoryInput,
+  OpponentRangeAdjuster,
 } from '@/components/analyzer';
 
 const SUIT_SYMBOLS: Record<string, string> = {
@@ -1974,6 +1978,53 @@ export default function AnalyzerPage() {
             analysisResult={analysisResult}
             userActions={userActions}
             street={street}
+          />
+
+          {/* Runout Analyzer - Only show for postflop */}
+          {street !== 'preflop' && (
+            <RunoutAnalyzer
+              heroHand={heroHand}
+              board={board}
+              heroEquity={analysisResult?.equity}
+            />
+          )}
+
+          {/* Range Explorer - Only show for postflop */}
+          {street !== 'preflop' && (
+            <RangeExplorer
+              heroHand={heroHand}
+              board={board}
+              position={heroPosition || undefined}
+            />
+          )}
+
+          {/* Opponent Range Adjuster - Only show for postflop */}
+          {street !== 'preflop' && (
+            <OpponentRangeAdjuster
+              board={board}
+            />
+          )}
+
+          {/* Hand History Input */}
+          <HandHistoryInput
+            onHandParsed={(parsedHand) => {
+              if (parsedHand.heroHand) {
+                setHeroHand(parsedHand.heroHand);
+              }
+              if (parsedHand.board.length > 0) {
+                setBoard(parsedHand.board);
+              }
+              if (parsedHand.heroPosition) {
+                const pos = parsedHand.heroPosition as Position;
+                if (POSITIONS.includes(pos)) {
+                  setHeroPosition(pos);
+                }
+              }
+              if (parsedHand.street) {
+                setStreet(parsedHand.street);
+              }
+              hasAutoAnalyzed.current = false;
+            }}
           />
 
           {/* Analysis Result - with Skeleton loading state */}

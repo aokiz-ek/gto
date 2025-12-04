@@ -9,3 +9,7 @@ export { HandAnnotation } from './HandAnnotation';
 export { EquityCalculator } from './EquityCalculator';
 export { GTOReports } from './GTOReports';
 export { SizingAdvisor } from './SizingAdvisor';
+export { RunoutAnalyzer } from './RunoutAnalyzer';
+export { RangeExplorer } from './RangeExplorer';
+export { HandHistoryInput } from './HandHistoryInput';
+export { OpponentRangeAdjuster } from './OpponentRangeAdjuster';
