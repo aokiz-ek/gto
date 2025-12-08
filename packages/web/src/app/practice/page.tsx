@@ -1178,6 +1178,34 @@ export default function PracticePage() {
                   </div>
                   <div className="menu-divider" />
                   <div className="menu-section">
+                    <div className="menu-section-title">其他训练模式</div>
+                    <Link href="/practice/pushfold" className="menu-item">
+                      <span className="menu-icon">🎯</span>
+                      Push/Fold 训练
+                    </Link>
+                    <Link href="/practice/multitable" className="menu-item">
+                      <span className="menu-icon">🃏</span>
+                      多桌训练
+                    </Link>
+                    <Link href="/practice/tournament" className="menu-item">
+                      <span className="menu-icon">🏆</span>
+                      锦标赛训练
+                    </Link>
+                    <Link href="/practice/range-builder" className="menu-item">
+                      <span className="menu-icon">🎨</span>
+                      Range Builder 训练
+                    </Link>
+                    <Link href="/reports" className="menu-item">
+                      <span className="menu-icon">📊</span>
+                      GTO 分析报告
+                    </Link>
+                    <Link href="/icm" className="menu-item">
+                      <span className="menu-icon">🔢</span>
+                      ICM 计算器
+                    </Link>
+                  </div>
+                  <div className="menu-divider" />
+                  <div className="menu-section">
                     <div className="menu-section-title">设置</div>
                     <div
                       className="menu-item toggle-item"

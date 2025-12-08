@@ -99,3 +99,66 @@ export type {
   PostflopContext,
   AggregateEVStats,
 } from './utils/evCalculator';
+
+// ICM Calculator - Independent Chip Model for tournament equity
+export {
+  calculateICM,
+  calculateICMPressure,
+  calculateICMDiff,
+  quickICM,
+  calculatePushFoldICM,
+  getNashPushRange,
+  getNashCallRange,
+  COMMON_PAYOUTS,
+} from './utils/icm';
+export type {
+  ICMPlayer,
+  ICMPayoutStructure,
+  ICMResult,
+  ICMCalculation,
+  PushFoldScenario,
+  PushFoldResult,
+} from './utils/icm';
+
+// Deep Stack Ranges (150BB and 200BB)
+export {
+  GTO_RANGES_150BB,
+  GTO_RANGES_200BB,
+  getDeepStackStrategy,
+  getDeep3BetStrategy,
+  hasDeepStackData,
+  getAvailableStackDepths,
+} from './data/gto-deep-stack';
+
+// GTO Benchmarks - Baseline frequencies for leak analysis
+export {
+  // Benchmark data
+  RFI_BENCHMARKS,
+  THREE_BET_BENCHMARKS,
+  FOLD_TO_3BET_BENCHMARKS,
+  BB_DEFENSE_BENCHMARKS,
+  CBET_BENCHMARKS,
+  FOLD_TO_CBET_BENCHMARKS,
+  CHECK_RAISE_BENCHMARKS,
+  AGGRESSION_BENCHMARKS,
+  LEAK_INDICATORS,
+  ALL_BENCHMARKS,
+  // Helper functions
+  getBenchmark,
+  getBenchmarksByCategory,
+  analyzeFrequency,
+  analyzeUserStats,
+  summarizeLeaks,
+  generateTrainingRecommendations,
+} from './data/gto-benchmarks';
+export type {
+  ActionLine,
+  Street,
+  BoardTexture as BenchmarkBoardTexture,
+  GTOBenchmark,
+  LeakSeverity,
+  LeakAnalysis,
+  UserStats,
+  LeakSummary,
+  TrainingRecommendation,
+} from './data/gto-benchmarks';

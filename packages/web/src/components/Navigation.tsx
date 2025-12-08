@@ -52,6 +52,17 @@ const Icons = {
       <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
     </svg>
   ),
+  reports: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 20V10M18 20V4M6 20v-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  icm: (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 6v6l4 2" />
+    </svg>
+  ),
   premium: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
@@ -77,7 +88,8 @@ const navItems = [
   { href: '/analyzer', label: 'Analyzer', icon: Icons.analyzer },
   { href: '/practice', label: 'Practice', icon: Icons.practice },
   { href: '/challenge', label: 'Daily', icon: Icons.challenge, highlight: true },
-  { href: '/replayer', label: 'Replayer', icon: Icons.replayer },
+  { href: '/reports', label: 'Reports', icon: Icons.reports },
+  { href: '/icm', label: 'ICM', icon: Icons.icm },
   { href: '/leaderboard', label: 'Leaderboard', icon: Icons.leaderboard },
   { href: '/history', label: 'History', icon: Icons.history },
 ];

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import Link from 'next/link';
 import { PokerCard, RangeMatrix, Skeleton, SkeletonGroup } from '@gto/ui';
 import { useGameStore } from '@/store';
 import { parseCard, RANKS, SUITS, createEmptyMatrix, setMatrixValue, getMatrixValue, HAND_CATEGORIES, countCombos, rangePercentage } from '@gto/core';
@@ -94,13 +95,16 @@ const createDynamicAnalysisResult = (
   villainPosition: Position | null,
   potSize: number,
   effectiveStack: number,
-  estimatedEquity: number
+  estimatedEquity: number,
+  betSizePercent: number = 0.66 // 下注尺寸百分比
 ): AnalysisResult => {
   // Calculate SPR
   const spr = potSize > 0 ? Math.round((effectiveStack / potSize) * 10) / 10 : 10;
 
-  // Calculate pot odds (for a half-pot bet)
-  const potOdds = Math.round(100 / (1 + potSize / 2) * 10) / 10;
+  // Calculate pot odds based on bet size
+  // 底池赔率 = 需要跟注的金额 / (底池 + 下注金额 + 需要跟注的金额)
+  const betAmount = potSize * betSizePercent;
+  const potOdds = Math.round((betAmount / (potSize + betAmount + betAmount)) * 1000) / 10;
 
   // Position-based range estimates
   const POSITION_RANGES: Record<string, number> = {
@@ -289,6 +293,11 @@ export default function AnalyzerPage() {
   const [effectiveStack, setEffectiveStack] = useState(100); // Default effective stack in BB
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
   const [userActions, setUserActions] = useState<{ street: Street; action: string }[]>([]);
+  const [customVillainRangePercent, setCustomVillainRangePercent] = useState<number | null>(null); // 用户调整的对手范围百分比
+  const [filteredActions, setFilteredActions] = useState<{ action: string; frequency: number; ev: number }[]>([]); // 过滤后的行动
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [notes, setNotes] = useState('');
 
   const { isMobile, isMobileOrTablet } = useResponsive();
 
@@ -465,7 +474,10 @@ export default function AnalyzerPage() {
   // Calculate range stats based on villain range and hero hand
   const rangeStats = useMemo(() => {
     const totalCombos = Math.round(countCombos(villainRange));
-    const rangePercent = Math.round(rangePercentage(villainRange) * 10) / 10;
+    // 优先使用用户自定义的范围百分比，否则从矩阵计算
+    const rangePercent = customVillainRangePercent !== null
+      ? customVillainRangePercent
+      : Math.round(rangePercentage(villainRange) * 10) / 10;
 
     // Calculate effective combos (excluding hero's blockers)
     let effectiveCombos = totalCombos;
@@ -520,7 +532,7 @@ export default function AnalyzerPage() {
       rangePercent,
       equity: Math.round(estimatedEquity * 10) / 10,
     };
-  }, [villainRange, heroHand, board.length]);
+  }, [villainRange, heroHand, board.length, customVillainRangePercent]);
 
   // Analyze hand
   const analyzeHand = useCallback(async (isAuto = false) => {
@@ -596,7 +608,8 @@ export default function AnalyzerPage() {
           villainPosition,
           potSize,
           effectiveStack,
-          rangeStats.equity
+          rangeStats.equity,
+          betSize
         );
         setAnalysisResult(fallbackResult);
       }
@@ -609,13 +622,14 @@ export default function AnalyzerPage() {
         villainPosition,
         potSize,
         effectiveStack,
-        rangeStats.equity
+        rangeStats.equity,
+        betSize
       );
       setAnalysisResult(fallbackResult);
     } finally {
       setIsAnalyzing(false);
     }
-  }, [heroHand, heroPosition, villainPosition, board, street, potSize, effectiveStack, rangeStats.equity]);
+  }, [heroHand, heroPosition, villainPosition, board, street, potSize, effectiveStack, rangeStats.equity, betSize]);
 
   // Handle card selection
   const handleCardSelect = (rank: string, suit: string) => {
@@ -724,6 +738,49 @@ export default function AnalyzerPage() {
     hasAutoAnalyzed.current = true; // Don't re-analyze loaded items
   };
 
+  // Save to database history
+  const saveToHistory = async () => {
+    if (!heroHand || !heroPosition || !analysisResult) return;
+
+    setIsSaving(true);
+    setSaveSuccess(false);
+
+    try {
+      const response = await fetch('/api/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          heroHand: heroHand.map(c => `${c.rank}${c.suit}`).join(''),
+          board: board.map(c => `${c.rank}${c.suit}`).join(''),
+          heroPosition,
+          villainPosition,
+          potSize,
+          stackSize: effectiveStack,
+          street,
+          analysisResult: {
+            equity: analysisResult.equity / 100,
+            ev: analysisResult.actions[0]?.ev || 0,
+            recommendedAction: analysisResult.actions[0]?.action || '',
+          },
+          notes: notes || null,
+        }),
+      });
+
+      if (response.ok) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      } else {
+        const data = await response.json();
+        alert(data.error || '保存失败，请先登录');
+      }
+    } catch (error) {
+      console.error('Save to history error:', error);
+      alert('保存失败，请检查网络连接');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Remove hero hand
   const removeHeroHand = () => {
     setHeroHand(null);
@@ -771,6 +828,26 @@ export default function AnalyzerPage() {
           font-size: ${isMobile ? '16px' : '18px'};
           font-weight: 600;
           color: #fff;
+        }
+
+        .guide-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: rgba(139, 92, 246, 0.15);
+          color: #8b5cf6;
+          text-decoration: none;
+          transition: all 0.2s;
+          flex-shrink: 0;
+        }
+
+        .guide-btn:hover {
+          background: rgba(139, 92, 246, 0.25);
+          color: #a78bfa;
+          transform: scale(1.1);
         }
 
         .step-hint-inline {
@@ -1815,6 +1892,13 @@ export default function AnalyzerPage() {
       <div className="analyzer-header">
         <div className="header-left">
           <h1 className="header-title">手牌分析器</h1>
+          <Link href="/analyzer/guide" className="guide-btn" title="查看功能说明">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </Link>
           <span className="step-hint-inline">{stepHint}</span>
         </div>
         <div className="header-actions">
@@ -1824,6 +1908,20 @@ export default function AnalyzerPage() {
           <button className="btn btn-ghost" onClick={clearAll}>
             清除
           </button>
+          {analysisResult && (
+            <button
+              className={`btn ${saveSuccess ? 'btn-success' : 'btn-ghost'}`}
+              onClick={saveToHistory}
+              disabled={isSaving || saveSuccess}
+              style={{
+                background: saveSuccess ? 'rgba(34, 197, 94, 0.2)' : undefined,
+                borderColor: saveSuccess ? '#22c55e' : undefined,
+                color: saveSuccess ? '#22c55e' : undefined,
+              }}
+            >
+              {isSaving ? <span className="loading-spinner" /> : saveSuccess ? '✓ 已保存' : '💾 保存'}
+            </button>
+          )}
           <button
             className="btn btn-primary"
             onClick={() => analyzeHand(false)}
@@ -2219,6 +2317,70 @@ export default function AnalyzerPage() {
                   ))}
                 </div>
               )}
+
+              {/* Save Notes Section */}
+              <div style={{
+                marginTop: '12px',
+                paddingTop: '12px',
+                borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+              }}>
+                <div style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#888',
+                  textTransform: 'uppercase' as const,
+                  letterSpacing: '0.5px',
+                  marginBottom: '8px',
+                }}>
+                  保存笔记 (可选)
+                </div>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="添加笔记，记录你的思考过程..."
+                  style={{
+                    width: '100%',
+                    minHeight: '60px',
+                    padding: '10px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    fontSize: '12px',
+                    resize: 'vertical' as const,
+                    outline: 'none',
+                    fontFamily: 'inherit',
+                  }}
+                />
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '8px',
+                }}>
+                  <span style={{ fontSize: '10px', color: '#666' }}>
+                    保存后可在"历史记录"页面查看
+                  </span>
+                  <button
+                    onClick={saveToHistory}
+                    disabled={isSaving || saveSuccess}
+                    style={{
+                      padding: '6px 16px',
+                      borderRadius: '6px',
+                      border: 'none',
+                      background: saveSuccess ? 'rgba(34, 197, 94, 0.2)' : 'linear-gradient(135deg, #22d3bf 0%, #1eb8a6 100%)',
+                      color: saveSuccess ? '#22c55e' : '#000',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: isSaving || saveSuccess ? 'not-allowed' : 'pointer',
+                      opacity: isSaving ? 0.7 : 1,
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {isSaving ? '保存中...' : saveSuccess ? '✓ 已保存' : '💾 保存到历史'}
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="analysis-card">
@@ -2274,6 +2436,13 @@ export default function AnalyzerPage() {
           {/* 对手范围调整 - Always visible */}
           <OpponentRangeAdjuster
             board={board}
+            onRangeChange={(rangePercent) => {
+              setCustomVillainRangePercent(rangePercent);
+              // 清除分析结果，需要重新分析
+              if (analysisResult) {
+                hasAutoAnalyzed.current = false;
+              }
+            }}
           />
 
           {/* 策略笔记 - Always visible */}
@@ -2456,6 +2625,7 @@ export default function AnalyzerPage() {
               selectedActions={selectedActions}
               onActionsChange={setSelectedActions}
               analysisActions={analysisResult.actions}
+              onFilteredActionsChange={setFilteredActions}
             />
           )}
 
