@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { RANKS, GTO_RANGES, GTO_VS_RFI_RANGES, GTO_RANGES_100BB, getGTOStrategy, getStrategyByStackDepth, ALL_HANDS } from '@gto/core';
 import type { Position, GTOStrategy, GTOHandStrategy, GameType, StackDepth } from '@gto/core';
+import { useResponsive } from '@/hooks';
 
 // Action line types
 type ActionLine = 'rfi' | 'vs_rfi';
@@ -19,6 +20,175 @@ const ACTION_COLORS = {
   allin: '#6b1f1f',
 };
 
+// Common style constants to reduce repetition
+const COLORS = {
+  background: '#0a0a0f',
+  surface: '#1a1a1a',
+  surfaceLight: '#252525',
+  surfaceHover: '#2a2a2a',
+  border: '#333',
+  borderLight: '#3a3a3a',
+  text: '#fff',
+  textSecondary: '#888',
+  textMuted: '#666',
+  primary: '#22d3bf',
+  success: '#4ade80',
+  activeBackground: '#2d4a3a',
+  activeBorder: '#4a9a6a',
+};
+
+const COMMON_STYLES = {
+  card: {
+    background: COLORS.surfaceLight,
+    borderRadius: '12px',
+    padding: '16px',
+  } as React.CSSProperties,
+  button: {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+  } as React.CSSProperties,
+  tabButton: (isActive: boolean) => ({
+    background: 'transparent',
+    border: 'none',
+    color: isActive ? COLORS.text : COLORS.textMuted,
+    fontSize: '14px',
+    cursor: 'pointer',
+    padding: '0 0 6px 0',
+    borderBottom: isActive ? `2px solid ${COLORS.primary}` : '2px solid transparent',
+    marginBottom: '-11px',
+  } as React.CSSProperties),
+  pillButton: (isActive: boolean, activeColor = COLORS.primary) => ({
+    padding: '6px 14px',
+    background: isActive ? COLORS.borderLight : 'transparent',
+    border: isActive ? `1px solid ${COLORS.border}` : 'none',
+    borderRadius: '4px',
+    color: isActive ? COLORS.text : COLORS.textSecondary,
+    fontSize: '13px',
+    cursor: 'pointer',
+  } as React.CSSProperties),
+};
+
+// Dynamic calculation helpers
+const calculateRFIRaiseSize = (stackDepth: StackDepth, position: Position): number => {
+  // Standard raise sizes based on position and stack depth
+  if (stackDepth <= 20) return 2; // Short stack
+  if (stackDepth <= 50) return 2.25;
+  if (position === 'SB') return 3; // SB raises larger
+  return 2.5; // Standard open
+};
+
+const calculate3BetSize = (stackDepth: StackDepth, isInPosition: boolean, rfiSize: number): number => {
+  // 3-bet sizing: OOP 3-4x, IP 2.5-3x the open
+  if (stackDepth <= 20) return stackDepth; // All-in at short stacks
+  if (stackDepth <= 50) return Math.min(isInPosition ? rfiSize * 2.5 : rfiSize * 3.5, stackDepth);
+  return isInPosition ? rfiSize * 3 : rfiSize * 4;
+};
+
+const calculatePotSize = (actionLine: ActionLine, stackDepth: StackDepth, position: Position, rfiSize: number): number => {
+  if (actionLine === 'rfi') {
+    // Preflop pot before RFI: SB (0.5) + BB (1) = 1.5bb
+    return 1.5;
+  } else {
+    // vs RFI: SB (0.5) + BB (1) + RFI size = pot
+    return 1.5 + rfiSize;
+  }
+};
+
+const calculatePotOdds = (callSize: number, potSize: number): number => {
+  // Pot odds = call size / (pot + call size) * 100
+  return (callSize / (potSize + callSize)) * 100;
+};
+
+const calculateEffectiveStack = (stackDepth: StackDepth, position: Position, actionLine: ActionLine): number => {
+  // Calculate effective stack after blinds are posted
+  if (position === 'SB') return stackDepth - 0.5;
+  if (position === 'BB') return stackDepth - 1;
+  return stackDepth;
+};
+
+// Position marker positions for 6-max table layout
+type TablePosition = 'UTG' | 'HJ' | 'CO' | 'BTN' | 'SB' | 'BB';
+const POSITION_CONFIGS: Record<TablePosition, { style: React.CSSProperties }> = {
+  UTG: { style: { position: 'absolute', bottom: '-12px', left: '12%', transform: 'translateX(-50%)' } },
+  HJ: { style: { position: 'absolute', top: '50%', left: '-12px', transform: 'translateY(-50%)' } },
+  CO: { style: { position: 'absolute', top: '-12px', left: '12%', transform: 'translateX(-50%)' } },
+  BTN: { style: { position: 'absolute', top: '-12px', right: '12%', transform: 'translateX(50%)' } },
+  SB: { style: { position: 'absolute', top: '50%', right: '-12px', transform: 'translateY(-50%)' } },
+  BB: { style: { position: 'absolute', bottom: '-12px', right: '12%', transform: 'translateX(50%)' } },
+};
+
+// Position Marker Component - reduces code duplication
+function PositionMarker({
+  position,
+  isActive,
+  stackDepth,
+  chip,
+  showDButton,
+}: {
+  position: TablePosition;
+  isActive: boolean;
+  stackDepth: number;
+  chip?: { amount: number; label: string };
+  showDButton?: boolean;
+}) {
+  const config = POSITION_CONFIGS[position];
+
+  return (
+    <div style={config.style as React.CSSProperties}>
+      <div style={{
+        padding: '5px 8px',
+        background: isActive ? '#2d4a3a' : '#2a2a2a',
+        border: isActive ? '2px solid #4a9a6a' : '2px solid #3a3a3a',
+        borderRadius: '6px',
+        fontSize: '10px',
+        textAlign: 'center',
+        minWidth: '36px',
+        position: 'relative',
+      }}>
+        <div style={{ fontWeight: 700, color: isActive ? '#4ade80' : '#fff' }}>{position}</div>
+        <div style={{ fontSize: '9px', color: '#888' }}>{stackDepth}</div>
+
+        {/* D button for BTN */}
+        {showDButton && (
+          <div style={{
+            position: 'absolute',
+            right: '-10px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '16px',
+            height: '16px',
+            background: '#fff',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '9px',
+            fontWeight: 700,
+            color: '#000',
+          }}>D</div>
+        )}
+
+        {/* Chip indicator for SB/BB */}
+        {chip && (
+          <div style={{
+            position: 'absolute',
+            left: '-20px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '2px',
+          }}>
+            <div style={{ width: '6px', height: '6px', background: '#3b82f6', borderRadius: '50%' }} />
+            <span style={{ fontSize: '8px', color: '#888' }}>{chip.label}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Scenario Configuration Component
 function ScenarioConfig({
   gameType,
@@ -31,6 +201,8 @@ function ScenarioConfig({
   onPositionChange,
   onActionLineChange,
   onVsPositionChange,
+  dynamicValues,
+  isMobile,
 }: {
   gameType: GameType;
   stackDepth: StackDepth;
@@ -42,6 +214,16 @@ function ScenarioConfig({
   onPositionChange: (v: Position) => void;
   onActionLineChange: (v: ActionLine) => void;
   onVsPositionChange: (v: Position) => void;
+  dynamicValues: {
+    rfiSize: number;
+    threeBetSize: number;
+    potSize: number;
+    potOdds: number;
+    callSize: number;
+    heroEffective: number;
+    villainEffective: number;
+  };
+  isMobile: boolean;
 }) {
   const gameTypes: { value: GameType; label: string }[] = [
     { value: 'cash', label: 'Cash' },
@@ -231,8 +413,8 @@ function ScenarioConfig({
             BB
           </span>
           <span style={{ color: '#888', fontSize: '13px' }}>vs</span>
-          {/* Raiser position selector */}
-          {['UTG', 'HJ', 'CO', 'BTN', 'SB'].map((vs) => (
+          {/* Raiser position selector - available: UTG, HJ, CO, BTN (has data in GTO_VS_RFI_RANGES) */}
+          {['UTG', 'HJ', 'CO', 'BTN'].map((vs) => (
             <button
               key={vs}
               onClick={() => onVsPositionChange(vs as Position)}
@@ -244,8 +426,7 @@ function ScenarioConfig({
                 fontSize: '12px',
                 fontWeight: 600,
                 color: '#fff',
-                cursor: vs === 'BTN' ? 'pointer' : 'not-allowed',
-                opacity: vs === 'BTN' ? 1 : 0.5,
+                cursor: 'pointer',
               }}
             >
               {vs}
@@ -256,11 +437,15 @@ function ScenarioConfig({
 
       <div style={{ flex: 1 }} />
 
-      {/* Right side info */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: '#888', fontSize: '13px', paddingRight: '8px' }}>
-        <span>{actionLine === 'rfi' ? '1.5 BB' : '3.5 BB'}</span>
-        <span>底池赔率: {actionLine === 'rfi' ? '40%' : '28%'}</span>
-      </div>
+      {/* Right side info - dynamic values */}
+      {!isMobile && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: '#888', fontSize: '13px', paddingRight: '8px' }}>
+          <span>{dynamicValues.potSize.toFixed(1)} BB</span>
+          <span>底池赔率: {dynamicValues.potOdds.toFixed(0)}%</span>
+          {actionLine === 'rfi' && <span>加注: {dynamicValues.rfiSize}x</span>}
+          {actionLine === 'vs_rfi' && <span>3-Bet: {dynamicValues.threeBetSize.toFixed(0)}bb</span>}
+        </div>
+      )}
     </div>
   );
 }
@@ -351,20 +536,22 @@ function MatrixCell({ hand, strategy, isSelected, onClick, actionLine, isFiltere
 }
 
 // Enlarged detail card for selected hand with EV info
-function HandDetailCard({ hand, strategy, onClose }: {
+function HandDetailCard({ hand, strategy, onClose, actionLine, rfiSize }: {
   hand: string;
   strategy?: GTOHandStrategy;
   onClose: () => void;
+  actionLine: ActionLine;
+  rfiSize: number;
 }) {
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
-  // 触发入场动画
-  useState(() => {
+  // 触发入场动画 - Fixed: use useEffect instead of useState
+  useEffect(() => {
     requestAnimationFrame(() => {
       setIsVisible(true);
     });
-  });
+  }, []);
 
   // 处理关闭，先播放动画再调用 onClose
   const handleClose = () => {
@@ -376,14 +563,18 @@ function HandDetailCard({ hand, strategy, onClose }: {
   };
 
   const raiseAction = strategy?.actions.find(a => a.action === 'raise');
+  const callAction = strategy?.actions.find(a => a.action === 'call');
   const foldAction = strategy?.actions.find(a => a.action === 'fold');
   const allinAction = strategy?.actions.find(a => a.action === 'allin');
 
   const raiseFreq = raiseAction?.frequency || 0;
+  const callFreq = callAction?.frequency || 0;
   const foldFreq = foldAction?.frequency || 0;
   const allinFreq = allinAction?.frequency || 0;
   const raiseEV = raiseAction?.ev || 0;
-  const raiseSize = raiseAction?.size || 2.5;
+  const callEV = callAction?.ev || 0;
+  // Use provided rfiSize for dynamic sizing
+  const displayRaiseSize = raiseAction?.size || rfiSize;
 
   const getCellBackground = () => {
     if (!strategy) return ACTION_COLORS.fold;
@@ -460,10 +651,25 @@ function HandDetailCard({ hand, strategy, onClose }: {
           </>
         )}
 
-        {/* Raise row */}
-        <div style={{ color: '#fff', fontWeight: 500 }}>加注 {raiseSize}x</div>
-        <div style={{ color: '#4ade80', textAlign: 'right' }}>{raiseEV.toFixed(2)}bb</div>
-        <div style={{ color: '#fff', fontWeight: 600, textAlign: 'right' }}>{raiseFreq}%</div>
+        {/* Raise/3-Bet row */}
+        {raiseFreq > 0 && (
+          <>
+            <div style={{ color: '#fff', fontWeight: 500 }}>
+              {actionLine === 'vs_rfi' ? '3-Bet' : '加注'} {displayRaiseSize.toFixed(1)}x
+            </div>
+            <div style={{ color: '#4ade80', textAlign: 'right' }}>{raiseEV.toFixed(2)}bb</div>
+            <div style={{ color: '#fff', fontWeight: 600, textAlign: 'right' }}>{raiseFreq}%</div>
+          </>
+        )}
+
+        {/* Call row - only for vs RFI */}
+        {actionLine === 'vs_rfi' && callFreq > 0 && (
+          <>
+            <div style={{ color: '#fff', fontWeight: 500 }}>跟注</div>
+            <div style={{ color: '#4ecdc4', textAlign: 'right' }}>{callEV.toFixed(2)}bb</div>
+            <div style={{ color: '#fff', fontWeight: 600, textAlign: 'right' }}>{callFreq}%</div>
+          </>
+        )}
 
         {/* Fold row */}
         <div style={{ color: '#fff', fontWeight: 500 }}>弃牌</div>
@@ -491,6 +697,7 @@ function HandDetailCard({ hand, strategy, onClose }: {
 }
 
 export default function SolutionsPage() {
+  const { isMobile, isTablet, isMobileOrTablet } = useResponsive();
   const [gameType, setGameType] = useState<GameType>('cash');
   const [stackDepth, setStackDepth] = useState<StackDepth>(200);
   const [selectedPosition, setSelectedPosition] = useState<Position>('HJ');
@@ -500,10 +707,47 @@ export default function SolutionsPage() {
   const [selectedTab, setSelectedTab] = useState<'overview' | 'table' | 'equity'>('overview');
   const [selectedHandTab, setSelectedHandTab] = useState<'hands' | 'overview' | 'filter' | 'blockers'>('hands');
   const [detailCardPosition, setDetailCardPosition] = useState<{ x: number; y: number } | null>(null);
+  const [showMobilePanel, setShowMobilePanel] = useState(false);
+  const [viewTab, setViewTab] = useState<'range' | 'breakdown' | 'report'>('range');
 
   // Filter states
   const [actionFilter, setActionFilter] = useState<ActionFilter>('all');
   const [handTypeFilter, setHandTypeFilter] = useState<HandTypeFilter>('all');
+
+  // Dynamic calculations based on scenario
+  const dynamicValues = useMemo(() => {
+    const rfiSize = calculateRFIRaiseSize(stackDepth, selectedPosition);
+    const threeBetSize = calculate3BetSize(stackDepth, false, rfiSize); // BB is OOP vs all positions
+    const potSize = calculatePotSize(actionLine, stackDepth, selectedPosition, rfiSize);
+
+    // Calculate pot odds
+    let callSize: number;
+    let potOdds: number;
+
+    if (actionLine === 'rfi') {
+      // For RFI, call size is 0 (we're opening)
+      callSize = rfiSize - 1; // Minus BB already posted
+      potOdds = calculatePotOdds(rfiSize, potSize);
+    } else {
+      // vs RFI: need to call the raise
+      callSize = rfiSize - 1; // BB already has 1bb in
+      potOdds = calculatePotOdds(callSize, potSize);
+    }
+
+    // Calculate effective stacks for each position
+    const heroEffective = calculateEffectiveStack(stackDepth, actionLine === 'rfi' ? selectedPosition : 'BB', actionLine);
+    const villainEffective = calculateEffectiveStack(stackDepth, actionLine === 'rfi' ? 'BB' : vsPosition, actionLine);
+
+    return {
+      rfiSize,
+      threeBetSize,
+      potSize,
+      potOdds,
+      callSize,
+      heroEffective,
+      villainEffective,
+    };
+  }, [stackDepth, selectedPosition, actionLine, vsPosition]);
 
   // Get real GTO data based on action line and stack depth
   const gtoStrategy = useMemo(() => {
@@ -596,18 +840,20 @@ export default function SolutionsPage() {
         onPositionChange={setSelectedPosition}
         onActionLineChange={setActionLine}
         onVsPositionChange={setVsPosition}
+        dynamicValues={dynamicValues}
+        isMobile={isMobile}
       />
 
-      {/* Row 2: Strategy tabs */}
+      {/* Row 2: Strategy tabs - responsive */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        height: '36px',
+        flexWrap: isMobile ? 'wrap' : 'nowrap',
         minHeight: '36px',
-        padding: '0 8px',
+        padding: isMobile ? '6px 8px' : '0 8px',
         background: '#1e1e1e',
         borderBottom: '1px solid #333',
-        gap: '4px',
+        gap: isMobile ? '6px' : '4px',
         flexShrink: 0,
       }}>
         {/* Action Line indicator */}
@@ -615,41 +861,50 @@ export default function SolutionsPage() {
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          padding: '6px 12px',
+          padding: isMobile ? '4px 8px' : '6px 12px',
           background: '#2a2a2a',
           borderRadius: '4px',
+          flexShrink: 0,
         }}>
-          <span style={{ fontSize: '13px' }}>
+          <span style={{ fontSize: isMobile ? '11px' : '13px', whiteSpace: 'nowrap' }}>
             {actionLine === 'rfi'
-              ? `${selectedPosition} RFI (率先加注)`
-              : `BB vs ${vsPosition} (面对加注)`}
+              ? `${selectedPosition} RFI`
+              : `BB vs ${vsPosition}`}
           </span>
         </div>
 
-        <div style={{ width: '1px', height: '20px', background: '#444', margin: '0 8px' }} />
+        {!isMobile && <div style={{ width: '1px', height: '20px', background: '#444', margin: '0 8px' }} />}
 
         {/* View tabs */}
-        {['范围', 'Breakdown', '报告'].map((tab, i) => (
-          <button
-            key={tab}
-            style={{
-              padding: '6px 14px',
-              background: i === 0 ? '#3a3a3a' : 'transparent',
-              border: i === 0 ? '1px solid #555' : 'none',
-              borderRadius: '4px',
-              color: i === 0 ? '#fff' : '#888',
-              fontSize: '13px',
-              cursor: 'pointer',
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+        <div style={{ display: 'flex', gap: '4px' }}>
+          {[
+            { key: 'range', label: '范围' },
+            { key: 'breakdown', label: 'Breakdown' },
+            { key: 'report', label: '报告' },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setViewTab(tab.key as typeof viewTab)}
+              style={{
+                padding: isMobile ? '4px 8px' : '6px 14px',
+                background: viewTab === tab.key ? '#3a3a3a' : 'transparent',
+                border: viewTab === tab.key ? '1px solid #555' : 'none',
+                borderRadius: '4px',
+                color: viewTab === tab.key ? '#fff' : '#888',
+                fontSize: isMobile ? '11px' : '13px',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
         <div style={{ flex: 1 }} />
 
-        {/* Summary stats */}
-        {summary && (
+        {/* Summary stats - hide on mobile to save space */}
+        {summary && !isMobile && (
           <div style={{ display: 'flex', gap: '16px', fontSize: '12px', marginRight: '8px' }}>
             <span style={{ color: '#888' }}>
               可打手牌: <span style={{ color: '#4ade80', fontWeight: 600 }}>{summary.playableHands}</span>
@@ -659,13 +914,34 @@ export default function SolutionsPage() {
             </span>
           </div>
         )}
+
+        {/* Mobile summary stats - compact */}
+        {summary && isMobile && (
+          <div style={{ display: 'flex', gap: '8px', fontSize: '10px' }}>
+            <span style={{ color: '#4ade80', fontWeight: 600 }}>{summary.playableHands}牌</span>
+            <span style={{ color: '#4ade80', fontWeight: 600 }}>{summary.avgEV.toFixed(2)}bb</span>
+          </div>
+        )}
       </div>
 
-      {/* Main Content */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left: Range Matrix - 60% width */}
+      {/* Main Content - responsive layout */}
+      {viewTab === 'range' && (
+      <div style={{
+        display: 'flex',
+        flex: 1,
+        overflow: isMobileOrTablet ? 'auto' : 'hidden',
+        flexDirection: isMobileOrTablet ? 'column' : 'row',
+      }}>
+        {/* Left/Top: Range Matrix - 60% width on desktop, full width on mobile */}
         <div
-          style={{ flex: '0 0 60%', display: 'flex', overflow: 'hidden', position: 'relative' }}
+          style={{
+            flex: isMobileOrTablet ? '0 0 auto' : '0 0 60%',
+            display: 'flex',
+            overflow: 'hidden',
+            position: 'relative',
+            height: isMobileOrTablet ? '50vh' : 'auto',
+            minHeight: isMobileOrTablet ? '300px' : 'auto',
+          }}
           onClick={() => {
             setSelectedHand(null);
             setDetailCardPosition(null);
@@ -731,13 +1007,25 @@ export default function SolutionsPage() {
                   setSelectedHand(null);
                   setDetailCardPosition(null);
                 }}
+                actionLine={actionLine}
+                rfiSize={dynamicValues.rfiSize}
               />
             </div>
           )}
         </div>
 
-        {/* Right Panel - 40% width */}
-        <div style={{ flex: '0 0 40%', background: '#1a1a1a', borderLeft: '1px solid #333', padding: '12px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        {/* Right/Bottom Panel - 40% width on desktop, full width on mobile */}
+        <div style={{
+          flex: isMobileOrTablet ? '1 0 auto' : '0 0 40%',
+          minHeight: isMobileOrTablet ? '45vh' : 'auto',
+          background: '#1a1a1a',
+          borderLeft: isMobileOrTablet ? 'none' : '1px solid #333',
+          borderTop: isMobileOrTablet ? '1px solid #333' : 'none',
+          padding: isMobile ? '8px' : '12px',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
           {/* Top tabs */}
           <div style={{ display: 'flex', gap: '24px', marginBottom: '12px', borderBottom: '1px solid #333', paddingBottom: '8px', flexShrink: 0 }}>
             {[
@@ -792,7 +1080,7 @@ export default function SolutionsPage() {
                   position: 'relative',
                   background: 'linear-gradient(180deg, #1a2a22 0%, #162018 100%)',
                 }}>
-                  {/* 底池信息 */}
+                  {/* 底池信息 - dynamic */}
                   <div style={{
                     position: 'absolute',
                     top: '50%',
@@ -800,152 +1088,17 @@ export default function SolutionsPage() {
                     transform: 'translate(-50%, -50%)',
                     textAlign: 'center',
                   }}>
-                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>1.5 bb</div>
-                    <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>底池赔率: 40%</div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>{dynamicValues.potSize.toFixed(1)} bb</div>
+                    <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>底池赔率: {dynamicValues.potOdds.toFixed(0)}%</div>
                   </div>
 
-                  {/* 位置标记 - 6max布局 */}
-                  {/* UTG - 左下 */}
-                  <div style={{ position: 'absolute', bottom: '-12px', left: '12%', transform: 'translateX(-50%)' }}>
-                    <div style={{
-                      padding: '5px 8px',
-                      background: selectedPosition === 'UTG' ? '#2d4a3a' : '#2a2a2a',
-                      border: selectedPosition === 'UTG' ? '2px solid #4a9a6a' : '2px solid #3a3a3a',
-                      borderRadius: '6px',
-                      fontSize: '10px',
-                      textAlign: 'center',
-                      minWidth: '36px',
-                    }}>
-                      <div style={{ fontWeight: 700, color: selectedPosition === 'UTG' ? '#4ade80' : '#fff' }}>UTG</div>
-                      <div style={{ fontSize: '9px', color: '#888' }}>{stackDepth}</div>
-                    </div>
-                  </div>
-
-                  {/* HJ - 左侧 */}
-                  <div style={{ position: 'absolute', top: '50%', left: '-12px', transform: 'translateY(-50%)' }}>
-                    <div style={{
-                      padding: '5px 8px',
-                      background: selectedPosition === 'HJ' ? '#2d4a3a' : '#2a2a2a',
-                      border: selectedPosition === 'HJ' ? '2px solid #4a9a6a' : '2px solid #3a3a3a',
-                      borderRadius: '6px',
-                      fontSize: '10px',
-                      textAlign: 'center',
-                      minWidth: '36px',
-                    }}>
-                      <div style={{ fontWeight: 700, color: selectedPosition === 'HJ' ? '#4ade80' : '#fff' }}>HJ</div>
-                      <div style={{ fontSize: '9px', color: '#888' }}>{stackDepth}</div>
-                    </div>
-                  </div>
-
-                  {/* CO - 左上 */}
-                  <div style={{ position: 'absolute', top: '-12px', left: '12%', transform: 'translateX(-50%)' }}>
-                    <div style={{
-                      padding: '5px 8px',
-                      background: selectedPosition === 'CO' ? '#2d4a3a' : '#2a2a2a',
-                      border: selectedPosition === 'CO' ? '2px solid #4a9a6a' : '2px solid #3a3a3a',
-                      borderRadius: '6px',
-                      fontSize: '10px',
-                      textAlign: 'center',
-                      minWidth: '36px',
-                    }}>
-                      <div style={{ fontWeight: 700, color: selectedPosition === 'CO' ? '#4ade80' : '#fff' }}>CO</div>
-                      <div style={{ fontSize: '9px', color: '#888' }}>{stackDepth}</div>
-                    </div>
-                  </div>
-
-                  {/* BTN - 右上 */}
-                  <div style={{ position: 'absolute', top: '-12px', right: '12%', transform: 'translateX(50%)' }}>
-                    <div style={{
-                      padding: '5px 8px',
-                      background: selectedPosition === 'BTN' ? '#2d4a3a' : '#2a2a2a',
-                      border: selectedPosition === 'BTN' ? '2px solid #4a9a6a' : '2px solid #3a3a3a',
-                      borderRadius: '6px',
-                      fontSize: '10px',
-                      textAlign: 'center',
-                      minWidth: '36px',
-                      position: 'relative',
-                    }}>
-                      <div style={{ fontWeight: 700, color: selectedPosition === 'BTN' ? '#4ade80' : '#fff' }}>BTN</div>
-                      <div style={{ fontSize: '9px', color: '#888' }}>{stackDepth}</div>
-                      {/* D button */}
-                      <div style={{
-                        position: 'absolute',
-                        right: '-10px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        width: '16px',
-                        height: '16px',
-                        background: '#fff',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '9px',
-                        fontWeight: 700,
-                        color: '#000',
-                      }}>D</div>
-                    </div>
-                  </div>
-
-                  {/* SB - 右侧 */}
-                  <div style={{ position: 'absolute', top: '50%', right: '-12px', transform: 'translateY(-50%)' }}>
-                    <div style={{
-                      padding: '5px 8px',
-                      background: selectedPosition === 'SB' ? '#2d4a3a' : '#2a2a2a',
-                      border: selectedPosition === 'SB' ? '2px solid #4a9a6a' : '2px solid #3a3a3a',
-                      borderRadius: '6px',
-                      fontSize: '10px',
-                      textAlign: 'center',
-                      minWidth: '36px',
-                      position: 'relative',
-                    }}>
-                      <div style={{ fontWeight: 700, color: selectedPosition === 'SB' ? '#4ade80' : '#fff' }}>SB</div>
-                      <div style={{ fontSize: '9px', color: '#888' }}>199.5</div>
-                      {/* SB chip */}
-                      <div style={{
-                        position: 'absolute',
-                        left: '-20px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '2px',
-                      }}>
-                        <div style={{ width: '6px', height: '6px', background: '#3b82f6', borderRadius: '50%' }} />
-                        <span style={{ fontSize: '8px', color: '#888' }}>0.5</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* BB - 右下 */}
-                  <div style={{ position: 'absolute', bottom: '-12px', right: '12%', transform: 'translateX(50%)' }}>
-                    <div style={{
-                      padding: '5px 8px',
-                      background: '#2a2a2a',
-                      border: '2px solid #3a3a3a',
-                      borderRadius: '6px',
-                      fontSize: '10px',
-                      textAlign: 'center',
-                      minWidth: '36px',
-                      position: 'relative',
-                    }}>
-                      <div style={{ fontWeight: 700, color: '#fff' }}>BB</div>
-                      <div style={{ fontSize: '9px', color: '#888' }}>199</div>
-                      {/* BB chip */}
-                      <div style={{
-                        position: 'absolute',
-                        left: '-20px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '2px',
-                      }}>
-                        <div style={{ width: '6px', height: '6px', background: '#3b82f6', borderRadius: '50%' }} />
-                        <span style={{ fontSize: '8px', color: '#888' }}>1</span>
-                      </div>
-                    </div>
-                  </div>
+                  {/* 位置标记 - 使用 PositionMarker 组件 */}
+                  <PositionMarker position="UTG" isActive={selectedPosition === 'UTG'} stackDepth={stackDepth} />
+                  <PositionMarker position="HJ" isActive={selectedPosition === 'HJ'} stackDepth={stackDepth} />
+                  <PositionMarker position="CO" isActive={selectedPosition === 'CO'} stackDepth={stackDepth} />
+                  <PositionMarker position="BTN" isActive={selectedPosition === 'BTN'} stackDepth={stackDepth} showDButton />
+                  <PositionMarker position="SB" isActive={selectedPosition === 'SB'} stackDepth={stackDepth - 0.5} chip={{ amount: 0.5, label: '0.5' }} />
+                  <PositionMarker position="BB" isActive={actionLine === 'vs_rfi'} stackDepth={stackDepth - 1} chip={{ amount: 1, label: '1' }} />
                 </div>
               </div>
 
@@ -981,21 +1134,23 @@ export default function SolutionsPage() {
                   }}>{actionLine === 'rfi' ? 'RFI' : `vs ${vsPosition}`}</span>
                 </div>
 
-                {/* 统计数据 */}
+                {/* 统计数据 - dynamic calculations */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#888', fontSize: '12px' }}>EV/底池</span>
                     <span style={{ color: '#4ade80', fontSize: '14px', fontWeight: 700 }}>
-                      {summary ? `${(summary.avgEV / 1.5 * 100).toFixed(1)}%` : '-'}
+                      {summary ? `${(summary.avgEV / dynamicValues.potSize * 100).toFixed(1)}%` : '-'}
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#888', fontSize: '12px' }}>权益</span>
-                    <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>-</span>
+                    <span style={{ color: '#888', fontSize: '12px' }}>有效筹码</span>
+                    <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{dynamicValues.heroEffective}bb</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#888', fontSize: '12px' }}>EQR</span>
-                    <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>-</span>
+                    <span style={{ color: '#888', fontSize: '12px' }}>SPR</span>
+                    <span style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>
+                      {(dynamicValues.heroEffective / dynamicValues.potSize).toFixed(1)}
+                    </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#888', fontSize: '12px' }}>组合</span>
@@ -1121,7 +1276,7 @@ export default function SolutionsPage() {
                   <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
                     {/* 3-Bet */}
                     <div style={{ flex: 1, background: ACTION_COLORS.raise, borderRadius: '6px', padding: '12px' }}>
-                      <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>3-Bet 11bb</div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>3-Bet {dynamicValues.threeBetSize.toFixed(0)}bb</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                         <div style={{ fontSize: '24px', fontWeight: 700 }}>{raiseFreq.toFixed(1)}%</div>
                         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', textAlign: 'right' }}>
@@ -1167,7 +1322,7 @@ export default function SolutionsPage() {
                 <div style={{ display: 'flex', gap: '4px', marginBottom: '6px' }}>
                   {/* Allin */}
                   <div style={{ flex: 1, background: ACTION_COLORS.allin, borderRadius: '6px', padding: '12px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Allin 200</div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Allin {stackDepth}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                       <div style={{ fontSize: '24px', fontWeight: 700 }}>{allinFreq}%</div>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', textAlign: 'right' }}>
@@ -1177,7 +1332,7 @@ export default function SolutionsPage() {
                   </div>
                   {/* Raise */}
                   <div style={{ flex: 1, background: ACTION_COLORS.raise, borderRadius: '6px', padding: '12px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Raise 2.5</div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>Raise {dynamicValues.rfiSize}x</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                       <div style={{ fontSize: '24px', fontWeight: 700 }}>{raiseFreq.toFixed(1)}%</div>
                       <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', textAlign: 'right' }}>
@@ -1867,6 +2022,200 @@ export default function SolutionsPage() {
           })()}
         </div>
       </div>
+      )}
+
+      {/* Breakdown View - 按牌型分类统计 */}
+      {viewTab === 'breakdown' && (
+        <div style={{
+          flex: 1,
+          overflow: 'auto',
+          padding: isMobile ? '16px' : '24px',
+          background: '#1a1a1a',
+        }}>
+          <h2 style={{ fontSize: '18px', color: '#fff', marginBottom: '20px' }}>
+            范围分解 - {actionLine === 'rfi' ? `${selectedPosition} RFI` : `BB vs ${vsPosition}`}
+          </h2>
+
+          {/* 按牌力分类 */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+            {/* 高对 */}
+            <div style={{ background: '#252525', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ fontSize: '14px', color: '#888', marginBottom: '8px' }}>高对 (AA-TT)</div>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: ACTION_COLORS.raise }}>
+                {(() => {
+                  const pairs = ['AA', 'KK', 'QQ', 'JJ', 'TT'];
+                  let raiseCount = 0;
+                  pairs.forEach(p => {
+                    const s = ranges instanceof Map ? ranges.get(p) : ranges[p];
+                    if (s) raiseCount += (s as GTOHandStrategy).actions.find(a => a.action === 'raise')?.frequency || 0;
+                  });
+                  return (raiseCount / pairs.length).toFixed(0) + '%';
+                })()}
+              </div>
+              <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>平均加注频率</div>
+            </div>
+
+            {/* 中对 */}
+            <div style={{ background: '#252525', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ fontSize: '14px', color: '#888', marginBottom: '8px' }}>中对 (99-66)</div>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: ACTION_COLORS.raise }}>
+                {(() => {
+                  const pairs = ['99', '88', '77', '66'];
+                  let raiseCount = 0;
+                  pairs.forEach(p => {
+                    const s = ranges instanceof Map ? ranges.get(p) : ranges[p];
+                    if (s) raiseCount += (s as GTOHandStrategy).actions.find(a => a.action === 'raise')?.frequency || 0;
+                  });
+                  return (raiseCount / pairs.length).toFixed(0) + '%';
+                })()}
+              </div>
+              <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>平均加注频率</div>
+            </div>
+
+            {/* 小对 */}
+            <div style={{ background: '#252525', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ fontSize: '14px', color: '#888', marginBottom: '8px' }}>小对 (55-22)</div>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: ACTION_COLORS.raise }}>
+                {(() => {
+                  const pairs = ['55', '44', '33', '22'];
+                  let raiseCount = 0;
+                  pairs.forEach(p => {
+                    const s = ranges instanceof Map ? ranges.get(p) : ranges[p];
+                    if (s) raiseCount += (s as GTOHandStrategy).actions.find(a => a.action === 'raise')?.frequency || 0;
+                  });
+                  return (raiseCount / pairs.length).toFixed(0) + '%';
+                })()}
+              </div>
+              <div style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>平均加注频率</div>
+            </div>
+          </div>
+
+          {/* 同花连张 */}
+          <div style={{ background: '#252525', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+            <div style={{ fontSize: '14px', color: '#888', marginBottom: '12px' }}>同花连张</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {['AKs', 'KQs', 'QJs', 'JTs', 'T9s', '98s', '87s', '76s', '65s', '54s'].map(hand => {
+                const s = ranges instanceof Map ? ranges.get(hand) : ranges[hand];
+                const raiseFreq = s ? (s as GTOHandStrategy).actions.find(a => a.action === 'raise')?.frequency || 0 : 0;
+                return (
+                  <div key={hand} style={{
+                    padding: '6px 10px',
+                    background: raiseFreq > 50 ? ACTION_COLORS.raise : raiseFreq > 0 ? '#3a3a3a' : '#2a2a2a',
+                    borderRadius: '6px',
+                    color: raiseFreq > 0 ? '#fff' : '#666',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                  }}>
+                    {hand}: {raiseFreq}%
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Broadway */}
+          <div style={{ background: '#252525', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '14px', color: '#888', marginBottom: '12px' }}>Broadway 组合</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {['AKo', 'AQo', 'AJo', 'ATo', 'KQo', 'KJo', 'QJo'].map(hand => {
+                const s = ranges instanceof Map ? ranges.get(hand) : ranges[hand];
+                const raiseFreq = s ? (s as GTOHandStrategy).actions.find(a => a.action === 'raise')?.frequency || 0 : 0;
+                return (
+                  <div key={hand} style={{
+                    padding: '6px 10px',
+                    background: raiseFreq > 50 ? ACTION_COLORS.raise : raiseFreq > 0 ? '#3a3a3a' : '#2a2a2a',
+                    borderRadius: '6px',
+                    color: raiseFreq > 0 ? '#fff' : '#666',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                  }}>
+                    {hand}: {raiseFreq}%
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report View - 详细报告 */}
+      {viewTab === 'report' && (
+        <div style={{
+          flex: 1,
+          overflow: 'auto',
+          padding: isMobile ? '16px' : '24px',
+          background: '#1a1a1a',
+        }}>
+          <h2 style={{ fontSize: '18px', color: '#fff', marginBottom: '20px' }}>
+            策略报告 - {actionLine === 'rfi' ? `${selectedPosition} RFI` : `BB vs ${vsPosition}`}
+          </h2>
+
+          {/* 总体统计 */}
+          <div style={{ background: '#252525', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+            <div style={{ fontSize: '14px', color: '#888', marginBottom: '16px' }}>总体统计</div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '16px' }}>
+              <div>
+                <div style={{ fontSize: '28px', fontWeight: 700, color: '#4ade80' }}>{summary?.playableHands || 0}</div>
+                <div style={{ fontSize: '12px', color: '#888' }}>可打手牌</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '28px', fontWeight: 700, color: ACTION_COLORS.raise }}>{summary?.raiseFreq.toFixed(1)}%</div>
+                <div style={{ fontSize: '12px', color: '#888' }}>加注频率</div>
+              </div>
+              {actionLine === 'vs_rfi' && (
+                <div>
+                  <div style={{ fontSize: '28px', fontWeight: 700, color: ACTION_COLORS.call }}>{summary?.callFreq.toFixed(1)}%</div>
+                  <div style={{ fontSize: '12px', color: '#888' }}>跟注频率</div>
+                </div>
+              )}
+              <div>
+                <div style={{ fontSize: '28px', fontWeight: 700, color: '#888' }}>{summary?.foldFreq.toFixed(1)}%</div>
+                <div style={{ fontSize: '12px', color: '#888' }}>弃牌频率</div>
+              </div>
+            </div>
+          </div>
+
+          {/* 策略要点 */}
+          <div style={{ background: '#252525', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+            <div style={{ fontSize: '14px', color: '#888', marginBottom: '16px' }}>策略要点</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '8px', height: '8px', background: '#4ade80', borderRadius: '50%' }} />
+                <span style={{ color: '#fff', fontSize: '13px' }}>
+                  {actionLine === 'rfi'
+                    ? `从${selectedPosition}位置开池加注，使用${dynamicValues.rfiSize}x的加注尺寸`
+                    : `面对${vsPosition}的开池，使用${dynamicValues.threeBetSize.toFixed(1)}x的3-bet尺寸`}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '8px', height: '8px', background: '#22d3bf', borderRadius: '50%' }} />
+                <span style={{ color: '#fff', fontSize: '13px' }}>
+                  平均期望值: {summary?.avgEV.toFixed(2)}bb
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '8px', height: '8px', background: '#9b5de5', borderRadius: '50%' }} />
+                <span style={{ color: '#fff', fontSize: '13px' }}>
+                  有效筹码: {dynamicValues.heroEffective}bb, SPR: {(dynamicValues.heroEffective / dynamicValues.potSize).toFixed(1)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 位置优势说明 */}
+          <div style={{ background: 'rgba(34, 211, 191, 0.1)', border: '1px solid rgba(34, 211, 191, 0.3)', borderRadius: '12px', padding: '20px' }}>
+            <div style={{ fontSize: '14px', color: '#22d3bf', marginBottom: '12px', fontWeight: 600 }}>位置分析</div>
+            <p style={{ color: '#888', fontSize: '13px', lineHeight: 1.6, margin: 0 }}>
+              {actionLine === 'rfi'
+                ? `${selectedPosition}是一个${['BTN', 'CO', 'HJ'].includes(selectedPosition) ? '较晚' : '较早'}的位置。` +
+                  `在此位置开池需要${['BTN', 'CO'].includes(selectedPosition) ? '相对宽松' : '谨慎选择'}的范围。` +
+                  `位置优势意味着我们可以${['BTN', 'CO'].includes(selectedPosition) ? '更多地利用位置优势进行价值下注和诈唬' : '需要更强的牌力来进入底池'}。`
+                : `作为BB面对${vsPosition}的开池加注，我们有位置劣势${vsPosition === 'BTN' ? '但面对按钮位的范围较宽' : '且对手范围较紧'}。` +
+                  `需要通过混合策略平衡我们的3-bet和跟注范围，防止被剥削。`}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
