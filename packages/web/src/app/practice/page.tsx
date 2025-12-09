@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { PokerCard } from '@gto/ui';
 import './practice.css';
 import { useUserStore, ACHIEVEMENTS } from '@/store';
+import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import AICoachFeedback from '@/components/AICoachFeedback';
 import {
   createDeck,
@@ -66,12 +68,7 @@ const AVAILABLE_VS_3BET = [
   { hero: 'UTG' as Position, threeBetter: 'HJ' as Position },
 ];
 
-const STREET_NAMES: Record<Street, string> = {
-  preflop: '翻前',
-  flop: '翻牌',
-  turn: '转牌',
-  river: '河牌',
-};
+// Legacy STREET_NAMES - replaced by STREET_NAMES_I18N in component
 
 // Range matrix display
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
@@ -240,24 +237,37 @@ interface ActionRating {
   bgColor: string;
 }
 
-function getActionRating(frequency: number): ActionRating {
-  if (frequency >= 80) {
-    return { level: 5, name: '完美', color: '#22c55e', bgColor: 'rgba(34, 197, 94, 0.15)' };
-  }
-  if (frequency >= 50) {
-    return { level: 4, name: '良好', color: '#84cc16', bgColor: 'rgba(132, 204, 22, 0.15)' };
-  }
-  if (frequency >= 20) {
-    return { level: 3, name: '小失误', color: '#eab308', bgColor: 'rgba(234, 179, 8, 0.15)' };
-  }
-  if (frequency >= 5) {
-    return { level: 2, name: '错误', color: '#f97316', bgColor: 'rgba(249, 115, 22, 0.15)' };
-  }
-  return { level: 1, name: '严重失误', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)' };
-}
+// Legacy getActionRating - replaced by getActionRatingI18n in component
 
 export default function PracticePage() {
   const { updatePracticeStats, updateDetailedStats, saveHand, settings, updateSettings, practiceStats, achievements, checkAchievements, clearRecentUnlock, savedHands, deleteHand } = useUserStore();
+  const { isMobile, isMobileOrTablet } = useResponsive();
+  const { t, locale } = useTranslation();
+
+  // Translated street names
+  const STREET_NAMES_I18N: Record<Street, string> = useMemo(() => ({
+    preflop: t.practice.streets.preflop,
+    flop: t.practice.streets.flop,
+    turn: t.practice.streets.turn,
+    river: t.practice.streets.river,
+  }), [t]);
+
+  // Translated action rating function
+  const getActionRatingI18n = useCallback((frequency: number): ActionRating => {
+    if (frequency >= 80) {
+      return { level: 5, name: t.practice.ratings.perfect, color: '#22c55e', bgColor: 'rgba(34, 197, 94, 0.15)' };
+    }
+    if (frequency >= 50) {
+      return { level: 4, name: t.practice.ratings.good, color: '#84cc16', bgColor: 'rgba(132, 204, 22, 0.15)' };
+    }
+    if (frequency >= 20) {
+      return { level: 3, name: t.practice.ratings.smallMistake, color: '#eab308', bgColor: 'rgba(234, 179, 8, 0.15)' };
+    }
+    if (frequency >= 5) {
+      return { level: 2, name: t.practice.ratings.mistake, color: '#f97316', bgColor: 'rgba(249, 115, 22, 0.15)' };
+    }
+    return { level: 1, name: t.practice.ratings.seriousMistake, color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)' };
+  }, [t]);
 
   // Sound effects using Web Audio API
   const playSound = useCallback((type: 'correct' | 'wrong' | 'click') => {
@@ -386,22 +396,35 @@ export default function PracticePage() {
   }, [weakSpotMode, activeWeakSpot]);
 
   // Get human readable weak spot name
-  const getWeakSpotDisplayName = (spot: string): string => {
+  const getWeakSpotDisplayName = useCallback((spot: string): string => {
     const parsed = parseWeakSpot(spot);
     if (!parsed) return spot;
 
     const nameMap: Record<string, Record<string, string>> = {
-      street: { preflop: '翻前', flop: '翻牌', turn: '转牌', river: '河牌' },
-      scenario: { rfi: 'RFI', vs_rfi: '面对RFI', vs_3bet: '面对3-Bet' },
-      hands: { pairs: '对子', suited: '同花', offsuit: '杂色' },
+      street: {
+        preflop: t.practice.streets.preflop,
+        flop: t.practice.streets.flop,
+        turn: t.practice.streets.turn,
+        river: t.practice.streets.river,
+      },
+      scenario: {
+        rfi: t.practice.scenarios.rfi,
+        vs_rfi: t.practice.scenarios.vsRfi,
+        vs_3bet: t.practice.scenarios.vs3bet,
+      },
+      hands: {
+        pairs: t.practice.handTypes.pairs,
+        suited: t.practice.handTypes.suited,
+        offsuit: t.practice.handTypes.offsuit,
+      },
     };
 
     if (parsed.type === 'position') {
-      return `${parsed.value} 位置`;
+      return `${parsed.value} ${t.practice.positionText}`;
     }
 
     return nameMap[parsed.type]?.[parsed.value] || parsed.value;
-  };
+  }, [t]);
 
   // Save current hand to history
   const handleSaveHand = useCallback(() => {
@@ -771,12 +794,12 @@ export default function PracticePage() {
           {/* Mini session stats */}
           <div className="mini-stats" onClick={() => setShowProgressChart(true)}>
             <span className="mini-stat">
-              <span className="mini-label">今日</span>
+              <span className="mini-label">{t.practice.today}</span>
               <span className="mini-value">{todayStats.total}</span>
             </span>
             <span className="mini-divider">·</span>
             <span className="mini-stat">
-              <span className="mini-label">准确</span>
+              <span className="mini-label">{t.practice.accurate}</span>
               <span className="mini-value">{sessionStats.total > 0 ? Math.round((sessionStats.correct / sessionStats.total) * 100) : 0}%</span>
             </span>
           </div>
@@ -796,7 +819,7 @@ export default function PracticePage() {
           {weakSpotMode && activeWeakSpot && (
             <div className="weak-spot-indicator">
               <span className="weak-spot-icon">🎯</span>
-              <span className="weak-spot-label">针对训练: {getWeakSpotDisplayName(activeWeakSpot)}</span>
+              <span className="weak-spot-label">{t.practice.targetedTraining}: {getWeakSpotDisplayName(activeWeakSpot)}</span>
               <button
                 className="weak-spot-close"
                 onClick={() => {
@@ -814,12 +837,12 @@ export default function PracticePage() {
         <div className="top-bar-right">
           <Link href="/pk" className="pk-mode-btn">
             <span className="pk-icon">⚔️</span>
-            <span className="pk-text">PK对战</span>
+            <span className="pk-text">{t.practice.pkBattle}</span>
           </Link>
           <button
             className="filter-toggle-btn-inline"
             onClick={() => setShowFilterPanel(!showFilterPanel)}
-            title="筛选设置"
+            title={t.practice.filterSettings}
           >
             <svg className="filter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
@@ -835,11 +858,11 @@ export default function PracticePage() {
       {showWeakSpotPanel && practiceStats.weakSpots.length > 0 && (
         <div className="weak-spot-panel">
           <div className="panel-header">
-            <h4>需要加强的领域</h4>
+            <h4>{t.practice.weakSpots.title}</h4>
             <button className="panel-close" onClick={() => setShowWeakSpotPanel(false)}>×</button>
           </div>
           <div className="panel-body">
-            <p className="panel-desc">以下领域准确率低于 60%，建议针对练习：</p>
+            <p className="panel-desc">{t.practice.weakSpots.description}</p>
             <div className="weak-spot-list">
               {practiceStats.weakSpots.map(spot => {
                 const parsed = parseWeakSpot(spot);
@@ -898,7 +921,7 @@ export default function PracticePage() {
         <div className="hand-history-bar">
           {scenario.streetResults.map((result, idx) => (
             <div key={idx} className={`history-item ${result.isCorrect ? 'correct' : 'wrong'}`}>
-              <span className="history-street">{STREET_NAMES[result.street as Street]}</span>
+              <span className="history-street">{STREET_NAMES_I18N[result.street as Street]}</span>
               <span className="history-stack">{scenario.heroStack}</span>
               <span className={`history-action ${result.isCorrect ? 'correct' : 'wrong'}`}>
                 {result.isCorrect && <span className="check-icon">✓</span>}
@@ -917,8 +940,8 @@ export default function PracticePage() {
           <div className="scenario-info-display">
             <span className="scenario-text">
               {scenario.heroPosition} vs. {scenario.villainPosition}, {
-                scenario.preflopScenario === 'rfi' ? 'RFI开池' :
-                scenario.preflopScenario === 'vs_rfi' ? '面对加注' : '面对3-Bet'
+                scenario.preflopScenario === 'rfi' ? t.practice.scenarios.rfiOpen :
+                scenario.preflopScenario === 'vs_rfi' ? t.practice.scenarios.vsRfi : t.practice.scenarios.vs3bet
               }, {scenario.heroStack}bb
             </span>
             <span className="info-icon-inline" onClick={() => setShowScenarioInfo(true)}>ⓘ</span>
@@ -1026,7 +1049,7 @@ export default function PracticePage() {
         {showResult && (
           <div className="result-panel-wizard">
             {/* Navigation arrow left */}
-            <button className="result-nav prev" onClick={repeatCurrentScenario} title="重复这一手">‹</button>
+            <button className="result-nav prev" onClick={repeatCurrentScenario} title={t.practice.repeatHand}>‹</button>
 
             <div className="result-card-wizard">
               {/* Score circle */}
@@ -1043,7 +1066,7 @@ export default function PracticePage() {
                   />
                 </svg>
                 <div className="score-inner">
-                  <span className="score-label">GTO得分</span>
+                  <span className="score-label">{t.practice.gtoScore}</span>
                   <span className="score-value" style={{ color: '#f59e0b' }}>
                     {accuracyScore}%
                   </span>
@@ -1056,7 +1079,7 @@ export default function PracticePage() {
                   <span className="status-icon" style={{ color: isCorrect ? '#22d3bf' : '#ef4444' }}>
                     {isCorrect ? '✓' : '✗'}
                   </span>
-                  <span className="status-text">{isCorrect ? '正确的行动' : '错误的行动'}</span>
+                  <span className="status-text">{isCorrect ? t.practice.correctAction : t.practice.wrongAction}</span>
                 </div>
 
                 {/* Street progress tabs */}
@@ -1070,7 +1093,7 @@ export default function PracticePage() {
                         className={`street-tab ${result?.isCorrect ? 'correct' : result ? 'wrong' : ''} ${isCurrent ? 'current' : ''}`}
                       >
                         {result && <span className="tab-check" style={{ color: result.isCorrect ? '#22d3bf' : '#ef4444' }}>✓</span>}
-                        {STREET_NAMES[street]}
+                        {STREET_NAMES_I18N[street]}
                       </div>
                     );
                   })}
@@ -1081,14 +1104,14 @@ export default function PracticePage() {
               <button
                 className="ai-coach-btn"
                 onClick={() => setShowAICoachModal(true)}
-                title="AI教练分析"
+                title={t.practice.aiCoachAnalysis}
               >
                 <span className="ai-icon">🤖</span>
               </button>
             </div>
 
             {/* Navigation arrow right */}
-            <button className="result-nav next" onClick={canContinue ? dealNextStreet : generateNewScenario} title={canContinue ? '继续下一街' : '下一手'}>›</button>
+            <button className="result-nav next" onClick={canContinue ? dealNextStreet : generateNewScenario} title={canContinue ? t.practice.continueStreet : t.practice.nextHand}>›</button>
           </div>
         )}
 
@@ -1097,7 +1120,7 @@ export default function PracticePage() {
           <div className="modal-overlay" onClick={() => setShowAICoachModal(false)}>
             <div className="ai-coach-modal" onClick={e => e.stopPropagation()}>
               <div className="modal-header">
-                <h3>🤖 AI 教练分析</h3>
+                <h3>🤖 {t.practice.aiCoachAnalysis}</h3>
                 <button className="modal-close" onClick={() => setShowAICoachModal(false)}>×</button>
               </div>
               <div className="modal-body ai-coach-modal-body">
@@ -1124,29 +1147,29 @@ export default function PracticePage() {
         {/* Bottom control bar - GTO Wizard style */}
         <div className="bottom-bar">
           <button className="btn-secondary" onClick={repeatCurrentScenario}>
-            <span className="btn-icon">↻</span> 重复这一手
+            <span className="btn-icon">↻</span> {t.practice.repeatHand}
           </button>
           {showResult && scenario.streetResults.length > 0 && (
             <button className="btn-save" onClick={handleSaveHand}>
-              <span className="btn-icon">💾</span> 保存
+              <span className="btn-icon">💾</span> {t.practice.save}
             </button>
           )}
           {canContinue ? (
             <button className="btn-primary" onClick={dealNextStreet}>
-              <span className="btn-icon">▶▶</span> 继续下一街
+              <span className="btn-icon">▶▶</span> {t.practice.continueStreet}
             </button>
           ) : showResult && scenario.streetResults.length > 1 ? (
             <>
               <button className="btn-summary" onClick={() => setShowSessionSummary(true)}>
-                <span className="btn-icon">📊</span> 查看总结
+                <span className="btn-icon">📊</span> {t.practice.viewSummary}
               </button>
               <button className="btn-primary" onClick={generateNewScenario}>
-                <span className="btn-icon">▶▶</span> 下一手
+                <span className="btn-icon">▶▶</span> {t.practice.nextHand}
               </button>
             </>
           ) : (
             <button className="btn-primary" onClick={generateNewScenario}>
-              <span className="btn-icon">▶▶</span> 下一手
+              <span className="btn-icon">▶▶</span> {t.practice.nextHand}
             </button>
           )}
           <div className="more-menu-wrapper">
@@ -1154,66 +1177,66 @@ export default function PracticePage() {
               {showMoreMenu && (
                 <div className="more-menu">
                   <div className="menu-section">
-                    <div className="menu-section-title">导航</div>
+                    <div className="menu-section-title">{t.practice.menu.navigation}</div>
                     <Link href="/" className="menu-item">
                       <span className="menu-icon">🏠</span>
-                      首页
+                      {t.practice.menu.home}
                     </Link>
                     <div className="menu-item" onClick={() => { setShowProgressChart(true); setShowMoreMenu(false); }}>
                       <span className="menu-icon">📊</span>
-                      进度图表
+                      {t.practice.menu.progressChart}
                     </div>
                     <div className="menu-item" onClick={() => { setShowHandHistory(true); setShowMoreMenu(false); }}>
                       <span className="menu-icon">📜</span>
-                      手牌历史 ({savedHands.length})
+                      {t.practice.menu.handHistory} ({savedHands.length})
                     </div>
                     <Link href="/solutions" className="menu-item">
                       <span className="menu-icon">📚</span>
-                      范围
+                      {t.practice.menu.ranges}
                     </Link>
                     <div className="menu-item" onClick={() => { setShowAchievements(true); setShowMoreMenu(false); }}>
                       <span className="menu-icon">🏆</span>
-                      成就 ({achievements.unlockedCount}/{achievements.totalCount})
+                      {t.practice.menu.achievements} ({achievements.unlockedCount}/{achievements.totalCount})
                     </div>
                   </div>
                   <div className="menu-divider" />
                   <div className="menu-section">
-                    <div className="menu-section-title">其他训练模式</div>
+                    <div className="menu-section-title">{t.practice.menu.otherModes}</div>
                     <Link href="/practice/pushfold" className="menu-item">
                       <span className="menu-icon">🎯</span>
-                      Push/Fold 训练
+                      {t.practice.menu.pushFold}
                     </Link>
                     <Link href="/practice/multitable" className="menu-item">
                       <span className="menu-icon">🃏</span>
-                      多桌训练
+                      {t.practice.menu.multitable}
                     </Link>
                     <Link href="/practice/tournament" className="menu-item">
                       <span className="menu-icon">🏆</span>
-                      锦标赛训练
+                      {t.practice.menu.tournament}
                     </Link>
                     <Link href="/practice/range-builder" className="menu-item">
                       <span className="menu-icon">🎨</span>
-                      Range Builder 训练
+                      {t.practice.menu.rangeBuilder}
                     </Link>
                     <Link href="/reports" className="menu-item">
                       <span className="menu-icon">📊</span>
-                      GTO 分析报告
+                      {t.practice.menu.reports}
                     </Link>
                     <Link href="/icm" className="menu-item">
                       <span className="menu-icon">🔢</span>
-                      ICM 计算器
+                      {t.practice.menu.icm}
                     </Link>
                   </div>
                   <div className="menu-divider" />
                   <div className="menu-section">
-                    <div className="menu-section-title">设置</div>
+                    <div className="menu-section-title">{t.practice.menu.settings}</div>
                     <div
                       className="menu-item toggle-item"
                       onClick={() => updateSettings({ soundEnabled: !settings.soundEnabled })}
                     >
                       <span className="menu-label">
                         <span className="menu-icon">{settings.soundEnabled ? '🔊' : '🔇'}</span>
-                        声音
+                        {t.practice.menu.sound}
                       </span>
                       <span className={`toggle-switch ${settings.soundEnabled ? 'on' : ''}`}>
                         <span className="toggle-knob" />
@@ -1221,17 +1244,17 @@ export default function PracticePage() {
                     </div>
                     <div className="menu-item" onClick={() => { setShowTutorial(true); setTutorialStep(0); setShowMoreMenu(false); }}>
                       <span className="menu-icon">📖</span>
-                      新手教程
+                      {t.practice.menu.tutorial}
                     </div>
                     <Link href="/settings" className="menu-item">
                       <span className="menu-icon">⚙️</span>
-                      更多设置
+                      {t.practice.menu.moreSettings}
                     </Link>
                   </div>
                   <div className="menu-divider" />
                   <div className="menu-hint" onClick={() => { setShowKeyboardHelp(true); setShowMoreMenu(false); }} style={{ cursor: 'pointer' }}>
                     <span className="hint-icon">⌨️</span>
-                    快捷键：按 ? 查看全部
+                    {t.practice.menu.keyboardShortcuts}
                   </div>
                 </div>
               )}
@@ -1242,52 +1265,52 @@ export default function PracticePage() {
         {showMoreMenu && <div className="menu-overlay" onClick={() => setShowMoreMenu(false)} />}
       </div>
 
-      {/* 场景信息弹窗 */}
+      {/* Scenario Info Modal */}
       {showScenarioInfo && (
         <div className="modal-overlay" onClick={() => setShowScenarioInfo(false)}>
           <div className="scenario-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>场景详情</h3>
+              <h3>{t.practice.scenarioDetails.title}</h3>
               <button className="modal-close" onClick={() => setShowScenarioInfo(false)}>×</button>
             </div>
             <div className="modal-body">
               <div className="info-row">
-                <span className="info-label">场景类型</span>
+                <span className="info-label">{t.practice.scenarioDetails.scenarioType}</span>
                 <span className="info-value">
-                  {scenario.preflopScenario === 'rfi' ? 'RFI (率先加注)' :
-                   scenario.preflopScenario === 'vs_rfi' ? '面对RFI (防守大盲)' : '面对3-Bet'}
+                  {scenario.preflopScenario === 'rfi' ? t.practice.scenarioDetails.rfi :
+                   scenario.preflopScenario === 'vs_rfi' ? t.practice.scenarioDetails.vsRfi : t.practice.scenarioDetails.vs3bet}
                 </span>
               </div>
               <div className="info-row">
-                <span className="info-label">你的位置</span>
+                <span className="info-label">{t.practice.scenarioDetails.yourPosition}</span>
                 <span className="info-value highlight">{scenario.heroPosition}</span>
               </div>
               <div className="info-row">
-                <span className="info-label">对手位置</span>
+                <span className="info-label">{t.practice.scenarioDetails.opponentPosition}</span>
                 <span className="info-value">{scenario.villainPosition}</span>
               </div>
               <div className="info-row">
-                <span className="info-label">有效筹码</span>
+                <span className="info-label">{t.practice.scenarioDetails.effectiveStack}</span>
                 <span className="info-value">100bb</span>
               </div>
               <div className="info-row">
-                <span className="info-label">当前底池</span>
+                <span className="info-label">{t.practice.scenarioDetails.currentPot}</span>
                 <span className="info-value">{scenario.potSize.toFixed(1)} BB</span>
               </div>
               <div className="info-row">
-                <span className="info-label">位置优势</span>
-                <span className="info-value">{scenario.isHeroIP ? '有位置 (IP)' : '无位置 (OOP)'}</span>
+                <span className="info-label">{t.practice.scenarioDetails.positionAdvantage}</span>
+                <span className="info-value">{scenario.isHeroIP ? t.practice.scenarioDetails.inPosition : t.practice.scenarioDetails.outOfPosition}</span>
               </div>
               <div className="scenario-desc">
-                <strong>行动描述：</strong>
+                <strong>{t.practice.scenarioDetails.actionDescription}</strong>
                 {scenario.preflopScenario === 'rfi' && (
-                  <p>你在 {scenario.heroPosition} 位置率先行动，前面玩家全部弃牌。选择是弃牌还是加注开池。</p>
+                  <p>{t.practice.scenarioDetails.rfiDescription.replace('{position}', scenario.heroPosition)}</p>
                 )}
                 {scenario.preflopScenario === 'vs_rfi' && (
-                  <p>{scenario.villainPosition} 位置开池加注到 2.5bb，你在 BB 位置面对这个加注。选择是弃牌、跟注还是3-Bet。</p>
+                  <p>{t.practice.scenarioDetails.vsRfiDescription.replace('{villainPosition}', scenario.villainPosition || '')}</p>
                 )}
                 {scenario.preflopScenario === 'vs_3bet' && (
-                  <p>你在 {scenario.heroPosition} 位置开池加注后，{scenario.villainPosition} 位置进行了3-Bet到 10bb。选择是弃牌、跟注还是4-Bet。</p>
+                  <p>{t.practice.scenarioDetails.vs3betDescription.replace('{heroPosition}', scenario.heroPosition).replace('{villainPosition}', scenario.villainPosition || '')}</p>
                 )}
               </div>
             </div>
@@ -1298,7 +1321,7 @@ export default function PracticePage() {
       {/* Saved toast notification */}
       {savedToast && (
         <div className="saved-toast">
-          <span>✓</span> 已保存到手牌记录
+          <span>✓</span> {t.practice.savedToast}
         </div>
       )}
 
@@ -1306,7 +1329,7 @@ export default function PracticePage() {
       {achievementToast && (
         <div className="achievement-toast">
           <span className="achievement-unlock-icon">🎉</span>
-          <span className="achievement-unlock-text">成就解锁: {achievementToast}</span>
+          <span className="achievement-unlock-text">{t.practice.achievementUnlocked}: {achievementToast}</span>
         </div>
       )}
 
@@ -1315,7 +1338,7 @@ export default function PracticePage() {
         <div className="modal-overlay" onClick={() => setShowAchievements(false)}>
           <div className="achievement-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>🏆 成就 ({achievements.unlockedCount}/{achievements.totalCount})</h3>
+              <h3>🏆 {t.practice.menu.achievements} ({achievements.unlockedCount}/{achievements.totalCount})</h3>
               <button className="modal-close" onClick={() => setShowAchievements(false)}>×</button>
             </div>
             <div className="modal-body">
@@ -1361,7 +1384,7 @@ export default function PracticePage() {
         <div className="modal-overlay" onClick={() => setShowSessionSummary(false)}>
           <div className="session-summary-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>这手牌总结</h3>
+              <h3>{t.practice.handSummary}</h3>
               <button className="modal-close" onClick={() => setShowSessionSummary(false)}>×</button>
             </div>
             <div className="modal-body">
@@ -1377,7 +1400,7 @@ export default function PracticePage() {
               {(() => {
                 const avgScore = Math.round(scenario.streetResults.reduce((sum, r) => sum + r.score, 0) / scenario.streetResults.length);
                 const correctCount = scenario.streetResults.filter(r => r.isCorrect).length;
-                const rating = getActionRating(avgScore);
+                const rating = getActionRatingI18n(avgScore);
                 return (
                   <div className="summary-score" style={{ background: rating.bgColor }}>
                     <div className="summary-stars">
@@ -1386,19 +1409,19 @@ export default function PracticePage() {
                       ))}
                     </div>
                     <div className="summary-score-value" style={{ color: rating.color }}>{avgScore}%</div>
-                    <div className="summary-score-label">{rating.name} · {correctCount}/{scenario.streetResults.length} 正确</div>
+                    <div className="summary-score-label">{rating.name} · {correctCount}/{scenario.streetResults.length} {t.practice.correct}</div>
                   </div>
                 );
               })()}
 
               {/* Street by street breakdown */}
               <div className="summary-breakdown">
-                <h4>各街表现</h4>
+                <h4>{t.practice.streetPerformance}</h4>
                 {scenario.streetResults.map((result, idx) => {
-                  const streetRating = getActionRating(result.score);
+                  const streetRating = getActionRatingI18n(result.score);
                   return (
                     <div key={idx} className="summary-street-row">
-                      <span className="street-label">{STREET_NAMES[result.street as Street]}</span>
+                      <span className="street-label">{STREET_NAMES_I18N[result.street as Street]}</span>
                       <span className="street-action">{result.action}</span>
                       <span className="street-score" style={{ color: streetRating.color }}>{result.score}%</span>
                       <span className="street-status" style={{ color: result.isCorrect ? '#22c55e' : '#ef4444' }}>
@@ -1412,7 +1435,7 @@ export default function PracticePage() {
               {/* Board if postflop */}
               {scenario.board.length > 0 && (
                 <div className="summary-board">
-                  <h4>公共牌</h4>
+                  <h4>{t.practice.board}</h4>
                   <div className="board-cards-preview">
                     {scenario.board.map((card, idx) => (
                       <PokerCard key={idx} card={card} size="sm" variant="dark" />
@@ -1427,13 +1450,13 @@ export default function PracticePage() {
                   setShowSessionSummary(false);
                   handleSaveHand();
                 }}>
-                  💾 保存这手牌
+                  💾 {t.practice.saveThisHand}
                 </button>
                 <button className="btn-primary" onClick={() => {
                   setShowSessionSummary(false);
                   generateNewScenario();
                 }}>
-                  下一手 ▶
+                  {t.practice.nextHand} ▶
                 </button>
               </div>
             </div>
@@ -1448,10 +1471,10 @@ export default function PracticePage() {
             <div className="modal-header">
               <h3>
                 {scenario.preflopScenario === 'rfi'
-                  ? `${scenario.heroPosition} RFI 范围`
+                  ? `${scenario.heroPosition} RFI ${t.practice.range}`
                   : scenario.preflopScenario === 'vs_rfi'
-                  ? `BB vs ${scenario.villainPosition} 范围`
-                  : `${scenario.heroPosition} vs ${scenario.villainPosition} 3-Bet 范围`}
+                  ? `BB vs ${scenario.villainPosition} ${t.practice.range}`
+                  : `${scenario.heroPosition} vs ${scenario.villainPosition} 3-Bet ${t.practice.range}`}
               </h3>
               <button className="modal-close" onClick={() => setShowRangeView(false)}>×</button>
             </div>
@@ -1505,11 +1528,11 @@ export default function PracticePage() {
               <div className="range-legend">
                 <div className="legend-item">
                   <span className="legend-color" style={{ backgroundColor: '#dc2626' }} />
-                  <span>Raise 高频</span>
+                  <span>{t.practice.raiseHigh}</span>
                 </div>
                 <div className="legend-item">
                   <span className="legend-color" style={{ backgroundColor: '#22c55e' }} />
-                  <span>Call 高频</span>
+                  <span>{t.practice.callHigh}</span>
                 </div>
                 <div className="legend-item">
                   <span className="legend-color" style={{ backgroundColor: '#3b3b3b' }} />
@@ -1517,7 +1540,7 @@ export default function PracticePage() {
                 </div>
                 <div className="legend-item">
                   <span className="legend-color" style={{ backgroundColor: '#22d3bf' }} />
-                  <span>当前手牌</span>
+                  <span>{t.practice.currentHand}</span>
                 </div>
               </div>
               <div className="current-hand-info">
@@ -1540,7 +1563,7 @@ export default function PracticePage() {
         <div className="modal-overlay" onClick={() => setShowProgressChart(false)}>
           <div className="progress-chart-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>📊 练习进度</h3>
+              <h3>📊 {t.practice.menu.progressChart}</h3>
               <button className="modal-close" onClick={() => setShowProgressChart(false)}>×</button>
             </div>
             <div className="modal-body">
@@ -1548,7 +1571,7 @@ export default function PracticePage() {
               <div className="progress-overview">
                 <div className="overview-stat">
                   <div className="stat-value">{practiceStats.totalDecisions}</div>
-                  <div className="stat-label">总决策数</div>
+                  <div className="stat-label">{t.practice.stats.totalDecisions}</div>
                 </div>
                 <div className="overview-stat">
                   <div className="stat-value">
@@ -1556,20 +1579,23 @@ export default function PracticePage() {
                       ? Math.round((practiceStats.correctDecisions / practiceStats.totalDecisions) * 100)
                       : 0}%
                   </div>
-                  <div className="stat-label">总准确率</div>
+                  <div className="stat-label">{t.practice.stats.totalAccuracy}</div>
                 </div>
                 <div className="overview-stat">
                   <div className="stat-value">{practiceStats.streakDays}</div>
-                  <div className="stat-label">连续天数</div>
+                  <div className="stat-label">{t.practice.stats.streakDays}</div>
                 </div>
               </div>
 
               {/* Daily Chart */}
               <div className="daily-chart-section">
-                <h4>最近7天练习</h4>
+                <h4>{t.practice.stats.last7Days}</h4>
                 <div className="daily-chart">
                   {(() => {
                     const last7Days = [];
+                    const dayNames = locale === 'zh-CN'
+                      ? ['日', '一', '二', '三', '四', '五', '六']
+                      : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                     for (let i = 6; i >= 0; i--) {
                       const date = new Date();
                       date.setDate(date.getDate() - i);
@@ -1577,7 +1603,7 @@ export default function PracticePage() {
                       const dayStats = practiceStats.dailyHistory.find(d => d.date === dateStr);
                       last7Days.push({
                         date: dateStr,
-                        dayName: ['日', '一', '二', '三', '四', '五', '六'][date.getDay()],
+                        dayName: dayNames[date.getDay()],
                         total: dayStats?.total || 0,
                         correct: dayStats?.correct || 0,
                       });
@@ -1606,17 +1632,17 @@ export default function PracticePage() {
 
               {/* Category Breakdown */}
               <div className="category-breakdown">
-                <h4>分类统计</h4>
+                <h4>{t.practice.stats.categoryBreakdown}</h4>
                 <div className="breakdown-grid">
                   {/* By Street */}
                   <div className="breakdown-section">
-                    <div className="breakdown-title">按街道</div>
+                    <div className="breakdown-title">{t.practice.stats.byStreet}</div>
                     {(['preflop', 'flop', 'turn', 'river'] as const).map(street => {
                       const stats = practiceStats.byStreet[street];
                       const pct = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
                       return (
                         <div key={street} className="breakdown-row">
-                          <span className="breakdown-label">{STREET_NAMES[street]}</span>
+                          <span className="breakdown-label">{STREET_NAMES_I18N[street]}</span>
                           <div className="breakdown-bar">
                             <div className="bar-fill" style={{ width: `${pct}%` }} />
                           </div>
@@ -1629,7 +1655,7 @@ export default function PracticePage() {
 
                   {/* By Scenario */}
                   <div className="breakdown-section">
-                    <div className="breakdown-title">按场景</div>
+                    <div className="breakdown-title">{t.practice.stats.byScenario}</div>
                     {(['rfi', 'vs_rfi', 'vs_3bet'] as const).map(sc => {
                       const stats = practiceStats.byScenario[sc];
                       const pct = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
@@ -1649,11 +1675,11 @@ export default function PracticePage() {
 
                   {/* By Hand Type */}
                   <div className="breakdown-section">
-                    <div className="breakdown-title">按手牌</div>
+                    <div className="breakdown-title">{t.practice.stats.byHandType}</div>
                     {(['pairs', 'suited', 'offsuit'] as const).map(ht => {
                       const stats = practiceStats.byHandType[ht];
                       const pct = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
-                      const labels = { pairs: '对子', suited: '同花', offsuit: '杂色' };
+                      const labels = { pairs: t.practice.handTypes.pairs, suited: t.practice.handTypes.suited, offsuit: t.practice.handTypes.offsuit };
                       return (
                         <div key={ht} className="breakdown-row">
                           <span className="breakdown-label">{labels[ht]}</span>
@@ -1669,7 +1695,7 @@ export default function PracticePage() {
 
                   {/* By Position */}
                   <div className="breakdown-section breakdown-full-width">
-                    <div className="breakdown-title">按位置</div>
+                    <div className="breakdown-title">{t.practice.stats.byPosition}</div>
                     <div className="position-stats-grid">
                       {(['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'] as const).map(pos => {
                         const stats = practiceStats.byPosition[pos] || { correct: 0, total: 0 };
@@ -1690,7 +1716,7 @@ export default function PracticePage() {
                               </div>
                               <span className="position-pct">{pct}%</span>
                             </div>
-                            <div className="position-count">{stats.total} 手</div>
+                            <div className="position-count">{stats.total} {t.practice.hands}</div>
                           </div>
                         );
                       })}
@@ -1708,21 +1734,21 @@ export default function PracticePage() {
         <div className="modal-overlay" onClick={() => setShowHandHistory(false)}>
           <div className="hand-history-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>📜 手牌历史 ({savedHands.length})</h3>
+              <h3>📜 {t.practice.menu.handHistory} ({savedHands.length})</h3>
               <button className="modal-close" onClick={() => setShowHandHistory(false)}>×</button>
             </div>
             <div className="modal-body">
               {savedHands.length === 0 ? (
                 <div className="empty-history">
                   <div className="empty-icon">📭</div>
-                  <div className="empty-text">还没有保存的手牌</div>
-                  <div className="empty-hint">完成练习后点击"保存"按钮来记录手牌</div>
+                  <div className="empty-text">{t.practice.history.noHands}</div>
+                  <div className="empty-hint">{t.practice.history.saveHint}</div>
                 </div>
               ) : (
                 <div className="history-list">
                   {savedHands.slice().reverse().map((hand) => {
                     const avgScore = Math.round(hand.results.reduce((sum, r) => sum + r.score, 0) / hand.results.length);
-                    const rating = getActionRating(avgScore);
+                    const rating = getActionRatingI18n(avgScore);
                     const isExpanded = selectedHistoryHand === hand.id;
 
                     return (
@@ -1747,9 +1773,9 @@ export default function PracticePage() {
                             <div className="detail-streets">
                               {hand.results.map((result, idx) => (
                                 <div key={idx} className="detail-street-row">
-                                  <span className="detail-street">{STREET_NAMES[result.street as Street]}</span>
+                                  <span className="detail-street">{STREET_NAMES_I18N[result.street as Street]}</span>
                                   <span className="detail-action">{result.action}</span>
-                                  <span className="detail-score" style={{ color: getActionRating(result.score).color }}>
+                                  <span className="detail-score" style={{ color: getActionRatingI18n(result.score).color }}>
                                     {result.score}%
                                   </span>
                                 </div>
@@ -1759,7 +1785,7 @@ export default function PracticePage() {
                             {/* Board if available */}
                             {hand.board.length > 0 && (
                               <div className="detail-board">
-                                <span className="board-label">公共牌:</span>
+                                <span className="board-label">{t.practice.board}:</span>
                                 <span className="board-cards-text">{hand.board.join(' ')}</span>
                               </div>
                             )}
@@ -1773,7 +1799,7 @@ export default function PracticePage() {
                                 setSelectedHistoryHand(null);
                               }}
                             >
-                              🗑️ 删除
+                              🗑️ {t.practice.delete}
                             </button>
                           </div>
                         )}
@@ -1792,51 +1818,51 @@ export default function PracticePage() {
         <div className="modal-overlay" onClick={() => setShowKeyboardHelp(false)}>
           <div className="keyboard-help-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>⌨️ 快捷键</h3>
+              <h3>⌨️ {t.practice.shortcuts.title}</h3>
               <button className="modal-close" onClick={() => setShowKeyboardHelp(false)}>×</button>
             </div>
             <div className="modal-body">
               <div className="shortcuts-section">
-                <div className="shortcuts-title">决策动作</div>
+                <div className="shortcuts-title">{t.practice.shortcuts.actions}</div>
                 <div className="shortcut-row">
                   <span className="shortcut-key">F</span>
-                  <span className="shortcut-desc">弃牌 (Fold)</span>
+                  <span className="shortcut-desc">{t.practice.shortcuts.fold}</span>
                 </div>
                 <div className="shortcut-row">
                   <span className="shortcut-key">C</span>
-                  <span className="shortcut-desc">跟注/过牌 (Call/Check)</span>
+                  <span className="shortcut-desc">{t.practice.shortcuts.callCheck}</span>
                 </div>
                 <div className="shortcut-row">
                   <span className="shortcut-key">R</span>
-                  <span className="shortcut-desc">加注 (Raise)</span>
+                  <span className="shortcut-desc">{t.practice.shortcuts.raise}</span>
                 </div>
                 <div className="shortcut-row">
                   <span className="shortcut-key">B</span>
-                  <span className="shortcut-desc">下注 (Bet)</span>
+                  <span className="shortcut-desc">{t.practice.shortcuts.bet}</span>
                 </div>
                 <div className="shortcut-row">
                   <span className="shortcut-key">A</span>
-                  <span className="shortcut-desc">全下 (All-in)</span>
+                  <span className="shortcut-desc">{t.practice.shortcuts.allin}</span>
                 </div>
               </div>
 
               <div className="shortcuts-section">
-                <div className="shortcuts-title">导航</div>
+                <div className="shortcuts-title">{t.practice.menu.navigation}</div>
                 <div className="shortcut-row">
                   <span className="shortcut-key">Space</span>
-                  <span className="shortcut-desc">下一手/下一街</span>
+                  <span className="shortcut-desc">{t.practice.shortcuts.nextHandStreet}</span>
                 </div>
                 <div className="shortcut-row">
                   <span className="shortcut-key">Enter</span>
-                  <span className="shortcut-desc">下一手/下一街</span>
+                  <span className="shortcut-desc">{t.practice.shortcuts.nextHandStreet}</span>
                 </div>
                 <div className="shortcut-row">
                   <span className="shortcut-key">Esc</span>
-                  <span className="shortcut-desc">关闭弹窗</span>
+                  <span className="shortcut-desc">{t.practice.shortcuts.closeModal}</span>
                 </div>
                 <div className="shortcut-row">
                   <span className="shortcut-key">?</span>
-                  <span className="shortcut-desc">显示快捷键帮助</span>
+                  <span className="shortcut-desc">{t.practice.shortcuts.showHelp}</span>
                 </div>
               </div>
             </div>
@@ -1849,7 +1875,7 @@ export default function PracticePage() {
         <div className="modal-overlay" onClick={() => setShowTutorial(false)}>
           <div className="tutorial-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>📖 新手教程</h3>
+              <h3>📖 {t.practice.menu.tutorial}</h3>
               <button className="modal-close" onClick={() => setShowTutorial(false)}>×</button>
             </div>
             <div className="modal-body">
@@ -1925,12 +1951,12 @@ export default function PracticePage() {
               </div>
               <div className="tutorial-buttons">
                 {tutorialStep > 0 && (
-                  <button className="btn-secondary" onClick={() => setTutorialStep(s => s - 1)}>上一步</button>
+                  <button className="btn-secondary" onClick={() => setTutorialStep(s => s - 1)}>{t.practice.tutorial.previous}</button>
                 )}
                 {tutorialStep < 4 ? (
-                  <button className="btn-primary" onClick={() => setTutorialStep(s => s + 1)}>下一步</button>
+                  <button className="btn-primary" onClick={() => setTutorialStep(s => s + 1)}>{t.practice.tutorial.next}</button>
                 ) : (
-                  <button className="btn-primary" onClick={() => setShowTutorial(false)}>开始练习!</button>
+                  <button className="btn-primary" onClick={() => setShowTutorial(false)}>{t.practice.tutorial.start}</button>
                 )}
               </div>
             </div>
@@ -1944,13 +1970,13 @@ export default function PracticePage() {
         <>
           <div className="filter-overlay" onClick={() => setShowFilterPanel(false)} />
           <div className="filter-panel">
-        {/* 模式筛选 */}
+        {/* Mode filter */}
         <div className="filter-group">
-          <span className="filter-label">模式</span>
+          <span className="filter-label">{t.practice.filters.mode}</span>
           <div className="filter-chips">
             {[
-              { value: 'preflop', label: '翻前' },
-              { value: 'full_hand', label: '完整' },
+              { value: 'preflop', label: t.practice.streets.preflop },
+              { value: 'full_hand', label: t.practice.filters.fullHand },
             ].map(opt => (
               <button
                 key={opt.value}
@@ -1963,12 +1989,12 @@ export default function PracticePage() {
           </div>
         </div>
 
-        {/* 场景筛选 */}
+        {/* Scenario filter */}
         <div className="filter-group">
-          <span className="filter-label">场景</span>
+          <span className="filter-label">{t.practice.filters.scenario}</span>
           <div className="filter-chips">
             {[
-              { value: 'all', label: '全部' },
+              { value: 'all', label: t.practice.filters.all },
               { value: 'rfi', label: 'RFI' },
               { value: 'vs_rfi', label: 'vs RFI' },
               { value: 'vs_3bet', label: 'vs 3-Bet' },
@@ -1984,15 +2010,15 @@ export default function PracticePage() {
           </div>
         </div>
 
-        {/* 手牌类型筛选 */}
+        {/* Hand type filter */}
         <div className="filter-group">
-          <span className="filter-label">手牌</span>
+          <span className="filter-label">{t.practice.filters.handType}</span>
           <div className="filter-chips">
             {[
-              { value: 'all', label: '全部' },
-              { value: 'pairs', label: '对子' },
-              { value: 'suited', label: '同花' },
-              { value: 'offsuit', label: '杂色' },
+              { value: 'all', label: t.practice.filters.all },
+              { value: 'pairs', label: t.practice.handTypes.pairs },
+              { value: 'suited', label: t.practice.handTypes.suited },
+              { value: 'offsuit', label: t.practice.handTypes.offsuit },
             ].map(opt => (
               <button
                 key={opt.value}
@@ -2005,15 +2031,15 @@ export default function PracticePage() {
           </div>
         </div>
 
-        {/* 计时模式 */}
+        {/* Timer mode */}
         <div className="filter-group timer-group">
-          <span className="filter-label">计时</span>
+          <span className="filter-label">{t.practice.filters.timer}</span>
           <div className="filter-chips">
             <button
               className={`filter-chip timer-chip ${timerMode ? 'active' : ''}`}
               onClick={() => setTimerMode(!timerMode)}
             >
-              {timerMode ? '⏱️ 开' : '⏱️ 关'}
+              {timerMode ? `⏱️ ${t.practice.filters.on}` : `⏱️ ${t.practice.filters.off}`}
             </button>
             {timerMode && (
               <select
@@ -2021,20 +2047,20 @@ export default function PracticePage() {
                 value={timerDuration}
                 onChange={(e) => setTimerDuration(Number(e.target.value))}
               >
-                <option value={5}>5秒</option>
-                <option value={10}>10秒</option>
-                <option value={15}>15秒</option>
-                <option value={20}>20秒</option>
-                <option value={30}>30秒</option>
+                <option value={5}>5{t.practice.filters.seconds}</option>
+                <option value={10}>10{t.practice.filters.seconds}</option>
+                <option value={15}>15{t.practice.filters.seconds}</option>
+                <option value={20}>20{t.practice.filters.seconds}</option>
+                <option value={30}>30{t.practice.filters.seconds}</option>
               </select>
             )}
           </div>
         </div>
 
-        {/* 平均决策时间 */}
+        {/* Average decision time */}
         {timerMode && decisionTimes.length > 0 && (
           <div className="avg-time-display">
-            <span className="avg-label">平均决策</span>
+            <span className="avg-label">{t.practice.filters.avgDecision}</span>
             <span className="avg-value">{avgDecisionTime}s</span>
           </div>
         )}
@@ -2073,11 +2099,11 @@ export default function PracticePage() {
         <div className="modal-overlay" onClick={() => setShowDailyGoalModal(false)}>
           <div className="daily-goal-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>🎯 设置每日目标</h3>
+              <h3>🎯 {t.practice.dailyGoal.title}</h3>
               <button className="modal-close" onClick={() => setShowDailyGoalModal(false)}>×</button>
             </div>
             <div className="modal-body">
-              <p className="goal-desc">设置每天的练习目标，帮助你保持持续进步</p>
+              <p className="goal-desc">{t.practice.dailyGoal.description}</p>
               <div className="goal-options">
                 {[10, 20, 30, 50, 100].map(goal => (
                   <button
@@ -2085,12 +2111,12 @@ export default function PracticePage() {
                     className={`goal-option ${dailyGoal === goal ? 'active' : ''}`}
                     onClick={() => setDailyGoal(goal)}
                   >
-                    {goal}手
+                    {goal}{t.practice.hands}
                   </button>
                 ))}
               </div>
               <div className="goal-custom">
-                <label>自定义:</label>
+                <label>{t.practice.dailyGoal.custom}:</label>
                 <input
                   type="number"
                   min="1"
@@ -2098,30 +2124,30 @@ export default function PracticePage() {
                   value={dailyGoal}
                   onChange={(e) => setDailyGoal(Math.max(1, Math.min(500, parseInt(e.target.value) || 1)))}
                 />
-                <span>手/天</span>
+                <span>{t.practice.dailyGoal.handsPerDay}</span>
               </div>
               <div className="goal-stats">
                 <div className="goal-stat-row">
-                  <span>今日已完成</span>
-                  <span className="goal-stat-value">{todayStats.total} 手</span>
+                  <span>{t.practice.dailyGoal.todayCompleted}</span>
+                  <span className="goal-stat-value">{todayStats.total} {t.practice.hands}</span>
                 </div>
                 <div className="goal-stat-row">
-                  <span>今日准确率</span>
+                  <span>{t.practice.dailyGoal.todayAccuracy}</span>
                   <span className="goal-stat-value">
                     {todayStats.total > 0 ? Math.round((todayStats.correct / todayStats.total) * 100) : 0}%
                   </span>
                 </div>
                 <div className="goal-stat-row">
-                  <span>距离目标还差</span>
+                  <span>{t.practice.dailyGoal.remaining}</span>
                   <span className="goal-stat-value">
-                    {Math.max(0, dailyGoal - todayStats.total)} 手
+                    {Math.max(0, dailyGoal - todayStats.total)} {t.practice.hands}
                   </span>
                 </div>
               </div>
             </div>
             <div className="modal-footer">
               <button className="btn-primary" onClick={() => setShowDailyGoalModal(false)}>
-                确定
+                {t.practice.dailyGoal.confirm}
               </button>
             </div>
           </div>
@@ -2171,7 +2197,7 @@ export default function PracticePage() {
           align-items: center;
           justify-content: space-between;
           width: 100%;
-          padding: 8px 16px;
+          padding: ${isMobile ? '6px 10px' : '8px 16px'};
           background: rgba(10, 10, 15, 0.95);
           border-bottom: 1px solid rgba(255, 255, 255, 0.05);
           z-index: 20;
@@ -2699,13 +2725,13 @@ export default function PracticePage() {
           justify-content: flex-start;
           width: 100%;
           min-height: 0;
-          padding: 20px 16px;
+          padding: ${isMobile ? '12px 8px' : '20px 16px'};
           box-sizing: border-box;
           position: relative;
           z-index: 1;
           overflow-y: auto;
           overflow-x: hidden;
-          gap: 24px;
+          gap: ${isMobile ? '16px' : '24px'};
         }
 
         /* Table Area - scalable based on viewport */
@@ -2717,7 +2743,7 @@ export default function PracticePage() {
           align-items: center;
           justify-content: center;
           min-height: 0;
-          margin: 16px 0;
+          margin: ${isMobile ? '8px 0' : '16px 0'};
         }
 
         /* Scenario Info Display - above table */
@@ -2748,8 +2774,8 @@ export default function PracticePage() {
         .poker-table {
           position: relative;
           width: 100%;
-          max-width: min(92vw, 880px);
-          aspect-ratio: 3 / 0.8;
+          max-width: ${isMobile ? 'min(98vw, 420px)' : 'min(92vw, 880px)'};
+          aspect-ratio: ${isMobile ? '2.5 / 1' : '3 / 0.8'};
           margin: 0 auto;
         }
 
@@ -3498,19 +3524,19 @@ export default function PracticePage() {
         .action-buttons {
           display: flex;
           flex-direction: row;
-          gap: 10px;
+          gap: ${isMobile ? '6px' : '10px'};
           flex-wrap: wrap;
           justify-content: center;
           align-items: center;
-          padding: 8px 16px;
+          padding: ${isMobile ? '6px 8px' : '8px 16px'};
           width: 100%;
         }
 
         .action-btn {
-          padding: 12px 28px;
+          padding: ${isMobile ? '10px 18px' : '12px 28px'};
           border: none;
-          border-radius: 10px;
-          font-size: 13px;
+          border-radius: ${isMobile ? '8px' : '10px'};
+          font-size: ${isMobile ? '12px' : '13px'};
           font-weight: 600;
           color: #fff;
           cursor: pointer;
@@ -3579,13 +3605,13 @@ export default function PracticePage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 10px;
-          padding: 12px 16px;
-          padding-bottom: max(12px, env(safe-area-inset-bottom));
+          gap: ${isMobile ? '6px' : '10px'};
+          padding: ${isMobile ? '8px 8px' : '12px 16px'};
+          padding-bottom: max(${isMobile ? '8px' : '12px'}, env(safe-area-inset-bottom));
           background: rgba(10, 10, 15, 0.95);
           border-top: 1px solid rgba(255, 255, 255, 0.05);
-          border-radius: 12px;
-          margin-top: 16px;
+          border-radius: ${isMobile ? '8px' : '12px'};
+          margin-top: ${isMobile ? '12px' : '16px'};
           z-index: 20;
         }
 

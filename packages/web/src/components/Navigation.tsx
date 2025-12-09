@@ -7,6 +7,8 @@ import { Button } from '@gto/ui';
 import { useUserStore } from '@/store';
 import { useResponsive } from '@/hooks';
 import { createClient } from '@/lib/supabase/client';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useTranslation } from '@/i18n';
 
 // SVG Icons for navigation
 const Icons = {
@@ -83,15 +85,16 @@ const Icons = {
   ),
 };
 
-const navItems = [
-  { href: '/solutions', label: 'Solutions', icon: Icons.solutions },
-  { href: '/analyzer', label: 'Analyzer', icon: Icons.analyzer },
-  { href: '/practice', label: 'Practice', icon: Icons.practice },
-  { href: '/challenge', label: 'Daily', icon: Icons.challenge, highlight: true },
-  { href: '/reports', label: 'Reports', icon: Icons.reports },
-  { href: '/icm', label: 'ICM', icon: Icons.icm },
-  { href: '/leaderboard', label: 'Leaderboard', icon: Icons.leaderboard },
-  { href: '/history', label: 'History', icon: Icons.history },
+// Navigation items will be created dynamically with translations
+const getNavItems = (t: ReturnType<typeof useTranslation>['t']) => [
+  { href: '/solutions', label: t.nav.solutions, icon: Icons.solutions },
+  { href: '/analyzer', label: t.nav.analyzer, icon: Icons.analyzer },
+  { href: '/practice', label: t.nav.practice, icon: Icons.practice },
+  { href: '/challenge', label: t.nav.daily, icon: Icons.challenge, highlight: true },
+  { href: '/reports', label: t.nav.reports, icon: Icons.reports },
+  { href: '/icm', label: t.nav.icm, icon: Icons.icm },
+  { href: '/leaderboard', label: t.nav.leaderboard, icon: Icons.leaderboard },
+  { href: '/history', label: t.nav.history, icon: Icons.history },
 ];
 
 // Interactive Nav Link Component
@@ -310,6 +313,7 @@ export const Navigation = memo(function Navigation() {
   const router = useRouter();
   const { isAuthenticated, user, logout } = useUserStore();
   const { isMobile, isTablet, isMobileOrTablet } = useResponsive();
+  const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoHovered, setLogoHovered] = useState(false);
   const [menuButtonHovered, setMenuButtonHovered] = useState(false);
@@ -319,6 +323,9 @@ export const Navigation = memo(function Navigation() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const userDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Get nav items with translations
+  const navItems = useMemo(() => getNavItems(t), [t]);
 
   // Handle hydration for Zustand persist
   useEffect(() => {
@@ -448,6 +455,9 @@ export const Navigation = memo(function Navigation() {
 
         {/* Right Section */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '12px' }}>
+          {/* Language Switcher */}
+          <LanguageSwitcher size={isMobile ? 'sm' : 'md'} />
+
           {/* Upgrade Button - Hide on mobile */}
           {!isMobile && (
             <Link href="/pricing" style={{ textDecoration: 'none' }}>
@@ -479,7 +489,7 @@ export const Navigation = memo(function Navigation() {
                 }}>
                   {Icons.premium}
                 </span>
-                <span>{isTablet ? 'Pro' : 'Upgrade'}</span>
+                <span>{isTablet ? t.membership.pro : t.nav.upgrade}</span>
               </button>
             </Link>
           )}
@@ -578,7 +588,7 @@ export const Navigation = memo(function Navigation() {
                             <circle cx="12" cy="7" r="4" />
                           </svg>
                         }
-                        label="Profile"
+                        label={t.nav.profile}
                         onClick={() => { setUserDropdownOpen(false); router.push('/profile'); }}
                       />
                       <DropdownItem
@@ -588,12 +598,12 @@ export const Navigation = memo(function Navigation() {
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
                           </svg>
                         }
-                        label="Settings"
+                        label={t.nav.settings}
                         onClick={() => { setUserDropdownOpen(false); router.push('/settings'); }}
                       />
                       <DropdownItem
                         icon={Icons.history}
-                        label="Hand History"
+                        label={t.nav.history}
                         onClick={() => { setUserDropdownOpen(false); router.push('/history'); }}
                       />
                     </div>
@@ -608,7 +618,7 @@ export const Navigation = memo(function Navigation() {
                             <line x1="21" y1="12" x2="9" y2="12" />
                           </svg>
                         }
-                        label="Log out"
+                        label={t.nav.logout}
                         onClick={handleLogout}
                         danger
                       />
@@ -620,12 +630,12 @@ export const Navigation = memo(function Navigation() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Link href="/auth/login">
                   <Button variant="ghost" size="sm">
-                    Log in
+                    {t.nav.login}
                   </Button>
                 </Link>
                 <Link href="/auth/register">
                   <Button variant="primary" size="sm">
-                    Sign up
+                    {t.nav.signup}
                   </Button>
                 </Link>
               </div>
@@ -741,7 +751,7 @@ export const Navigation = memo(function Navigation() {
               <Link href="/pricing" style={{ textDecoration: 'none' }}>
                 <InteractiveButton variant="premium" style={{ width: '100%' }}>
                   {Icons.premium}
-                  <span>Upgrade to Pro</span>
+                  <span>{t.nav.upgradeToPro}</span>
                 </InteractiveButton>
               </Link>
             </div>
@@ -781,7 +791,7 @@ export const Navigation = memo(function Navigation() {
                       {user?.name || 'User'}
                     </div>
                     <div style={{ fontSize: '13px', color: '#666666' }}>
-                      View Profile
+                      {t.nav.profile}
                     </div>
                   </div>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666666" strokeWidth="2">
@@ -792,12 +802,12 @@ export const Navigation = memo(function Navigation() {
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <Link href="/auth/login" style={{ flex: 1, textDecoration: 'none' }}>
                     <InteractiveButton variant="ghost" style={{ width: '100%' }}>
-                      Log in
+                      {t.nav.login}
                     </InteractiveButton>
                   </Link>
                   <Link href="/auth/register" style={{ flex: 1, textDecoration: 'none' }}>
                     <InteractiveButton variant="primary" style={{ width: '100%' }}>
-                      Sign up
+                      {t.nav.signup}
                     </InteractiveButton>
                   </Link>
                 </div>

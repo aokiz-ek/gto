@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Button, Card } from '@gto/ui';
 import { useResponsive } from '@/hooks';
 import { CampaignBanner } from '@/components';
+import { useTranslation } from '@/i18n';
 
 // Banner ad data
 const bannerAds = [
@@ -545,6 +546,7 @@ function FeatureCard({ feature, index }: {
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const { isMobile } = useResponsive();
+  const { t } = useTranslation();
 
   return (
     <AnimatedSection delay={index * 0.15} direction="up">
@@ -605,7 +607,7 @@ function FeatureCard({ feature, index }: {
               fontSize: '14px',
               fontWeight: 500,
             }}>
-              Learn more
+              {t.common.learnMore}
               <svg
                 width="16"
                 height="16"
@@ -1006,6 +1008,7 @@ function RangeMatrixPreview({ size = 'md' }: { size?: 'sm' | 'md' }) {
 export default function Home() {
   const { isMobile, isTablet, isMobileOrTablet } = useResponsive();
   const [heroVisible, setHeroVisible] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setHeroVisible(true);
@@ -1068,7 +1071,7 @@ export default function Home() {
               animation: 'pulse 2s infinite',
             }} />
             <span style={{ fontSize: isMobile ? '12px' : '14px', color: '#22d3bf', fontWeight: 500 }}>
-              Powered by Advanced GTO Algorithms
+              {t.home.heroBadge}
             </span>
           </div>
 
@@ -1084,14 +1087,14 @@ export default function Home() {
             transform: heroVisible ? 'translateY(0)' : 'translateY(30px)',
             transition: 'opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s',
           }}>
-            Crush Your{' '}
+            {t.home.heroTitle}{' '}
             <span style={{
               background: 'linear-gradient(135deg, #22d3bf 0%, #3b82f6 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
             }}>
-              Competition
+              {t.home.heroTitleHighlight}
             </span>
           </h1>
 
@@ -1108,7 +1111,7 @@ export default function Home() {
             transform: heroVisible ? 'translateY(0)' : 'translateY(30px)',
             transition: 'opacity 0.6s ease 0.3s, transform 0.6s ease 0.3s',
           }}>
-            The best way to learn and practice Game Theory Optimal poker.
+            {t.home.heroSubtitle}
           </p>
 
           {/* CTA Buttons */}
@@ -1124,10 +1127,10 @@ export default function Home() {
             transition: 'opacity 0.6s ease 0.4s, transform 0.6s ease 0.4s',
           }}>
             <HeroCTAButton href="/solutions" variant="primary">
-              Get Solutions for Free
+              {t.home.ctaGetSolutions}
             </HeroCTAButton>
             <HeroCTAButton href="/practice" variant="secondary">
-              Start Practicing
+              {t.home.ctaStartPractice}
             </HeroCTAButton>
           </div>
         </div>
@@ -1167,7 +1170,7 @@ export default function Home() {
               color: '#ffffff',
               marginBottom: '12px',
             }}>
-              Everything You Need to Master GTO
+              {t.home.featuresTitle}
             </h2>
             <p style={{
               fontSize: isMobile ? '14px' : '18px',
@@ -1176,7 +1179,7 @@ export default function Home() {
               margin: '0 auto',
               padding: isMobile ? '0 8px' : 0,
             }}>
-              Comprehensive tools designed to help you understand and apply game theory optimal strategies.
+              {t.home.featuresSubtitle}
             </p>
           </div>
         </AnimatedSection>
@@ -1215,7 +1218,7 @@ export default function Home() {
               marginBottom: '16px',
               textAlign: isMobileOrTablet ? 'center' : 'left',
             }}>
-              Visualize Optimal Ranges
+              {t.home.rangeTitle}
             </h2>
             <p style={{
               fontSize: isMobile ? '14px' : '16px',
@@ -1224,7 +1227,7 @@ export default function Home() {
               marginBottom: '24px',
               textAlign: isMobileOrTablet ? 'center' : 'left',
             }}>
-              Our interactive range matrix makes it easy to study GTO preflop strategies.
+              {t.home.rangeDesc}
             </p>
             <ul style={{
               listStyle: 'none',
@@ -1234,10 +1237,10 @@ export default function Home() {
               gap: '4px',
             }}>
               {[
-                'All positions from UTG to BB',
-                'Cash games, MTT, and SNG formats',
-                'Stack depths from 20bb to 100bb+',
-                'RFI, 3-bet, and vs 3-bet scenarios',
+                t.home.rangeFeature1,
+                t.home.rangeFeature2,
+                t.home.rangeFeature3,
+                t.home.rangeFeature4,
               ].map((item, i) => (
                 <CheckListItem key={i} item={item} index={i} isMobileOrTablet={isMobileOrTablet} />
               ))}
@@ -1268,7 +1271,7 @@ export default function Home() {
               color: '#ffffff',
               marginBottom: '16px',
             }}>
-              Ready to Play Like a Pro?
+              {t.home.ctaTitle}
             </h2>
             <p style={{
               fontSize: isMobile ? '14px' : '18px',
@@ -1276,10 +1279,10 @@ export default function Home() {
               marginBottom: isMobile ? '28px' : '40px',
               padding: isMobile ? '0 8px' : 0,
             }}>
-              Join thousands of players improving their game with Aokiz GTO.
+              {t.home.ctaSubtitle}
             </p>
             <HeroCTAButton href="/auth/register" variant="primary">
-              Get Started for Free
+              {t.home.ctaGetStarted}
             </HeroCTAButton>
           </div>
         </AnimatedSection>
@@ -1309,9 +1312,9 @@ export default function Home() {
               flexWrap: 'wrap',
               justifyContent: 'center',
             }}>
-              <FooterLink href="/terms">Terms</FooterLink>
-              <FooterLink href="/privacy">Privacy</FooterLink>
-              <FooterLink href="/contact">Contact</FooterLink>
+              <FooterLink href="/terms">{t.home.terms}</FooterLink>
+              <FooterLink href="/privacy">{t.home.privacy}</FooterLink>
+              <FooterLink href="/contact">{t.home.contact}</FooterLink>
             </div>
 
             <div style={{ fontSize: isMobile ? '12px' : '14px', color: '#666666' }}>

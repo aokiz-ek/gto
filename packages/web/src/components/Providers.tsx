@@ -5,20 +5,23 @@ import { ToastProvider } from './Toast';
 import { BottomNav, BottomNavSpacer } from './BottomNav';
 import { PWAProvider } from './pwa';
 import { PageErrorBoundary } from './ErrorBoundary';
+import { I18nProvider } from '@/i18n';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // Initialize auth state listener
   useAuthListener();
 
   return (
-    <ToastProvider>
-      <PWAProvider>
-        <PageErrorBoundary>
-          {children}
-        </PageErrorBoundary>
-        <BottomNavSpacer />
-        <BottomNav />
-      </PWAProvider>
-    </ToastProvider>
+    <I18nProvider>
+      <ToastProvider>
+        <PWAProvider>
+          <PageErrorBoundary>
+            {children}
+          </PageErrorBoundary>
+          <BottomNavSpacer />
+          <BottomNav />
+        </PWAProvider>
+      </ToastProvider>
+    </I18nProvider>
   );
 }

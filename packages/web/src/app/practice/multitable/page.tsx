@@ -67,7 +67,9 @@ function getGTOStrategy(position: Position, handString: string): { action: strin
     return { action: 'fold', strategy: { fold: 100 } };
   }
 
-  const handData = positionData[handString];
+  // Access ranges from the GTOStrategy object
+  const ranges = positionData.ranges;
+  const handData = ranges instanceof Map ? ranges.get(handString) : ranges[handString];
   if (!handData || !handData.actions || handData.actions.length === 0) {
     return { action: 'fold', strategy: { fold: 100 } };
   }
@@ -178,8 +180,8 @@ export default function MultiTablePage() {
       if (table.status !== 'waiting') return prev;
 
       const timeMs = Date.now() - startTimeRef.current;
-      const isCorrect = action === table.correctAction ||
-        (table.gtoStrategy[action] && table.gtoStrategy[action] >= 30); // Accept if frequency >= 30%
+      const frequency = table.gtoStrategy[action] || 0;
+      const isCorrect = action === table.correctAction || frequency >= 30; // Accept if frequency >= 30%
 
       table.status = 'answered';
       table.userAction = action;

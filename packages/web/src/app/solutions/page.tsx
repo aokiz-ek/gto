@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { RANKS, GTO_RANGES, GTO_VS_RFI_RANGES, GTO_RANGES_100BB, getGTOStrategy, getStrategyByStackDepth, ALL_HANDS } from '@gto/core';
 import type { Position, GTOStrategy, GTOHandStrategy, GameType, StackDepth } from '@gto/core';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 
 // Action line types
 type ActionLine = 'rfi' | 'vs_rfi';
@@ -203,6 +204,8 @@ function ScenarioConfig({
   onVsPositionChange,
   dynamicValues,
   isMobile,
+  translations,
+  t,
 }: {
   gameType: GameType;
   stackDepth: StackDepth;
@@ -224,13 +227,10 @@ function ScenarioConfig({
     villainEffective: number;
   };
   isMobile: boolean;
+  translations: any;
+  t: any;
 }) {
-  const gameTypes: { value: GameType; label: string }[] = [
-    { value: 'cash', label: 'Cash' },
-    { value: 'mtt', label: 'MTT' },
-    { value: 'sng', label: 'SNG' },
-    { value: 'spin', label: 'Spin' },
-  ];
+  const gameTypes = translations.gameTypes;
 
   const stackDepths: StackDepth[] = [20, 50, 100, 200];
 
@@ -280,7 +280,7 @@ function ScenarioConfig({
 
       {/* Game Type Selector */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: '4px' }}>
-        {gameTypes.map((gt) => (
+        {gameTypes.map((gt: { value: GameType; label: string }) => (
           <button
             key={gt.value}
             onClick={() => onGameTypeChange(gt.value)}
@@ -441,9 +441,9 @@ function ScenarioConfig({
       {!isMobile && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', color: '#888', fontSize: '13px', paddingRight: '8px' }}>
           <span>{dynamicValues.potSize.toFixed(1)} BB</span>
-          <span>底池赔率: {dynamicValues.potOdds.toFixed(0)}%</span>
-          {actionLine === 'rfi' && <span>加注: {dynamicValues.rfiSize}x</span>}
-          {actionLine === 'vs_rfi' && <span>3-Bet: {dynamicValues.threeBetSize.toFixed(0)}bb</span>}
+          <span>{t.solutions.potOdds}: {dynamicValues.potOdds.toFixed(0)}%</span>
+          {actionLine === 'rfi' && <span>{t.solutions.raiseSize}: {dynamicValues.rfiSize}x</span>}
+          {actionLine === 'vs_rfi' && <span>{t.solutions.threeBetSize}: {dynamicValues.threeBetSize.toFixed(0)}bb</span>}
         </div>
       )}
     </div>
@@ -536,12 +536,13 @@ function MatrixCell({ hand, strategy, isSelected, onClick, actionLine, isFiltere
 }
 
 // Enlarged detail card for selected hand with EV info
-function HandDetailCard({ hand, strategy, onClose, actionLine, rfiSize }: {
+function HandDetailCard({ hand, strategy, onClose, actionLine, rfiSize, t }: {
   hand: string;
   strategy?: GTOHandStrategy;
   onClose: () => void;
   actionLine: ActionLine;
   rfiSize: number;
+  t: any;
 }) {
   const [isVisible, setIsVisible] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -638,14 +639,14 @@ function HandDetailCard({ hand, strategy, onClose, actionLine, rfiSize }: {
         alignItems: 'center',
       }}>
         {/* Header row */}
-        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>行动</div>
-        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', textAlign: 'right' }}>期望值</div>
-        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', textAlign: 'right' }}>频率</div>
+        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>{t.solutions.action}</div>
+        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', textAlign: 'right' }}>{t.solutions.expectedValue}</div>
+        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', textAlign: 'right' }}>{t.solutions.frequency}</div>
 
         {/* Allin row */}
         {allinFreq > 0 && (
           <>
-            <div style={{ color: '#fff', fontWeight: 500 }}>全下</div>
+            <div style={{ color: '#fff', fontWeight: 500 }}>{t.solutions.allin}</div>
             <div style={{ color: '#4ade80', textAlign: 'right' }}>-</div>
             <div style={{ color: '#fff', fontWeight: 600, textAlign: 'right' }}>{allinFreq}%</div>
           </>
@@ -655,7 +656,7 @@ function HandDetailCard({ hand, strategy, onClose, actionLine, rfiSize }: {
         {raiseFreq > 0 && (
           <>
             <div style={{ color: '#fff', fontWeight: 500 }}>
-              {actionLine === 'vs_rfi' ? '3-Bet' : '加注'} {displayRaiseSize.toFixed(1)}x
+              {actionLine === 'vs_rfi' ? t.solutions.threeBet : t.practice.raise} {displayRaiseSize.toFixed(1)}x
             </div>
             <div style={{ color: '#4ade80', textAlign: 'right' }}>{raiseEV.toFixed(2)}bb</div>
             <div style={{ color: '#fff', fontWeight: 600, textAlign: 'right' }}>{raiseFreq}%</div>
@@ -665,14 +666,14 @@ function HandDetailCard({ hand, strategy, onClose, actionLine, rfiSize }: {
         {/* Call row - only for vs RFI */}
         {actionLine === 'vs_rfi' && callFreq > 0 && (
           <>
-            <div style={{ color: '#fff', fontWeight: 500 }}>跟注</div>
+            <div style={{ color: '#fff', fontWeight: 500 }}>{t.practice.call}</div>
             <div style={{ color: '#4ecdc4', textAlign: 'right' }}>{callEV.toFixed(2)}bb</div>
             <div style={{ color: '#fff', fontWeight: 600, textAlign: 'right' }}>{callFreq}%</div>
           </>
         )}
 
         {/* Fold row */}
-        <div style={{ color: '#fff', fontWeight: 500 }}>弃牌</div>
+        <div style={{ color: '#fff', fontWeight: 500 }}>{t.practice.fold}</div>
         <div style={{ color: '#888', textAlign: 'right' }}>0.00bb</div>
         <div style={{ color: '#fff', fontWeight: 600, textAlign: 'right' }}>{foldFreq}%</div>
       </div>
@@ -688,7 +689,7 @@ function HandDetailCard({ hand, strategy, onClose, actionLine, rfiSize }: {
           display: 'flex',
           justifyContent: 'space-between',
         }}>
-          <span>组合数</span>
+          <span>{t.solutions.combos}</span>
           <span style={{ color: '#fff', fontWeight: 500 }}>{strategy.totalCombos}</span>
         </div>
       )}
@@ -698,6 +699,8 @@ function HandDetailCard({ hand, strategy, onClose, actionLine, rfiSize }: {
 
 export default function SolutionsPage() {
   const { isMobile, isTablet, isMobileOrTablet } = useResponsive();
+  const { t, locale } = useTranslation();
+
   const [gameType, setGameType] = useState<GameType>('cash');
   const [stackDepth, setStackDepth] = useState<StackDepth>(200);
   const [selectedPosition, setSelectedPosition] = useState<Position>('HJ');
@@ -713,6 +716,45 @@ export default function SolutionsPage() {
   // Filter states
   const [actionFilter, setActionFilter] = useState<ActionFilter>('all');
   const [handTypeFilter, setHandTypeFilter] = useState<HandTypeFilter>('all');
+
+  // Memoized translations for performance
+  const translations = useMemo(() => ({
+    gameTypes: [
+      { value: 'cash' as GameType, label: t.solutions.cash },
+      { value: 'mtt' as GameType, label: t.solutions.mtt },
+      { value: 'sng' as GameType, label: t.solutions.sng },
+      { value: 'spin' as GameType, label: t.solutions.spin },
+    ],
+    actionFilters: [
+      { key: 'all' as ActionFilter, label: t.solutions.all, color: '#666' },
+      { key: 'raise' as ActionFilter, label: t.practice.raise, color: ACTION_COLORS.raise },
+      { key: 'call' as ActionFilter, label: t.practice.call, color: ACTION_COLORS.call },
+      { key: 'fold' as ActionFilter, label: t.practice.fold, color: ACTION_COLORS.fold },
+      { key: 'mixed' as ActionFilter, label: t.solutions.mixed, color: '#9b5de5' },
+    ],
+    handTypeFilters: [
+      { key: 'all' as HandTypeFilter, label: t.solutions.all },
+      { key: 'pairs' as HandTypeFilter, label: t.solutions.pairs },
+      { key: 'suited' as HandTypeFilter, label: t.solutions.suited },
+      { key: 'offsuit' as HandTypeFilter, label: t.solutions.offsuit },
+    ],
+    viewTabs: [
+      { key: 'range' as const, label: t.solutions.range },
+      { key: 'breakdown' as const, label: 'Breakdown' },
+      { key: 'report' as const, label: t.solutions.report },
+    ],
+    selectedTabs: [
+      { key: 'overview' as const, label: t.solutions.overview },
+      { key: 'table' as const, label: t.solutions.table },
+      { key: 'equity' as const, label: t.solutions.equityTable },
+    ],
+    handTabs: [
+      { key: 'hands' as const, label: t.solutions.hands },
+      { key: 'overview' as const, label: t.solutions.overview },
+      { key: 'filter' as const, label: t.solutions.filter },
+      { key: 'blockers' as const, label: t.solutions.blockers },
+    ],
+  }), [t, locale]);
 
   // Dynamic calculations based on scenario
   const dynamicValues = useMemo(() => {
@@ -842,6 +884,8 @@ export default function SolutionsPage() {
         onVsPositionChange={setVsPosition}
         dynamicValues={dynamicValues}
         isMobile={isMobile}
+        translations={translations}
+        t={t}
       />
 
       {/* Row 2: Strategy tabs - responsive */}
@@ -877,11 +921,7 @@ export default function SolutionsPage() {
 
         {/* View tabs */}
         <div style={{ display: 'flex', gap: '4px' }}>
-          {[
-            { key: 'range', label: '范围' },
-            { key: 'breakdown', label: 'Breakdown' },
-            { key: 'report', label: '报告' },
-          ].map((tab) => (
+          {translations.viewTabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setViewTab(tab.key as typeof viewTab)}
@@ -907,10 +947,10 @@ export default function SolutionsPage() {
         {summary && !isMobile && (
           <div style={{ display: 'flex', gap: '16px', fontSize: '12px', marginRight: '8px' }}>
             <span style={{ color: '#888' }}>
-              可打手牌: <span style={{ color: '#4ade80', fontWeight: 600 }}>{summary.playableHands}</span>
+              {t.solutions.playableHands}: <span style={{ color: '#4ade80', fontWeight: 600 }}>{summary.playableHands}</span>
             </span>
             <span style={{ color: '#888' }}>
-              平均EV: <span style={{ color: '#4ade80', fontWeight: 600 }}>{summary.avgEV.toFixed(2)}bb</span>
+              {t.solutions.avgEV}: <span style={{ color: '#4ade80', fontWeight: 600 }}>{summary.avgEV.toFixed(2)}bb</span>
             </span>
           </div>
         )}
@@ -1009,6 +1049,7 @@ export default function SolutionsPage() {
                 }}
                 actionLine={actionLine}
                 rfiSize={dynamicValues.rfiSize}
+                t={t}
               />
             </div>
           )}
@@ -1028,11 +1069,7 @@ export default function SolutionsPage() {
         }}>
           {/* Top tabs */}
           <div style={{ display: 'flex', gap: '24px', marginBottom: '12px', borderBottom: '1px solid #333', paddingBottom: '8px', flexShrink: 0 }}>
-            {[
-              { key: 'overview', label: '总览' },
-              { key: 'table', label: '桌' },
-              { key: 'equity', label: 'EV表格' },
-            ].map(tab => (
+            {translations.selectedTabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setSelectedTab(tab.key as typeof selectedTab)}
@@ -1364,12 +1401,7 @@ export default function SolutionsPage() {
 
           {/* Hand tabs */}
           <div style={{ display: 'flex', gap: '16px', marginBottom: '8px', borderBottom: '1px solid #333', paddingBottom: '8px', flexShrink: 0 }}>
-            {[
-              { key: 'hands', label: '手牌组合' },
-              { key: 'overview', label: '总览' },
-              { key: 'filter', label: '筛选' },
-              { key: 'blockers', label: '阻挡牌' },
-            ].map(tab => (
+            {translations.handTabs.map(tab => (
               <button
                 key={tab.key}
                 onClick={() => setSelectedHandTab(tab.key as typeof selectedHandTab)}
@@ -1394,15 +1426,9 @@ export default function SolutionsPage() {
             <div style={{ flex: 1, overflowY: 'auto', minHeight: 0, padding: '8px 0' }}>
               {/* 行动类型筛选 */}
               <div style={{ marginBottom: '20px' }}>
-                <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>按行动筛选</div>
+                <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>{t.solutions.filterByAction}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {[
-                    { key: 'all', label: '全部', color: '#666' },
-                    { key: 'raise', label: actionLine === 'rfi' ? 'Raise' : '3-Bet', color: ACTION_COLORS.raise },
-                    { key: 'call', label: 'Call', color: ACTION_COLORS.call },
-                    { key: 'fold', label: 'Fold', color: ACTION_COLORS.fold },
-                    { key: 'mixed', label: '混合策略', color: '#9b5de5' },
-                  ].filter(item => actionLine === 'rfi' ? item.key !== 'call' : true).map(item => (
+                  {translations.actionFilters.filter(item => actionLine === 'rfi' ? item.key !== 'call' : true).map(item => (
                     <button
                       key={item.key}
                       onClick={() => setActionFilter(item.key as ActionFilter)}
@@ -1426,14 +1452,9 @@ export default function SolutionsPage() {
 
               {/* 手牌类型筛选 */}
               <div style={{ marginBottom: '20px' }}>
-                <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>按手牌类型</div>
+                <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>{t.solutions.filterByHandType}</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {[
-                    { key: 'all', label: '全部' },
-                    { key: 'pairs', label: '对子 (AA-22)' },
-                    { key: 'suited', label: '同花 (AKs...)' },
-                    { key: 'offsuit', label: '不同花 (AKo...)' },
-                  ].map(item => (
+                  {translations.handTypeFilters.map(item => (
                     <button
                       key={item.key}
                       onClick={() => setHandTypeFilter(item.key as HandTypeFilter)}

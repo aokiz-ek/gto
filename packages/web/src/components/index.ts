@@ -2,6 +2,7 @@ export { Navigation } from './Navigation';
 export { Providers } from './Providers';
 export { HandReplayer } from './HandReplayer';
 export { ShareButton } from './ShareButton';
+export { LanguageSwitcher } from './LanguageSwitcher';
 
 // Mobile Components
 export { BottomNav, BottomNavSpacer } from './BottomNav';

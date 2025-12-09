@@ -7,6 +7,7 @@ import { useGameStore } from '@/store';
 import { parseCard, RANKS, SUITS, createEmptyMatrix, setMatrixValue, getMatrixValue, HAND_CATEGORIES, countCombos, rangePercentage } from '@gto/core';
 import type { Card as CardType, Position, Street } from '@gto/core';
 import { useResponsive, useLocalStorage } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import {
   BoardTexturePanel,
   StrategyExplainer,
@@ -46,12 +47,6 @@ const SUIT_COLORS: Record<string, string> = {
 
 const POSITIONS: Position[] = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB'];
 const STREETS: Street[] = ['preflop', 'flop', 'turn', 'river'];
-const STREET_LABELS: Record<Street, string> = {
-  preflop: '翻前',
-  flop: '翻牌',
-  turn: '转牌',
-  river: '河牌',
-};
 
 // Street analysis result
 interface StreetAnalysis {
@@ -300,6 +295,15 @@ export default function AnalyzerPage() {
   const [notes, setNotes] = useState('');
 
   const { isMobile, isMobileOrTablet } = useResponsive();
+  const { t } = useTranslation();
+
+  // Street labels using translations
+  const STREET_LABELS: Record<Street, string> = useMemo(() => ({
+    preflop: t.poker.preflop,
+    flop: t.poker.flop,
+    turn: t.poker.turn,
+    river: t.poker.river,
+  }), [t]);
 
   // Determine position advantage
   const heroPositionAdvantage = useMemo((): 'IP' | 'OOP' | null => {
@@ -357,15 +361,15 @@ export default function AnalyzerPage() {
   // Step hints (memoized)
   const stepHint = useMemo((): string => {
     switch (currentStep) {
-      case 'position': return '第1步：选择你和对手的位置';
-      case 'hero': return '第2步：选择你的两张手牌';
+      case 'position': return t.analyzer.step1Position;
+      case 'hero': return t.analyzer.step2Hero;
       case 'board': {
         const requiredCards = street === 'flop' ? 3 : street === 'turn' ? 4 : 5;
-        return `第3步：选择${requiredCards}张公共牌 (${board.length}/${requiredCards})`;
+        return `${t.analyzer.step3Board} (${board.length}/${requiredCards})`;
       }
-      case 'complete': return '✓ 分析完成';
+      case 'complete': return t.analyzer.analysisComplete;
     }
-  }, [currentStep, street, board.length]);
+  }, [currentStep, street, board.length, t]);
 
   // Check if ready for analysis
   const isReadyForAnalysis = currentStep === 'complete';
@@ -771,11 +775,11 @@ export default function AnalyzerPage() {
         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
         const data = await response.json();
-        alert(data.error || '保存失败，请先登录');
+        alert(data.error || t.analyzer.saveFailed);
       }
     } catch (error) {
       console.error('Save to history error:', error);
-      alert('保存失败，请检查网络连接');
+      alert(t.analyzer.saveNetworkError);
     } finally {
       setIsSaving(false);
     }
@@ -902,7 +906,7 @@ export default function AnalyzerPage() {
         .main-grid {
           display: grid;
           grid-template-columns: ${isMobileOrTablet ? '1fr' : '6fr 4fr'};
-          gap: 12px;
+          gap: ${isMobile ? '8px' : '12px'};
           flex: 1;
           min-height: 0;
         }
@@ -910,7 +914,7 @@ export default function AnalyzerPage() {
         .left-section {
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: ${isMobile ? '8px' : '10px'};
           overflow-y: auto;
           min-height: 0;
         }
@@ -918,8 +922,8 @@ export default function AnalyzerPage() {
         /* Setup Card */
         .setup-card {
           background: #12121a;
-          border-radius: 10px;
-          padding: 10px 12px;
+          border-radius: ${isMobile ? '8px' : '10px'};
+          padding: ${isMobile ? '8px 10px' : '10px 12px'};
           border: 1px solid rgba(255, 255, 255, 0.05);
           flex-shrink: 0;
         }
@@ -1175,8 +1179,8 @@ export default function AnalyzerPage() {
         /* Card Selector */
         .card-selector {
           background: #12121a;
-          border-radius: 10px;
-          padding: 12px;
+          border-radius: ${isMobile ? '8px' : '10px'};
+          padding: ${isMobile ? '8px' : '12px'};
           border: 1px solid rgba(255, 255, 255, 0.05);
           flex: 0 0 auto;
           display: flex;
@@ -1630,8 +1634,8 @@ export default function AnalyzerPage() {
         .right-section {
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          min-width: 280px;
+          gap: ${isMobile ? '8px' : '10px'};
+          min-width: ${isMobileOrTablet ? '0' : '280px'};
           overflow-y: auto;
           min-height: 0;
         }
@@ -1891,8 +1895,8 @@ export default function AnalyzerPage() {
       {/* Header */}
       <div className="analyzer-header">
         <div className="header-left">
-          <h1 className="header-title">手牌分析器</h1>
-          <Link href="/analyzer/guide" className="guide-btn" title="查看功能说明">
+          <h1 className="header-title">{t.analyzer.title}</h1>
+          <Link href="/analyzer/guide" className="guide-btn" title={t.common.learnMore}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
@@ -1903,10 +1907,10 @@ export default function AnalyzerPage() {
         </div>
         <div className="header-actions">
           <button className="btn btn-ghost" onClick={() => setShowHistory(!showHistory)}>
-            历史
+            {t.analyzer.history}
           </button>
           <button className="btn btn-ghost" onClick={clearAll}>
-            清除
+            {t.analyzer.clear}
           </button>
           {analysisResult && (
             <button
@@ -1919,7 +1923,7 @@ export default function AnalyzerPage() {
                 color: saveSuccess ? '#22c55e' : undefined,
               }}
             >
-              {isSaving ? <span className="loading-spinner" /> : saveSuccess ? '✓ 已保存' : '💾 保存'}
+              {isSaving ? <span className="loading-spinner" /> : saveSuccess ? `✓ ${t.analyzer.saved}` : `💾 ${t.analyzer.save}`}
             </button>
           )}
           <button
@@ -1927,7 +1931,7 @@ export default function AnalyzerPage() {
             onClick={() => analyzeHand(false)}
             disabled={!isReadyForAnalysis || isAnalyzing}
           >
-            {isAnalyzing ? <span className="loading-spinner" /> : '分析'}
+            {isAnalyzing ? <span className="loading-spinner" /> : t.analyzer.analyze}
           </button>
         </div>
       </div>
@@ -1939,7 +1943,7 @@ export default function AnalyzerPage() {
           <div className="setup-card">
             {/* Positions Row */}
             <div className="setup-row" style={{ marginBottom: '12px' }}>
-              <span className="setup-label">你的位置</span>
+              <span className="setup-label">{t.analyzer.yourPosition}</span>
               <div className="position-chips">
                 {POSITIONS.map(pos => (
                   <button
@@ -1954,7 +1958,7 @@ export default function AnalyzerPage() {
             </div>
 
             <div className="setup-row" style={{ marginBottom: '12px' }}>
-              <span className="setup-label">对手位置</span>
+              <span className="setup-label">{t.analyzer.opponentPosition}</span>
               <div className="position-chips">
                 {POSITIONS.filter(p => p !== heroPosition).map(pos => (
                   <button
@@ -1969,7 +1973,7 @@ export default function AnalyzerPage() {
             </div>
 
             <div className="setup-row" style={{ marginBottom: '12px' }}>
-              <span className="setup-label">街道</span>
+              <span className="setup-label">{t.poker.position}</span>
               <div className="street-chips">
                 {STREETS.map(s => (
                   <button
@@ -1985,10 +1989,10 @@ export default function AnalyzerPage() {
 
             {/* Pot Size and Stack Configuration */}
             <div className="setup-row">
-              <span className="setup-label">底池/筹码</span>
+              <span className="setup-label">{t.analyzer.potSize}/{t.poker.stack}</span>
               <div className="stack-config">
                 <div className="stack-input-group">
-                  <label className="stack-input-label">底池</label>
+                  <label className="stack-input-label">{t.poker.pot}</label>
                   <div className="stack-input-wrapper">
                     <input
                       type="number"
@@ -2002,7 +2006,7 @@ export default function AnalyzerPage() {
                   </div>
                 </div>
                 <div className="stack-input-group">
-                  <label className="stack-input-label">筹码</label>
+                  <label className="stack-input-label">{t.poker.stack}</label>
                   <div className="stack-input-wrapper">
                     <input
                       type="number"
@@ -2028,8 +2032,8 @@ export default function AnalyzerPage() {
             <div className="hand-display">
               <div className="hand-section">
                 <span className="hand-label">
-                  你的手牌
-                  {heroHand && <span className="click-hint">(点击移除)</span>}
+                  {t.analyzer.yourHand}
+                  {heroHand && <span className="click-hint">({t.common.delete})</span>}
                 </span>
                 <div className="cards-row">
                   {heroHand ? (
@@ -2048,8 +2052,8 @@ export default function AnalyzerPage() {
 
               <div className="hand-section">
                 <span className="hand-label">
-                  公共牌
-                  {board.length > 0 && <span className="click-hint">(点击移除)</span>}
+                  {t.analyzer.communityCards}
+                  {board.length > 0 && <span className="click-hint">({t.common.delete})</span>}
                 </span>
                 <div className="board-cards-wrapper">
                   {/* Flop (3 cards) */}
@@ -2132,20 +2136,20 @@ export default function AnalyzerPage() {
           {/* Card Selector */}
           <div className="card-selector">
             <div className="selector-header">
-              <span className="selector-title">选择卡牌</span>
+              <span className="selector-title">{t.analyzer.selectCard}</span>
               <div className="selector-mode">
                 <button
                   className={`mode-btn ${selectionMode === 'hero' ? 'active' : ''}`}
                   onClick={() => setSelectionMode('hero')}
                 >
-                  手牌 {heroHand ? '✓' : `(${selectedCards.length}/2)`}
+                  {t.analyzer.heroHand} {heroHand ? '✓' : `(${selectedCards.length}/2)`}
                 </button>
                 <button
                   className={`mode-btn ${selectionMode === 'board' ? 'active' : ''}`}
                   onClick={() => setSelectionMode('board')}
                   disabled={!heroHand}
                 >
-                  公共牌 ({board.length}/{street === 'flop' ? 3 : street === 'turn' ? 4 : street === 'river' ? 5 : 0})
+                  {t.analyzer.communityCards} ({board.length}/{street === 'flop' ? 3 : street === 'turn' ? 4 : street === 'river' ? 5 : 0})
                 </button>
               </div>
             </div>
@@ -2155,7 +2159,7 @@ export default function AnalyzerPage() {
               <input
                 type="text"
                 className="quick-input"
-                placeholder="快速输入: AhKs 或 AhKs QcJdTh"
+                placeholder={t.analyzer.quickInputPlaceholder}
                 value={quickInput}
                 onChange={(e) => setQuickInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -2169,7 +2173,7 @@ export default function AnalyzerPage() {
                 onClick={() => parseQuickInput(quickInput)}
                 disabled={quickInput.length < 4}
               >
-                确认
+                {t.common.confirm}
               </button>
             </div>
 
@@ -2212,7 +2216,7 @@ export default function AnalyzerPage() {
             <div className="analysis-card">
               <div className="analysis-title">
                 <Skeleton variant="rectangular" width={20} height={20} animation="pulse" />
-                <span style={{ marginLeft: '8px' }}>分析中...</span>
+                <span style={{ marginLeft: '8px' }}>{t.analyzer.analyzing}</span>
               </div>
               <div className="actions-row">
                 <Skeleton variant="rounded" width={80} height={36} animation="wave" />
@@ -2224,42 +2228,42 @@ export default function AnalyzerPage() {
           ) : analysisResult ? (
             <div className="analysis-card">
               <div className="analysis-title">
-                📊 GTO 分析结果
+                {t.analyzer.gtoAnalysisResults}
               </div>
 
               <div className="stats-grid">
                 <div className="stat-item">
-                  <div className="stat-label">权益</div>
+                  <div className="stat-label">{t.analyzer.equity}</div>
                   <div className="stat-value" style={{ color: '#22d3bf' }}>{analysisResult.equity}%</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-label">底池赔率</div>
+                  <div className="stat-label">{t.analyzer.potOdds}</div>
                   <div className="stat-value">{analysisResult.potOdds}%</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-label">SPR</div>
+                  <div className="stat-label">{t.analyzer.spr}</div>
                   <div className="stat-value">{analysisResult.spr}</div>
                 </div>
                 <div className="stat-item">
-                  <div className="stat-label">最佳EV</div>
+                  <div className="stat-label">{t.analyzer.bestEv}</div>
                   <div className="stat-value" style={{ color: '#22c55e' }}>+{analysisResult.actions[0]?.ev} BB</div>
                 </div>
               </div>
 
               {/* Action Comparison with EV Loss */}
               <div className="action-comparison">
-                <div className="action-comparison-title">行动对比 (EV损失)</div>
+                <div className="action-comparison-title">{t.analyzer.actionComparison}</div>
                 <div className="action-bars">
                   {analysisResult.actions.map((action, i) => {
                     const maxEv = Math.max(...analysisResult.actions.map(a => a.ev));
                     const evLoss = maxEv - action.ev;
                     const barWidth = action.frequency * 100;
-                    const actionLabel = action.action === 'raise' ? '加注' :
-                      action.action === 'call' ? '跟注' :
-                      action.action === 'fold' ? '弃牌' :
-                      action.action === 'bet' ? '下注' :
-                      action.action === 'check' ? '过牌' :
-                      action.action === 'allin' ? '全下' : action.action;
+                    const actionLabel = action.action === 'raise' ? t.practice.raise :
+                      action.action === 'call' ? t.practice.call :
+                      action.action === 'fold' ? t.practice.fold :
+                      action.action === 'bet' ? t.practice.bet :
+                      action.action === 'check' ? t.practice.check :
+                      action.action === 'allin' ? t.practice.allIn : action.action;
                     return (
                       <div key={i} className="action-bar-row">
                         <div className="action-bar-label">
@@ -2278,7 +2282,7 @@ export default function AnalyzerPage() {
                             <span className="action-ev-loss">-{evLoss.toFixed(1)} BB</span>
                           )}
                           {evLoss === 0 && (
-                            <span className="action-ev-optimal">最优</span>
+                            <span className="action-ev-optimal">{t.analyzer.optimal}</span>
                           )}
                         </div>
                       </div>
@@ -2290,7 +2294,7 @@ export default function AnalyzerPage() {
               {/* Street-by-street Analysis */}
               {analysisResult.streetAnalysis && (
                 <div className="street-analysis">
-                  <div className="street-analysis-title">各街道策略</div>
+                  <div className="street-analysis-title">{t.analyzer.streetStrategy}</div>
                   {analysisResult.streetAnalysis.map((sa) => (
                     <div
                       key={sa.street}
@@ -2303,11 +2307,11 @@ export default function AnalyzerPage() {
                             key={i}
                             className={`street-action-chip ${a.action}`}
                           >
-                            {a.action === 'raise' ? '加注' :
-                             a.action === 'call' ? '跟注' :
-                             a.action === 'fold' ? '弃牌' :
-                             a.action === 'bet' ? '下注' :
-                             a.action === 'check' ? '过牌' : a.action}
+                            {a.action === 'raise' ? t.practice.raise :
+                             a.action === 'call' ? t.practice.call :
+                             a.action === 'fold' ? t.practice.fold :
+                             a.action === 'bet' ? t.practice.bet :
+                             a.action === 'check' ? t.practice.check : a.action}
                             <span className="street-action-freq">{Math.round(a.frequency * 100)}%</span>
                           </span>
                         ))}
@@ -2332,12 +2336,12 @@ export default function AnalyzerPage() {
                   letterSpacing: '0.5px',
                   marginBottom: '8px',
                 }}>
-                  保存笔记 (可选)
+                  {t.analyzer.saveNotes}
                 </div>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="添加笔记，记录你的思考过程..."
+                  placeholder={t.analyzer.notesPlaceholder}
                   style={{
                     width: '100%',
                     minHeight: '60px',
@@ -2359,7 +2363,7 @@ export default function AnalyzerPage() {
                   marginTop: '8px',
                 }}>
                   <span style={{ fontSize: '10px', color: '#666' }}>
-                    保存后可在"历史记录"页面查看
+                    {t.analyzer.viewInHistory}
                   </span>
                   <button
                     onClick={saveToHistory}
@@ -2377,7 +2381,7 @@ export default function AnalyzerPage() {
                       transition: 'all 0.2s',
                     }}
                   >
-                    {isSaving ? '保存中...' : saveSuccess ? '✓ 已保存' : '💾 保存到历史'}
+                    {isSaving ? t.analyzer.saving : saveSuccess ? t.analyzer.saved : t.analyzer.saveToHistory}
                   </button>
                 </div>
               </div>
@@ -2385,18 +2389,18 @@ export default function AnalyzerPage() {
           ) : (
             <div className="analysis-card">
               <div className="analysis-title">
-                📊 GTO 分析结果
+                {t.analyzer.gtoAnalysisResults}
               </div>
               <div className="analysis-placeholder">
                 <div className="placeholder-icon">🎯</div>
                 <div className="placeholder-text">
                   {!heroPosition || !villainPosition
-                    ? '请先选择你和对手的位置'
+                    ? t.analyzer.selectPositionFirst
                     : !heroHand
-                    ? '请选择你的两张手牌'
+                    ? t.analyzer.selectHeroCards
                     : street !== 'preflop' && board.length < (street === 'flop' ? 3 : street === 'turn' ? 4 : 5)
-                    ? `请选择公共牌 (${board.length}/${street === 'flop' ? 3 : street === 'turn' ? 4 : 5})`
-                    : '点击"分析"按钮开始分析'}
+                    ? `${t.analyzer.selectBoardCards} (${board.length}/${street === 'flop' ? 3 : street === 'turn' ? 4 : 5})`
+                    : t.analyzer.clickAnalyze}
                 </div>
               </div>
             </div>
@@ -2478,7 +2482,7 @@ export default function AnalyzerPage() {
               <div className="range-card-header">
                 <div className="range-header">
                   <div className="range-title-wrapper">
-                    <span className="range-title">对手范围</span>
+                    <span className="range-title">{t.analyzer.opponentRange}</span>
                     <span
                       className="help-icon"
                       onMouseEnter={handleTooltipEnter}
@@ -2509,23 +2513,23 @@ export default function AnalyzerPage() {
                     pointerEvents: 'none',
                   }}
                 >
-                  <div className="help-tooltip-title">什么是对手范围？</div>
+                  <div className="help-tooltip-title">{t.analyzer.whatIsRange}</div>
                   <div className="help-tooltip-content">
-                    <p>对手范围是指基于对手位置和行动，推测其可能持有的所有起手牌组合。</p>
-                    <p>矩阵中的颜色深浅表示该手牌在对手范围内的可能性：颜色越深，可能性越高。</p>
+                    <p>{t.analyzer.rangeExplanation1}</p>
+                    <p>{t.analyzer.rangeExplanation2}</p>
                   </div>
                   <div className="help-tooltip-stats">
                     <div className="help-tooltip-stat">
-                      <span className="help-tooltip-stat-label">范围%</span>
-                      <span className="help-tooltip-stat-desc">对手开牌范围百分比</span>
+                      <span className="help-tooltip-stat-label">{t.analyzer.rangePercent}</span>
+                      <span className="help-tooltip-stat-desc">{t.analyzer.rangePercent}</span>
                     </div>
                     <div className="help-tooltip-stat">
-                      <span className="help-tooltip-stat-label">组合数</span>
-                      <span className="help-tooltip-stat-desc">范围内的手牌组合总数</span>
+                      <span className="help-tooltip-stat-label">{t.analyzer.combos}</span>
+                      <span className="help-tooltip-stat-desc">{t.analyzer.combosCount}</span>
                     </div>
                     <div className="help-tooltip-stat">
-                      <span className="help-tooltip-stat-label">平均权益</span>
-                      <span className="help-tooltip-stat-desc">你的手牌对抗此范围的胜率</span>
+                      <span className="help-tooltip-stat-label">{t.analyzer.avgEquity}</span>
+                      <span className="help-tooltip-stat-desc">{t.analyzer.equityVsRange}</span>
                     </div>
                   </div>
                 </div>
@@ -2545,15 +2549,15 @@ export default function AnalyzerPage() {
               <div className="range-card-footer">
                 <div className="range-stats">
                   <div className="range-stat">
-                    <div className="range-stat-label">范围</div>
+                    <div className="range-stat-label">{t.analyzer.range}</div>
                     <div className="range-stat-value">{rangeStats.rangePercent}%</div>
                   </div>
                   <div className="range-stat">
-                    <div className="range-stat-label">组合</div>
+                    <div className="range-stat-label">{t.analyzer.combos}</div>
                     <div className="range-stat-value">{rangeStats.combos}</div>
                   </div>
                   <div className="range-stat">
-                    <div className="range-stat-label">vs范围权益</div>
+                    <div className="range-stat-label">{t.analyzer.vsRangeEquity}</div>
                     <div className="range-stat-value" style={{ color: heroHand ? '#22d3bf' : '#666' }}>
                       {heroHand ? `${rangeStats.equity}%` : '--'}
                     </div>
@@ -2632,7 +2636,7 @@ export default function AnalyzerPage() {
           {/* History - Show when toggled */}
           {showHistory && (
             <div className="history-card">
-              <div className="history-title">分析历史</div>
+              <div className="history-title">{t.analyzer.analysisHistory}</div>
               {history.length > 0 ? (
                 <div className="history-list">
                   {history.map(item => (
@@ -2654,7 +2658,7 @@ export default function AnalyzerPage() {
                   ))}
                 </div>
               ) : (
-                <div className="empty-state">暂无分析历史</div>
+                <div className="empty-state">{t.analyzer.noHistory}</div>
               )}
             </div>
           )}
