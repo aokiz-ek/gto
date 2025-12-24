@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import './postflop.css';
 
 // Types
@@ -79,6 +80,7 @@ const STREET_LABELS: Record<Street, { en: string; zh: string }> = {
 };
 
 export default function PostflopPage() {
+  const { t } = useTranslation();
   const { isMobile, isTablet, isMobileOrTablet } = useResponsive();
   const [scenarios, setScenarios] = useState<PostflopScenario[]>([]);
   const [labels, setLabels] = useState<Labels | null>(null);
@@ -90,6 +92,16 @@ export default function PostflopPage() {
   const [filterType, setFilterType] = useState<ScenarioType | 'all'>('all');
   const [filterStreet, setFilterStreet] = useState<Street | 'all'>('all');
   const [filterTexture, setFilterTexture] = useState<BoardTexture | 'all'>('all');
+
+  // Get hand strength label
+  const getStrengthLabel = (strength: HandStrength): string => {
+    return t.postflop.handStrength[strength];
+  };
+
+  // Get street label
+  const getStreetLabel = (street: Street): string => {
+    return t.postflop.streets[street];
+  };
 
   useEffect(() => {
     async function fetchScenarios() {
@@ -172,11 +184,11 @@ export default function PostflopPage() {
           <Link href="/" className="back-btn">
             <span>←</span>
           </Link>
-          <h1>翻牌后策略库</h1>
+          <h1>{t.postflop.title}</h1>
         </div>
         <div className="header-right">
           <Link href="/practice?mode=postflop" className="practice-btn">
-            开始练习
+            {t.postflop.startPractice}
           </Link>
         </div>
       </header>
@@ -188,12 +200,12 @@ export default function PostflopPage() {
           {/* Filters */}
           <div className="filters">
             <div className="filter-group">
-              <label>场景类型</label>
+              <label>{t.postflop.scenarioType}</label>
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as ScenarioType | 'all')}
               >
-                <option value="all">全部场景</option>
+                <option value="all">{t.postflop.allScenarios}</option>
                 {labels && Object.entries(labels.scenarioTypes).map(([key, label]) => (
                   <option key={key} value={key}>{label.zh}</option>
                 ))}
@@ -201,25 +213,25 @@ export default function PostflopPage() {
             </div>
 
             <div className="filter-group">
-              <label>街道</label>
+              <label>{t.postflop.street}</label>
               <select
                 value={filterStreet}
                 onChange={(e) => setFilterStreet(e.target.value as Street | 'all')}
               >
-                <option value="all">全部街道</option>
+                <option value="all">{t.postflop.allStreets}</option>
                 {Object.entries(STREET_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label.zh}</option>
+                  <option key={key} value={key}>{getStreetLabel(key as Street)}</option>
                 ))}
               </select>
             </div>
 
             <div className="filter-group">
-              <label>牌面质地</label>
+              <label>{t.postflop.boardTexture}</label>
               <select
                 value={filterTexture}
                 onChange={(e) => setFilterTexture(e.target.value as BoardTexture | 'all')}
               >
-                <option value="all">全部质地</option>
+                <option value="all">{t.postflop.allTextures}</option>
                 {labels && Object.entries(labels.boardTextures).map(([key, label]) => (
                   <option key={key} value={key}>{label.zh}</option>
                 ))}
@@ -230,9 +242,9 @@ export default function PostflopPage() {
           {/* Scenario list */}
           <div className="scenario-list">
             {loading ? (
-              <div className="loading">加载中...</div>
+              <div className="loading">{t.postflop.loading}</div>
             ) : scenarios.length === 0 ? (
-              <div className="empty">暂无符合条件的场景</div>
+              <div className="empty">{t.postflop.noScenarios}</div>
             ) : (
               scenarios.map((scenario) => (
                 <div
@@ -243,7 +255,7 @@ export default function PostflopPage() {
                   <div className="scenario-title">{scenario.nameZh}</div>
                   <div className="scenario-meta">
                     <span className={`street-badge ${scenario.street}`}>
-                      {STREET_LABELS[scenario.street].zh}
+                      {getStreetLabel(scenario.street)}
                     </span>
                     <span className={`position-badge ${scenario.hasPosition ? 'ip' : 'oop'}`}>
                       {scenario.hasPosition ? 'IP' : 'OOP'}
@@ -270,10 +282,10 @@ export default function PostflopPage() {
                 <p className="scenario-desc">{selectedScenario.descriptionZh}</p>
                 <div className="scenario-badges">
                   <span className={`street-badge ${selectedScenario.street}`}>
-                    {STREET_LABELS[selectedScenario.street].zh}
+                    {getStreetLabel(selectedScenario.street)}
                   </span>
                   <span className={`position-badge ${selectedScenario.hasPosition ? 'ip' : 'oop'}`}>
-                    {selectedScenario.hasPosition ? '有位置' : '无位置'}
+                    {selectedScenario.hasPosition ? t.postflop.hasPosition : t.postflop.noPosition}
                   </span>
                   {labels && (
                     <span className="texture-badge">
@@ -285,7 +297,7 @@ export default function PostflopPage() {
 
               {/* Hand strength selector */}
               <div className="strength-selector">
-                <div className="selector-label">选择牌力查看策略</div>
+                <div className="selector-label">{t.postflop.selectStrength}</div>
                 <div className="strength-tabs">
                   {(Object.keys(STRENGTH_LABELS) as HandStrength[]).map((strength) => (
                     <button
@@ -301,7 +313,7 @@ export default function PostflopPage() {
                         className="strength-dot"
                         style={{ backgroundColor: STRENGTH_COLORS[strength] }}
                       />
-                      {STRENGTH_LABELS[strength].zh}
+                      {getStrengthLabel(strength)}
                     </button>
                   ))}
                 </div>
@@ -314,9 +326,9 @@ export default function PostflopPage() {
                     className="strength-label"
                     style={{ color: STRENGTH_COLORS[selectedStrength] }}
                   >
-                    {STRENGTH_LABELS[selectedStrength].zh}
+                    {getStrengthLabel(selectedStrength)}
                   </span>
-                  策略
+                  {t.postflop.strategy}
                 </div>
 
                 {/* Action frequency bar */}
@@ -329,7 +341,7 @@ export default function PostflopPage() {
 
                 {/* All strengths overview */}
                 <div className="all-strengths-section">
-                  <h3>所有牌力策略概览</h3>
+                  <h3>{t.postflop.allStrengthsOverview}</h3>
                   <div className="strength-overview-grid">
                     {(Object.keys(STRENGTH_LABELS) as HandStrength[]).map((strength) => (
                       <div
@@ -342,7 +354,7 @@ export default function PostflopPage() {
                             className="strength-dot"
                             style={{ backgroundColor: STRENGTH_COLORS[strength] }}
                           />
-                          <span>{STRENGTH_LABELS[strength].zh}</span>
+                          <span>{getStrengthLabel(strength)}</span>
                         </div>
                         {renderActionBar(selectedScenario.strategies[strength])}
                         <div className="strength-overview-legend">
@@ -364,7 +376,7 @@ export default function PostflopPage() {
                 {/* Tips section */}
                 {selectedScenario.tips.length > 0 && (
                   <div className="tips-section">
-                    <h3>策略要点</h3>
+                    <h3>{t.postflop.strategyPoints}</h3>
                     <ul className="tips-list">
                       {selectedScenario.tips.map((tip, i) => (
                         <li key={i}>
@@ -380,8 +392,8 @@ export default function PostflopPage() {
           ) : (
             <div className="empty-state">
               <div className="empty-icon">📊</div>
-              <h3>选择一个场景查看策略</h3>
-              <p>从左侧列表选择一个翻牌后场景，查看详细的GTO策略分析</p>
+              <h3>{t.postflop.selectScenario}</h3>
+              <p>{t.postflop.selectScenarioDesc}</p>
             </div>
           )}
         </div>

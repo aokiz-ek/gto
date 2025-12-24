@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 
 type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 type FocusArea = 'position' | 'street' | 'scenario' | 'hand_type' | 'action';
@@ -46,6 +47,7 @@ interface TrainingData {
 }
 
 export default function TrainingRecommendPage() {
+  const { t } = useTranslation();
   const { isMobile } = useResponsive();
   const [data, setData] = useState<TrainingData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,15 +61,15 @@ export default function TrainingRecommendPage() {
         if (result.success) {
           setData(result);
         } else {
-          setError(result.error || '加载失败');
+          setError(result.error || t.training.recommend.loadError);
         }
       } catch (err) {
-        setError('网络错误，请重试');
+        setError(t.training.recommend.networkError);
       }
       setLoading(false);
     }
     fetchRecommendations();
-  }, []);
+  }, [t]);
 
   const getDifficultyColor = (level: DifficultyLevel): string => {
     const colors: Record<DifficultyLevel, string> = {
@@ -80,13 +82,7 @@ export default function TrainingRecommendPage() {
   };
 
   const getDifficultyLabel = (level: DifficultyLevel): string => {
-    const labels: Record<DifficultyLevel, string> = {
-      beginner: '入门',
-      intermediate: '进阶',
-      advanced: '高级',
-      expert: '专家',
-    };
-    return labels[level];
+    return t.training.recommend.difficultyLevel[level];
   };
 
   const getFocusIcon = (focus: FocusArea): string => {
@@ -104,7 +100,7 @@ export default function TrainingRecommendPage() {
     return (
       <div className="training-page loading">
         <div className="loading-spinner" />
-        <p>正在生成个性化训练计划...</p>
+        <p>{t.training.recommend.loading}</p>
         <style jsx>{`
           .training-page.loading {
             min-height: 100vh;
@@ -136,8 +132,8 @@ export default function TrainingRecommendPage() {
     return (
       <div className="training-page error">
         <div className="error-icon">!</div>
-        <p>{error || '加载失败'}</p>
-        <Link href="/" className="back-link">返回首页</Link>
+        <p>{error || t.training.recommend.loadError}</p>
+        <Link href="/" className="back-link">{t.training.recommend.backToHome}</Link>
         <style jsx>{`
           .training-page.error {
             min-height: 100vh;
@@ -175,8 +171,8 @@ export default function TrainingRecommendPage() {
   return (
     <div className="training-page">
       <div className="header">
-        <Link href="/" className="back-link">← 返回</Link>
-        <h1>个性化训练</h1>
+        <Link href="/" className="back-link">← {t.common.back}</Link>
+        <h1>{t.training.recommend.personalizedTraining}</h1>
         <div className="spacer" />
       </div>
 
@@ -184,7 +180,7 @@ export default function TrainingRecommendPage() {
       <div className="level-card">
         <div className="level-header">
           <div className="level-info">
-            <span className="level-label">当前等级</span>
+            <span className="level-label">{t.training.recommend.currentLevel}</span>
             <span
               className="level-value"
               style={{ color: getDifficultyColor(learningPath.currentLevel) }}
@@ -194,13 +190,13 @@ export default function TrainingRecommendPage() {
           </div>
           <div className="streak-info">
             <span className="streak-value">{learningPath.streak}</span>
-            <span className="streak-label">天连续练习</span>
+            <span className="streak-label">{t.training.recommend.daysStreak}</span>
           </div>
         </div>
 
         <div className="progress-section">
           <div className="progress-header">
-            <span>进度</span>
+            <span>{t.training.recommend.progress}</span>
             <span>{learningPath.progressPercent}%</span>
           </div>
           <div className="progress-bar">
@@ -210,14 +206,14 @@ export default function TrainingRecommendPage() {
             />
           </div>
           <div className="milestone">
-            下一目标: {learningPath.nextMilestoneZh}
+            {t.training.recommend.nextGoal}: {learningPath.nextMilestoneZh}
           </div>
         </div>
       </div>
 
       {/* Daily Goal */}
       <div className="daily-goal-card">
-        <h2>今日目标</h2>
+        <h2>{t.training.recommend.dailyGoal}</h2>
         <div className="goal-content">
           <div className="goal-progress">
             <div className="goal-circle">
@@ -251,22 +247,22 @@ export default function TrainingRecommendPage() {
           <div className="goal-stats">
             <div className="goal-stat">
               <span className="stat-value">{learningPath.dailyGoal.accuracy}%</span>
-              <span className="stat-label">今日准确率</span>
+              <span className="stat-label">{t.training.recommend.todayAccuracy}</span>
             </div>
             <div className="goal-stat">
               <span className="stat-value">{learningPath.totalSessionsCompleted}</span>
-              <span className="stat-label">总练习次数</span>
+              <span className="stat-label">{t.training.recommend.totalPracticeSessions}</span>
             </div>
           </div>
         </div>
         <Link href="/practice" className="quick-practice-btn">
-          快速练习
+          {t.training.recommend.quickPractice}
         </Link>
       </div>
 
       {/* Recommendations */}
       <div className="recommendations-section">
-        <h2>针对性训练推荐</h2>
+        <h2>{t.training.recommend.targetedRecommendations}</h2>
         <div className="recommendations-list">
           {learningPath.recommendations.map((rec) => (
             <div key={rec.id} className="recommendation-card">
@@ -291,13 +287,13 @@ export default function TrainingRecommendPage() {
 
               <div className="rec-meta">
                 <span className="rec-questions">
-                  预计 {rec.estimatedQuestions} 题
+                  {t.training.recommend.estimatedQuestions.replace('{count}', rec.estimatedQuestions.toString())}
                 </span>
                 <span className="rec-target">{rec.targetValueZh}</span>
               </div>
 
               <Link href={rec.practiceUrl} className="start-training-btn">
-                开始训练
+                {t.training.recommend.startTraining}
               </Link>
             </div>
           ))}
@@ -308,15 +304,15 @@ export default function TrainingRecommendPage() {
       <div className="quick-actions">
         <Link href="/practice?mode=random" className="action-btn random">
           <span className="action-icon">🎲</span>
-          <span>随机练习</span>
+          <span>{t.training.recommend.quickActions.randomPractice}</span>
         </Link>
         <Link href="/report" className="action-btn report">
           <span className="action-icon">📊</span>
-          <span>弱点报告</span>
+          <span>{t.training.recommend.quickActions.weaknessReport}</span>
         </Link>
         <Link href="/challenge" className="action-btn challenge">
           <span className="action-icon">🏆</span>
-          <span>每日挑战</span>
+          <span>{t.training.recommend.quickActions.dailyChallenge}</span>
         </Link>
       </div>
 

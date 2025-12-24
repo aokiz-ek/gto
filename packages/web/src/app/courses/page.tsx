@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import './courses.css';
 
 // Types
@@ -31,6 +32,7 @@ interface Labels {
 }
 
 export default function CoursesPage() {
+  const { t } = useTranslation();
   const { isMobile, isMobileOrTablet } = useResponsive();
   const [courses, setCourses] = useState<CourseListItem[]>([]);
   const [labels, setLabels] = useState<Labels | null>(null);
@@ -75,8 +77,8 @@ export default function CoursesPage() {
             <span>←</span>
           </Link>
           <div>
-            <h1>GTO课程</h1>
-            <p className="header-subtitle">系统学习德州扑克GTO策略</p>
+            <h1>{t.courses.title}</h1>
+            <p className="header-subtitle">{t.courses.subtitle}</p>
           </div>
         </div>
       </header>
@@ -84,24 +86,24 @@ export default function CoursesPage() {
       {/* Hero section */}
       <div className="hero-section">
         <div className="hero-content">
-          <h2>从入门到精通</h2>
-          <p>结构化的GTO学习路径，包含理论讲解、测验和实战练习</p>
+          <h2>{t.courses.heroTitle}</h2>
+          <p>{t.courses.heroDescription}</p>
           <div className="hero-stats">
             <div className="stat">
               <span className="stat-value">{courses.length}</span>
-              <span className="stat-label">门课程</span>
+              <span className="stat-label">{t.courses.coursesCount}</span>
             </div>
             <div className="stat">
               <span className="stat-value">
                 {courses.reduce((sum, c) => sum + c.lessonCount, 0)}
               </span>
-              <span className="stat-label">节课</span>
+              <span className="stat-label">{t.courses.lessonsCount}</span>
             </div>
             <div className="stat">
               <span className="stat-value">
                 {courses.reduce((sum, c) => sum + c.estimatedHours, 0)}
               </span>
-              <span className="stat-label">小时内容</span>
+              <span className="stat-label">{t.courses.hoursContent}</span>
             </div>
           </div>
         </div>
@@ -112,13 +114,13 @@ export default function CoursesPage() {
         {/* Filters */}
         <div className={`filters-section ${isMobileOrTablet ? 'mobile' : ''}`}>
           <div className="filter-group">
-            <label>难度级别</label>
+            <label>{t.courses.difficultyLevel}</label>
             <div className="filter-buttons">
               <button
                 className={`filter-btn ${filterLevel === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterLevel('all')}
               >
-                全部
+                {t.courses.all}
               </button>
               {labels && Object.entries(labels.levels).map(([key, label]) => (
                 <button
@@ -137,13 +139,13 @@ export default function CoursesPage() {
           </div>
 
           <div className="filter-group">
-            <label>课程分类</label>
+            <label>{t.courses.courseCategory}</label>
             <div className="filter-buttons">
               <button
                 className={`filter-btn ${filterCategory === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterCategory('all')}
               >
-                全部
+                {t.courses.all}
               </button>
               {labels && Object.entries(labels.categories).map(([key, label]) => (
                 <button
@@ -165,7 +167,7 @@ export default function CoursesPage() {
                 onChange={(e) => setShowFreeOnly(e.target.checked)}
               />
               <span className="toggle-switch" />
-              只显示免费课程
+              {t.courses.showFreeOnly}
             </label>
           </div>
         </div>
@@ -175,13 +177,13 @@ export default function CoursesPage() {
           {loading ? (
             <div className="loading-state">
               <div className="loading-spinner" />
-              <p>加载课程...</p>
+              <p>{t.courses.loadingCourses}</p>
             </div>
           ) : courses.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">📚</div>
-              <h3>暂无符合条件的课程</h3>
-              <p>尝试调整筛选条件</p>
+              <h3>{t.courses.noCoursesFound}</h3>
+              <p>{t.courses.adjustFilters}</p>
             </div>
           ) : (
             courses.map((course) => (
@@ -207,7 +209,7 @@ export default function CoursesPage() {
                       </>
                     )}
                     {course.isFree && (
-                      <span className="free-badge">免费</span>
+                      <span className="free-badge">{t.courses.free}</span>
                     )}
                   </div>
                 </div>
@@ -218,20 +220,20 @@ export default function CoursesPage() {
                 <div className="course-meta">
                   <div className="meta-item">
                     <span className="meta-icon">📚</span>
-                    <span>{course.moduleCount} 模块</span>
+                    <span>{course.moduleCount} {t.courses.modules}</span>
                   </div>
                   <div className="meta-item">
                     <span className="meta-icon">📝</span>
-                    <span>{course.lessonCount} 节课</span>
+                    <span>{course.lessonCount} {t.courses.lessons}</span>
                   </div>
                   <div className="meta-item">
                     <span className="meta-icon">⏱️</span>
-                    <span>{course.estimatedHours} 小时</span>
+                    <span>{course.estimatedHours} {t.courses.hours}</span>
                   </div>
                 </div>
 
                 <div className="course-objectives">
-                  <div className="objectives-label">你将学到：</div>
+                  <div className="objectives-label">{t.courses.youWillLearn}</div>
                   <ul>
                     {course.objectives.slice(0, 3).map((obj, i) => (
                       <li key={i}>{obj.zh}</li>
@@ -241,7 +243,7 @@ export default function CoursesPage() {
 
                 <div className="course-footer">
                   <span className="start-btn">
-                    开始学习 <span>→</span>
+                    {t.courses.startCourse} <span>→</span>
                   </span>
                 </div>
               </Link>
@@ -251,37 +253,37 @@ export default function CoursesPage() {
 
         {/* Learning path section */}
         <div className="learning-path-section">
-          <h2>推荐学习路径</h2>
+          <h2>{t.courses.recommendedPath}</h2>
           <div className="path-steps">
             <div className="path-step">
               <div className="step-number">1</div>
               <div className="step-content">
-                <h4>翻牌前基础</h4>
-                <p>从位置和起手牌选择开始</p>
+                <h4>{t.courses.path1Title}</h4>
+                <p>{t.courses.path1Description}</p>
               </div>
             </div>
             <div className="path-arrow">→</div>
             <div className="path-step">
               <div className="step-number">2</div>
               <div className="step-content">
-                <h4>3-Bet进阶</h4>
-                <p>学习高级翻前策略</p>
+                <h4>{t.courses.path2Title}</h4>
+                <p>{t.courses.path2Description}</p>
               </div>
             </div>
             <div className="path-arrow">→</div>
             <div className="path-step">
               <div className="step-number">3</div>
               <div className="step-content">
-                <h4>C-Bet策略</h4>
-                <p>掌握翻牌后持续下注</p>
+                <h4>{t.courses.path3Title}</h4>
+                <p>{t.courses.path3Description}</p>
               </div>
             </div>
             <div className="path-arrow">→</div>
             <div className="path-step">
               <div className="step-number">4</div>
               <div className="step-content">
-                <h4>高级策略</h4>
-                <p>精通复杂场景决策</p>
+                <h4>{t.courses.path4Title}</h4>
+                <p>{t.courses.path4Description}</p>
               </div>
             </div>
           </div>

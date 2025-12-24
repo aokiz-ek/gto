@@ -459,7 +459,7 @@ export const Navigation = memo(function Navigation() {
           <LanguageSwitcher size={isMobile ? 'sm' : 'md'} />
 
           {/* Upgrade Button - Hide on mobile */}
-          {!isMobile && (
+          {/* {!isMobile && (
             <Link href="/pricing" style={{ textDecoration: 'none' }}>
               <button
                 onMouseEnter={() => setUpgradeHovered(true)}
@@ -492,7 +492,7 @@ export const Navigation = memo(function Navigation() {
                 <span>{isTablet ? t.membership.pro : t.nav.upgrade}</span>
               </button>
             </Link>
-          )}
+          )} */}
 
           {/* Auth Section - Desktop */}
           {!isMobileOrTablet && (

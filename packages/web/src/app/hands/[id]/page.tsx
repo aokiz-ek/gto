@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import './hand-detail.css';
 
 // Types
@@ -76,6 +77,7 @@ interface HandComment {
 export default function HandDetailPage() {
   const params = useParams();
   const { isMobile, isMobileOrTablet } = useResponsive();
+  const { t } = useTranslation();
   const [hand, setHand] = useState<SharedHand | null>(null);
   const [comments, setComments] = useState<HandComment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,12 +145,12 @@ export default function HandDetailPage() {
 
   const getActionDisplay = (action: HandAction) => {
     const actionLabels: Record<string, { label: string; color: string }> = {
-      fold: { label: '弃牌', color: '#6b7280' },
-      check: { label: '过牌', color: '#3b82f6' },
-      call: { label: '跟注', color: '#22c55e' },
-      bet: { label: '下注', color: '#f59e0b' },
-      raise: { label: '加注', color: '#ef4444' },
-      'all-in': { label: '全下', color: '#8b5cf6' },
+      fold: { label: t.practice.fold, color: '#6b7280' },
+      check: { label: t.practice.check, color: '#3b82f6' },
+      call: { label: t.practice.call, color: '#22c55e' },
+      bet: { label: t.practice.bet, color: '#f59e0b' },
+      raise: { label: t.practice.raise, color: '#ef4444' },
+      'all-in': { label: t.practice.allIn, color: '#8b5cf6' },
     };
 
     const info = actionLabels[action.action];
@@ -207,12 +209,12 @@ export default function HandDetailPage() {
             <Link href="/hands" className="back-btn">
               <span>&larr;</span>
             </Link>
-            <h1>加载中...</h1>
+            <h1>{t.hands.loading}</h1>
           </div>
         </header>
         <div className="loading-container">
           <div className="loading-spinner" />
-          <p>加载牌谱...</p>
+          <p>{t.hands.loading}</p>
         </div>
       </div>
     );
@@ -226,14 +228,14 @@ export default function HandDetailPage() {
             <Link href="/hands" className="back-btn">
               <span>&larr;</span>
             </Link>
-            <h1>牌谱不存在</h1>
+            <h1>{t.hands.noHandsYet}</h1>
           </div>
         </header>
         <div className="empty-container">
           <div className="empty-icon">&#127183;</div>
-          <h3>牌谱不存在</h3>
-          <p>该牌谱可能已被删除</p>
-          <Link href="/hands" className="back-link">返回牌谱列表</Link>
+          <h3>{t.hands.noHandsYet}</h3>
+          <p>{t.community.postDeleted}</p>
+          <Link href="/hands" className="back-link">{t.community.backToCommunity}</Link>
         </div>
       </div>
     );
@@ -249,7 +251,7 @@ export default function HandDetailPage() {
           <Link href="/hands" className="back-btn">
             <span>&larr;</span>
           </Link>
-          <h1>牌谱详情</h1>
+          <h1>{t.hands.title}</h1>
         </div>
       </header>
 
@@ -275,15 +277,15 @@ export default function HandDetailPage() {
           {/* Game info */}
           <div className="game-info">
             <div className="info-item">
-              <span className="info-label">盲注</span>
+              <span className="info-label">{t.common.blinds}</span>
               <span className="info-value">{hand.blinds}</span>
             </div>
             <div className="info-item">
-              <span className="info-label">有效筹码</span>
+              <span className="info-label">{t.analyzer.effectiveStack}</span>
               <span className="info-value">{hand.effectiveStack}BB</span>
             </div>
             <div className="info-item">
-              <span className="info-label">结果</span>
+              <span className="info-label">{t.hands.result}</span>
               <span className={`info-value ${hand.result.won ? 'won' : 'lost'}`}>
                 {hand.result.won ? '+' : ''}{hand.result.amount}BB
               </span>
@@ -298,9 +300,9 @@ export default function HandDetailPage() {
                 className={`street-tab ${activeStreet === street.name ? 'active' : ''}`}
                 onClick={() => setActiveStreet(street.name)}
               >
-                {street.name === 'preflop' ? '翻前' :
-                 street.name === 'flop' ? '翻牌' :
-                 street.name === 'turn' ? '转牌' : '河牌'}
+                {street.name === 'preflop' ? t.common.preflop :
+                 street.name === 'flop' ? t.common.flop :
+                 street.name === 'turn' ? t.common.turn : t.common.river}
               </button>
             ))}
           </div>
@@ -308,7 +310,7 @@ export default function HandDetailPage() {
           {/* Board */}
           {currentStreet?.board && (
             <div className="board-section">
-              <span className="board-label">公共牌</span>
+              <span className="board-label">{t.analyzer.board}</span>
               <div className="board-cards">
                 {currentStreet.board.map((card, i) => (
                   <div key={i} className="board-card">
@@ -322,14 +324,14 @@ export default function HandDetailPage() {
           {/* Pot */}
           {currentStreet && (
             <div className="pot-info">
-              <span>底池: ${currentStreet.pot}</span>
+              <span>{t.hands.potSize}: ${currentStreet.pot}</span>
             </div>
           )}
 
           {/* Actions */}
           {currentStreet && (
             <div className="actions-section">
-              <h4>行动</h4>
+              <h4>{t.hands.actions}</h4>
               <div className="actions-list">
                 {currentStreet.actions.map((action, i) => (
                   <div key={i} className="action-item">
@@ -345,8 +347,8 @@ export default function HandDetailPage() {
         <section className="hand-details">
           {/* Badges */}
           <div className="detail-badges">
-            {hand.isFeatured && <span className="badge featured">精选</span>}
-            {hand.isHot && <span className="badge hot">热门</span>}
+            {hand.isFeatured && <span className="badge featured">{t.hands.featured}</span>}
+            {hand.isHot && <span className="badge hot">{t.hands.hot}</span>}
           </div>
 
           {/* Title */}
@@ -371,14 +373,14 @@ export default function HandDetailPage() {
           {/* Key decision */}
           {hand.keyDecision && (
             <div className="key-decision">
-              <h4>关键决策</h4>
+              <h4>{t.hands.keyDecision}</h4>
               <div className="decision-content">
                 <div className="decision-header">
                   <span className="decision-street">{hand.keyDecision.street}</span>
                   <span className="decision-action">{hand.keyDecision.action}</span>
                   {hand.keyDecision.isCorrect !== undefined && (
                     <span className={`decision-result ${hand.keyDecision.isCorrect ? 'correct' : 'wrong'}`}>
-                      {hand.keyDecision.isCorrect ? '正确' : '失误'}
+                      {hand.keyDecision.isCorrect ? t.practice.correct : t.practice.incorrect}
                     </span>
                   )}
                 </div>
@@ -389,7 +391,7 @@ export default function HandDetailPage() {
 
           {/* Description */}
           <div className="description-section">
-            <h4>描述</h4>
+            <h4>{t.community.postContent}</h4>
             <div className="description-content">
               {hand.description.split('\n').map((para, i) => (
                 para.trim() && <p key={i}>{para}</p>
@@ -417,23 +419,23 @@ export default function HandDetailPage() {
             </button>
             <button className="action-btn">
               <span dangerouslySetInnerHTML={{ __html: '&#128279;' }} />
-              <span>分享</span>
+              <span>{t.hands.share}</span>
             </button>
             <button className="action-btn">
               <span dangerouslySetInnerHTML={{ __html: '&#128278;' }} />
-              <span>收藏</span>
+              <span>{t.community.bookmark}</span>
             </button>
           </div>
         </section>
 
         {/* Comments section */}
         <section className="comments-section">
-          <h3>评论 ({comments.length})</h3>
+          <h3>{t.community.comments} ({comments.length})</h3>
 
           {/* Comment input */}
           <div className="comment-input">
             <textarea
-              placeholder={replyTo ? `回复 @${replyTo}` : '写下你的分析...'}
+              placeholder={replyTo ? `${t.community.reply} @${replyTo}` : t.community.writeComment}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               rows={3}
@@ -441,7 +443,7 @@ export default function HandDetailPage() {
             <div className="comment-input-actions">
               {replyTo && (
                 <button className="cancel-reply" onClick={() => setReplyTo(null)}>
-                  取消回复
+                  {t.community.cancelReply}
                 </button>
               )}
               <button
@@ -449,7 +451,7 @@ export default function HandDetailPage() {
                 onClick={handleSubmitComment}
                 disabled={!newComment.trim()}
               >
-                发表评论
+                {t.community.submitComment}
               </button>
             </div>
           </div>
@@ -458,7 +460,7 @@ export default function HandDetailPage() {
           <div className="comments-list">
             {comments.length === 0 ? (
               <div className="no-comments">
-                <p>暂无评论，来分享你的观点吧！</p>
+                <p>{t.community.noComments}</p>
               </div>
             ) : (
               comments.map(comment => (
@@ -484,7 +486,7 @@ export default function HandDetailPage() {
                         className="comment-action"
                         onClick={() => setReplyTo(comment.author.username)}
                       >
-                        回复
+                        {t.community.reply}
                       </button>
                     </div>
 

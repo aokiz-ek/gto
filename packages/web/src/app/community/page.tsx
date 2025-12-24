@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import './community.css';
 
 // Types
@@ -50,6 +51,7 @@ interface CategoryLabel {
 
 export default function CommunityPage() {
   const { isMobile, isMobileOrTablet } = useResponsive();
+  const { t } = useTranslation();
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Record<string, CategoryLabel>>({});
   const [loading, setLoading] = useState(true);
@@ -91,10 +93,10 @@ export default function CommunityPage() {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
 
-    if (hours < 1) return '刚刚';
-    if (hours < 24) return `${hours}小时前`;
-    if (days < 7) return `${days}天前`;
-    return date.toLocaleDateString('zh-CN');
+    if (hours < 1) return t.community.justNow || '刚刚';
+    if (hours < 24) return `${hours}${t.community.hoursAgo || '小时前'}`;
+    if (days < 7) return `${days}${t.community.daysAgo || '天前'}`;
+    return date.toLocaleDateString();
   };
 
   const formatNumber = (num: number) => {
@@ -111,12 +113,12 @@ export default function CommunityPage() {
             <span>←</span>
           </Link>
           <div>
-            <h1>社区讨论</h1>
-            <p className="header-subtitle">与其他玩家交流策略心得</p>
+            <h1>{t.community.title}</h1>
+            <p className="header-subtitle">{t.community.subtitle}</p>
           </div>
         </div>
         <Link href="/community/new" className="new-post-btn">
-          发帖
+          {t.community.newPost}
         </Link>
       </header>
 
@@ -126,14 +128,14 @@ export default function CommunityPage() {
         <aside className="sidebar">
           {/* Categories */}
           <div className="category-section">
-            <h3>分类</h3>
+            <h3>{t.community.categories}</h3>
             <div className="category-list">
               <button
                 className={`category-item ${selectedCategory === 'all' ? 'active' : ''}`}
                 onClick={() => { setSelectedCategory('all'); setPage(1); }}
               >
                 <span className="category-icon">📋</span>
-                <span>全部</span>
+                <span>{t.community.all}</span>
               </button>
               {Object.entries(categories).map(([key, cat]) => (
                 <button
@@ -153,7 +155,7 @@ export default function CommunityPage() {
 
           {/* Hot Tags */}
           <div className="tags-section">
-            <h3>热门标签</h3>
+            <h3>{t.community.hotTags}</h3>
             <div className="tags-cloud">
               {['3-bet', 'C-bet', 'postflop', '新手', '位置', '心得', 'MTT', '河牌'].map(tag => (
                 <span key={tag} className="tag">{tag}</span>
@@ -165,11 +167,11 @@ export default function CommunityPage() {
           <div className="quick-links">
             <Link href="/courses" className="quick-link">
               <span>📚</span>
-              学习课程
+              {t.community.courses}
             </Link>
             <Link href="/practice" className="quick-link">
               <span>🎯</span>
-              开始练习
+              {t.community.startPractice}
             </Link>
           </div>
         </aside>
@@ -180,9 +182,9 @@ export default function CommunityPage() {
           <div className="sort-bar">
             <div className="sort-options">
               {[
-                { value: 'latest', label: '最新' },
-                { value: 'hot', label: '热门' },
-                { value: 'top', label: '最赞' },
+                { value: 'latest', label: t.community.recent },
+                { value: 'hot', label: t.community.trending },
+                { value: 'top', label: t.community.top },
               ].map(opt => (
                 <button
                   key={opt.value}
@@ -200,13 +202,13 @@ export default function CommunityPage() {
             {loading ? (
               <div className="loading-state">
                 <div className="loading-spinner" />
-                <p>加载中...</p>
+                <p>{t.community.loading}</p>
               </div>
             ) : posts.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">📝</div>
-                <h3>暂无帖子</h3>
-                <p>成为第一个发帖的人吧！</p>
+                <h3>{t.community.noPosts}</h3>
+                <p>{t.community.beFirstPost}</p>
               </div>
             ) : (
               posts.map(post => (
@@ -219,10 +221,10 @@ export default function CommunityPage() {
                   <div className="post-header">
                     <div className="post-badges">
                       {post.isPinned && (
-                        <span className="badge pinned">置顶</span>
+                        <span className="badge pinned">{t.community.pinned}</span>
                       )}
                       {post.isHot && (
-                        <span className="badge hot">热门</span>
+                        <span className="badge hot">{t.community.hot}</span>
                       )}
                       {categories[post.category] && (
                         <span
@@ -248,15 +250,15 @@ export default function CommunityPage() {
                   {/* Hand data if present */}
                   {post.handData && (
                     <div className="hand-preview">
-                      <span className="hand-label">手牌:</span>
+                      <span className="hand-label">{t.community.hand}:</span>
                       <span className="hand-value">{post.handData.heroHand}</span>
-                      <span className="hand-label">位置:</span>
+                      <span className="hand-label">{t.community.position}:</span>
                       <span className="hand-value">
                         {post.handData.heroPosition} vs {post.handData.villainPosition}
                       </span>
                       {post.handData.board && (
                         <>
-                          <span className="hand-label">牌面:</span>
+                          <span className="hand-label">{t.community.board}:</span>
                           <span className="hand-value">{post.handData.board}</span>
                         </>
                       )}
@@ -320,7 +322,7 @@ export default function CommunityPage() {
                 disabled={page === 1}
                 onClick={() => setPage(p => p - 1)}
               >
-                上一页
+                {t.community.prevPage}
               </button>
               <span className="page-info">{page} / {totalPages}</span>
               <button
@@ -328,7 +330,7 @@ export default function CommunityPage() {
                 disabled={page === totalPages}
                 onClick={() => setPage(p => p + 1)}
               >
-                下一页
+                {t.community.nextPage}
               </button>
             </div>
           )}

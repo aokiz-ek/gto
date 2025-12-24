@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useUserStore } from '@/store';
+import { useTranslation } from '@/i18n';
 
 // 30-Day Training Plan Structure
 interface TrainingDay {
@@ -132,6 +133,7 @@ function createInitialState(): TrainingState {
 }
 
 export default function TrainingPlanPage() {
+  const { t } = useTranslation();
   const [trainingState, setTrainingState] = useState<TrainingState | null>(null);
   const [selectedDay, setSelectedDay] = useState<TrainingDay | null>(null);
 
@@ -182,8 +184,8 @@ export default function TrainingPlanPage() {
       <div className="training-page">
         <div className="start-view">
           <div className="icon">30</div>
-          <h1>30天训练计划</h1>
-          <p className="subtitle">系统化的GTO学习路径，从基础到精通</p>
+          <h1>{t.training.title}</h1>
+          <p className="subtitle">{t.training.subtitle}</p>
 
           <div className="curriculum-preview">
             {TRAINING_CURRICULUM.map((week, i) => (
@@ -200,24 +202,24 @@ export default function TrainingPlanPage() {
           <div className="features">
             <div className="feature">
               <span className="feature-icon">📚</span>
-              <span className="feature-text">系统化课程设计</span>
+              <span className="feature-text">{t.training.programs.beginner}</span>
             </div>
             <div className="feature">
               <span className="feature-icon">📈</span>
-              <span className="feature-text">循序渐进难度</span>
+              <span className="feature-text">{t.training.programs.intermediate}</span>
             </div>
             <div className="feature">
               <span className="feature-icon">🎯</span>
-              <span className="feature-text">每日专项训练</span>
+              <span className="feature-text">{t.training.programs.advanced}</span>
             </div>
           </div>
 
           <button className="start-btn" onClick={startNewTraining}>
-            开始30天训练
+            {t.training.start}
           </button>
 
           <Link href="/" className="back-link">
-            返回首页
+            {t.challenge.backToHome}
           </Link>
         </div>
 
@@ -367,10 +369,10 @@ export default function TrainingPlanPage() {
   return (
     <div className="training-page">
       <div className="header">
-        <Link href="/" className="back-link">← 返回首页</Link>
-        <h1>30天训练计划</h1>
+        <Link href="/" className="back-link">← {t.challenge.backToHome}</Link>
+        <h1>{t.training.title}</h1>
         <div className="progress-badge">
-          {completedDays}/{totalDays}天
+          {completedDays}/{totalDays}{t.training.days}
         </div>
       </div>
 
@@ -380,7 +382,7 @@ export default function TrainingPlanPage() {
           <div className="progress-fill" style={{ width: `${progressPercent}%` }} />
         </div>
         <div className="progress-stats">
-          <span>已完成 {completedDays} 天</span>
+          <span>{t.training.completed} {completedDays} {t.training.days}</span>
           <span>{Math.round(progressPercent)}%</span>
         </div>
       </div>
@@ -414,7 +416,7 @@ export default function TrainingPlanPage() {
                     >
                       <div className="day-num">Day {day.day}</div>
                       <div className="day-title">{day.title}</div>
-                      <div className="day-questions">{day.questionsMin} 题</div>
+                      <div className="day-questions">{day.questionsMin} {t.training.questions}</div>
                       {day.completed && (
                         <div className="day-score">{day.score}%</div>
                       )}
@@ -440,11 +442,11 @@ export default function TrainingPlanPage() {
             <p className="modal-desc">{selectedDay.description}</p>
             <div className="modal-info">
               <div className="info-item">
-                <span className="info-label">题目数量</span>
-                <span className="info-value">{selectedDay.questionsMin} 题</span>
+                <span className="info-label">{t.training.questionCount}</span>
+                <span className="info-value">{selectedDay.questionsMin} {t.training.questions}</span>
               </div>
               <div className="info-item">
-                <span className="info-label">训练重点</span>
+                <span className="info-label">{t.training.trainingFocus}</span>
                 <span className="info-value">
                   {selectedDay.focus === 'rfi' ? 'RFI开池' :
                    selectedDay.focus === 'vs_rfi' ? '面对RFI' :
@@ -456,20 +458,20 @@ export default function TrainingPlanPage() {
             {selectedDay.completed ? (
               <div className="completed-status">
                 <span className="status-icon">✓</span>
-                <span>已完成</span>
-                <span className="status-score">得分: {selectedDay.score}%</span>
+                <span>{t.training.completed}</span>
+                <span className="status-score">{t.training.score}: {selectedDay.score}%</span>
               </div>
             ) : (
               <Link
                 href={`/practice?focus=${selectedDay.focus}&day=${selectedDay.day}`}
                 className="start-day-btn"
               >
-                开始训练
+                {t.training.start}
               </Link>
             )}
 
             <button className="close-btn" onClick={() => setSelectedDay(null)}>
-              关闭
+              {t.common.close}
             </button>
           </div>
         </div>

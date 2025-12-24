@@ -6,6 +6,7 @@ import { PokerCard } from '@gto/ui';
 import { ShareButton } from '@/components';
 import { usePKStore, useUserStore } from '@/store';
 import { createClient } from '@/lib/supabase/client';
+import { useTranslation } from '@/i18n';
 import {
   GTO_RANGES,
   GTO_VS_RFI_RANGES,
@@ -33,25 +34,20 @@ interface MatchInfo {
   available: boolean;
 }
 
-const MATCH_MODES: MatchInfo[] = [
+// Will be populated inside component using translations
+const MATCH_MODES_CONFIG: Omit<MatchInfo, 'label' | 'description'>[] = [
   {
     mode: 'quick',
-    label: '快速匹配',
-    description: '随机匹配对手，进行5局对决',
     icon: '⚡',
     available: true,
   },
   {
     mode: 'ranked',
-    label: '排位赛',
-    description: '匹配相近段位玩家，影响排名',
     icon: '🏆',
     available: false,
   },
   {
     mode: 'friend',
-    label: '好友对战',
-    description: '邀请好友进行私人对局',
     icon: '👥',
     available: false,
   },
@@ -96,6 +92,7 @@ function calculateScore(frequency: number, timeMs: number): number {
 }
 
 export default function PKPage() {
+  const { t } = useTranslation();
   const [selectedMode, setSelectedMode] = useState<MatchMode | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [matchingTime, setMatchingTime] = useState(0);
@@ -106,6 +103,25 @@ export default function PKPage() {
   const [timeLeft, setTimeLeft] = useState(ROUND_TIME_LIMIT);
   const [gtoStrategy, setGtoStrategy] = useState<GTOHandStrategy | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Build match modes with translations
+  const MATCH_MODES: MatchInfo[] = [
+    {
+      ...MATCH_MODES_CONFIG[0],
+      label: t.pk.quickMatch,
+      description: '随机匹配对手，进行5局对决',
+    },
+    {
+      ...MATCH_MODES_CONFIG[1],
+      label: t.pk.rankedMatch,
+      description: '匹配相近段位玩家，影响排名',
+    },
+    {
+      ...MATCH_MODES_CONFIG[2],
+      label: t.pk.friendMatch,
+      description: '邀请好友进行私人对局',
+    },
+  ];
 
   const {
     status,
@@ -260,8 +276,8 @@ export default function PKPage() {
     return (
       <div className="pk-page">
         <div className="header">
-          <Link href="/practice" className="back-link">← 返回练习</Link>
-          <h1>PK对战</h1>
+          <Link href="/practice" className="back-link">← {t.common.backToPractice}</Link>
+          <h1>{t.pk.title}</h1>
           <div className="placeholder" />
         </div>
 
@@ -272,7 +288,7 @@ export default function PKPage() {
         )}
 
         <div className="mode-section">
-          <h2>选择对战模式</h2>
+          <h2>{t.pk.findMatch}</h2>
           <div className="mode-grid">
             {MATCH_MODES.map((mode) => (
               <button
@@ -284,7 +300,7 @@ export default function PKPage() {
                 <span className="mode-icon">{mode.icon}</span>
                 <span className="mode-label">{mode.label}</span>
                 <span className="mode-desc">{mode.description}</span>
-                {!mode.available && <span className="coming-tag">即将上线</span>}
+                {!mode.available && <span className="coming-tag">{t.common.comingSoon}</span>}
               </button>
             ))}
           </div>
@@ -292,12 +308,12 @@ export default function PKPage() {
 
         {!userId && (
           <div className="login-prompt">
-            <p>请先 <Link href="/auth/login">登录</Link> 以开始对战</p>
+            <p>{t.common.pleaseLogin} <Link href="/auth/login">{t.common.login}</Link> {t.pk.toStartBattle}</p>
           </div>
         )}
 
         <div className="info-section">
-          <h2>PK对战规则</h2>
+          <h2>{t.pk.rules}</h2>
           <div className="rules-list">
             <div className="rule-item">
               <span className="rule-icon">1️⃣</span>
@@ -338,10 +354,10 @@ export default function PKPage() {
             <div className="pulse-ring delay" />
             <span className="matching-icon">⚔️</span>
           </div>
-          <h2>正在匹配对手...</h2>
+          <h2>{t.pk.searching}</h2>
           <p className="matching-time">{Math.floor(matchingTime / 60)}:{(matchingTime % 60).toString().padStart(2, '0')}</p>
           <button className="cancel-btn" onClick={handleCancelMatching}>
-            取消匹配
+            {t.common.cancel}
           </button>
         </div>
 
@@ -360,12 +376,12 @@ export default function PKPage() {
         {/* Battle header */}
         <div className="battle-header">
           <div className="player-info me">
-            <span className="player-name">你</span>
+            <span className="player-name">{t.common.you}</span>
             <span className="player-score">{myScore}</span>
           </div>
           <div className="vs-indicator">
-            <span className="round-info">第 {battle.currentRound}/{battle.totalRounds} 局</span>
-            <span className="vs">VS</span>
+            <span className="round-info">{t.pk.round} {battle.currentRound}/{battle.totalRounds}</span>
+            <span className="vs">{t.pk.vs}</span>
           </div>
           <div className="player-info opponent">
             <span className="player-name">{opponent.username}</span>
@@ -412,7 +428,7 @@ export default function PKPage() {
             <span className="hand-text">{currentRound.heroHand}</span>
           </div>
 
-          <p className="question-text">你应该怎么做？</p>
+          <p className="question-text">{t.practice.whatWouldYouDo}</p>
         </div>
 
         {/* Action buttons */}
@@ -443,7 +459,7 @@ export default function PKPage() {
         {hasSubmitted && !showResult && (
           <div className="waiting-opponent">
             <div className="spinner" />
-            <p>等待对手答题...</p>
+            <p>{t.pk.waiting}</p>
           </div>
         )}
 
@@ -452,12 +468,12 @@ export default function PKPage() {
           <div className="round-result">
             <div className="result-comparison">
               <div className="result-player">
-                <span className="label">你的选择</span>
+                <span className="label">{t.pk.yourChoice}</span>
                 <span className="action">{selectedAction}</span>
                 <span className="score">+{isPlayer1 ? currentRound.player1Score : currentRound.player2Score}</span>
               </div>
               <div className="result-player">
-                <span className="label">对手选择</span>
+                <span className="label">{t.pk.opponentChoice}</span>
                 <span className="action">{isPlayer1 ? currentRound.player2Action : currentRound.player1Action}</span>
                 <span className="score">+{isPlayer1 ? currentRound.player2Score : currentRound.player1Score}</span>
               </div>
@@ -466,7 +482,7 @@ export default function PKPage() {
             {/* GTO Strategy Display */}
             {gtoStrategy && (
               <div className="gto-strategy">
-                <h4>GTO策略</h4>
+                <h4>{t.analyzer.gtoStrategy}</h4>
                 <div className="strategy-bars">
                   {getActionFrequency(gtoStrategy, 'fold') > 0 && (
                     <div className="strategy-bar">
@@ -501,7 +517,7 @@ export default function PKPage() {
 
             {battle.currentRound <= battle.totalRounds && (
               <button className="next-btn" onClick={handleNextRound}>
-                下一局
+                {t.pk.nextRound}
               </button>
             )}
           </div>
@@ -526,12 +542,12 @@ export default function PKPage() {
             <span className="result-icon">
               {isWinner ? '🏆' : isDraw ? '🤝' : '😢'}
             </span>
-            <h2>{isWinner ? '胜利!' : isDraw ? '平局' : '失败'}</h2>
+            <h2>{isWinner ? t.pk.win : isDraw ? t.pk.draw : t.pk.lose}</h2>
           </div>
 
           <div className="final-score">
             <div className="score-item">
-              <span className="label">你的得分</span>
+              <span className="label">{t.pk.yourScore}</span>
               <span className="value">{myScore}</span>
             </div>
             <div className="score-divider">:</div>
@@ -543,7 +559,7 @@ export default function PKPage() {
 
           {/* Round by Round Review */}
           <div className="rounds-review">
-            <h3>对局回顾</h3>
+            <h3>{t.pk.battleReview}</h3>
             <div className="rounds-list">
               {battle.rounds.map((round) => {
                 const myAction = isPlayer1 ? round.player1Action : round.player2Action;
@@ -569,7 +585,7 @@ export default function PKPage() {
                 return (
                   <div key={round.roundNumber} className="round-review-item">
                     <div className="round-header">
-                      <span className="round-num">第{round.roundNumber}局</span>
+                      <span className="round-num">{t.pk.round}{round.roundNumber}</span>
                       <span className="round-hand">{round.heroHand}</span>
                       <span className="round-scenario">
                         {round.heroPosition} vs {round.villainPosition}
@@ -577,12 +593,12 @@ export default function PKPage() {
                     </div>
                     <div className="round-details">
                       <div className="player-result me">
-                        <span className="action-label">你: </span>
+                        <span className="action-label">{t.common.you}: </span>
                         <span className={`action-value ${myAction}`}>{myAction?.toUpperCase()}</span>
                         <span className="score-value">+{myRoundScore || 0}</span>
                       </div>
                       <div className="player-result opp">
-                        <span className="action-label">对手: </span>
+                        <span className="action-label">{t.pk.opponent}: </span>
                         <span className={`action-value ${oppAction}`}>{oppAction?.toUpperCase()}</span>
                         <span className="score-value">+{oppRoundScore || 0}</span>
                       </div>
@@ -599,17 +615,17 @@ export default function PKPage() {
 
           <div className="result-actions">
             <ShareButton
-              title={isWinner ? `我在GTO对战中获胜！` : isDraw ? `GTO对战平局结束` : `GTO对战结束`}
-              desc={`比分 ${myScore}:${opponentScore}，来和我PK吧！`}
+              title={isWinner ? t.pk.shareWin : isDraw ? t.pk.shareDraw : t.pk.shareEnd}
+              desc={`${t.pk.score} ${myScore}:${opponentScore}，${t.pk.comeChallenge}`}
               variant="secondary"
             >
-              分享战绩
+              {t.common.share}
             </ShareButton>
             <button className="action-btn primary" onClick={() => reset()}>
-              再来一局
+              {t.pk.rematch}
             </button>
             <Link href="/practice" className="action-btn secondary">
-              返回练习
+              {t.common.backToPractice}
             </Link>
           </div>
         </div>

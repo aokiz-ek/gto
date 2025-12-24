@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import './groups.css';
 
 // Types
@@ -47,6 +48,7 @@ interface CategoryLabel {
 }
 
 export default function GroupsPage() {
+  const { t } = useTranslation();
   const { isMobile, isMobileOrTablet } = useResponsive();
   const [groups, setGroups] = useState<StudyGroup[]>([]);
   const [categories, setCategories] = useState<Record<string, CategoryLabel>>({});
@@ -109,12 +111,12 @@ export default function GroupsPage() {
             <span>&larr;</span>
           </Link>
           <div>
-            <h1>学习小组</h1>
-            <p className="header-subtitle">加入志同道合的玩家，一起进步</p>
+            <h1>{t.groups.title}</h1>
+            <p className="header-subtitle">{t.groups.subtitle}</p>
           </div>
         </div>
         <button className="create-btn" onClick={() => setShowCreateModal(true)}>
-          创建小组
+          {t.groups.create}
         </button>
       </header>
 
@@ -126,7 +128,7 @@ export default function GroupsPage() {
           <div className="search-section">
             <input
               type="text"
-              placeholder="搜索小组..."
+              placeholder={t.groups.searchGroups}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
@@ -135,14 +137,14 @@ export default function GroupsPage() {
 
           {/* Categories */}
           <div className="category-section">
-            <h3>分类</h3>
+            <h3>{t.common.categories}</h3>
             <div className="category-list">
               <button
                 className={`category-item ${selectedCategory === 'all' ? 'active' : ''}`}
                 onClick={() => setSelectedCategory('all')}
               >
                 <span className="category-icon">&#128203;</span>
-                <span>全部</span>
+                <span>{t.common.all}</span>
               </button>
               {Object.entries(categories).map(([key, cat]) => (
                 <button
@@ -162,26 +164,26 @@ export default function GroupsPage() {
 
           {/* Quick Stats */}
           <div className="stats-section">
-            <h3>平台统计</h3>
+            <h3>{t.common.statistics}</h3>
             <div className="stats-grid">
               <div className="stat-item">
                 <span className="stat-value">{groups.length}</span>
-                <span className="stat-label">活跃小组</span>
+                <span className="stat-label">{t.common.activeGroups}</span>
               </div>
               <div className="stat-item">
                 <span className="stat-value">
                   {formatNumber(groups.reduce((sum, g) => sum + g.stats.totalMembers, 0))}
                 </span>
-                <span className="stat-label">总成员</span>
+                <span className="stat-label">{t.common.totalMembers}</span>
               </div>
             </div>
           </div>
 
           {/* My Groups */}
           <div className="my-groups-section">
-            <h3>我的小组</h3>
+            <h3>{t.groups.myGroups}</h3>
             <div className="my-groups-list">
-              <p className="empty-text">登录后查看已加入的小组</p>
+              <p className="empty-text">{t.common.loginToView}</p>
             </div>
           </div>
         </aside>
@@ -191,7 +193,7 @@ export default function GroupsPage() {
           {/* Results info */}
           <div className="results-bar">
             <span className="results-count">
-              找到 {groups.length} 个小组
+              {t.common.found} {groups.length} {t.common.groups}
             </span>
           </div>
 
@@ -200,13 +202,13 @@ export default function GroupsPage() {
             {loading ? (
               <div className="loading-state">
                 <div className="loading-spinner" />
-                <p>加载中...</p>
+                <p>{t.common.loading}</p>
               </div>
             ) : groups.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">&#128101;</div>
-                <h3>暂无小组</h3>
-                <p>成为第一个创建小组的人吧！</p>
+                <h3>{t.groups.noGroups}</h3>
+                <p>{t.common.beFirstToCreate}</p>
               </div>
             ) : (
               groups.map(group => (
@@ -230,7 +232,7 @@ export default function GroupsPage() {
                           </span>
                         )}
                         {!group.isPublic && (
-                          <span className="group-private">私密</span>
+                          <span className="group-private">{t.groups.private}</span>
                         )}
                       </div>
                     </div>
@@ -274,14 +276,14 @@ export default function GroupsPage() {
                         <circle cx="12" cy="12" r="10" />
                         <polyline points="12 6 12 12 16 14" />
                       </svg>
-                      <span>{group.stats.weeklyActive}活跃</span>
+                      <span>{group.stats.weeklyActive}{t.common.active}</span>
                     </div>
                   </div>
 
                   {/* Active challenges */}
                   {group.challenges.filter(c => c.status === 'active').length > 0 && (
                     <div className="active-challenge">
-                      <span className="challenge-badge">进行中</span>
+                      <span className="challenge-badge">{t.common.inProgress}</span>
                       <span className="challenge-name">
                         {group.challenges.find(c => c.status === 'active')?.title}
                       </span>
@@ -291,13 +293,13 @@ export default function GroupsPage() {
                   {/* Actions */}
                   <div className="group-actions">
                     <Link href={`/groups/${group.id}`} className="view-btn">
-                      查看详情
+                      {t.common.viewDetails}
                     </Link>
                     <button
                       className="join-btn"
                       onClick={() => handleJoinGroup(group.id, group.requireApproval)}
                     >
-                      {group.requireApproval ? '申请加入' : '加入小组'}
+                      {group.requireApproval ? t.common.applyToJoin : t.groups.join}
                     </button>
                   </div>
                 </div>
@@ -317,6 +319,7 @@ export default function GroupsPage() {
 
 // Create Group Modal Component
 function CreateGroupModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -345,7 +348,7 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
       });
       const data = await res.json();
       if (data.success) {
-        alert('小组创建成功！');
+        alert(t.common.createSuccess);
         onClose();
       }
     } catch (error) {
@@ -359,54 +362,54 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>创建学习小组</h2>
+          <h2>{t.groups.createGroup}</h2>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
         <form onSubmit={handleSubmit} className="create-form">
           <div className="form-group">
-            <label>小组名称 *</label>
+            <label>{t.groups.groupName} *</label>
             <input
               type="text"
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-              placeholder="给你的小组起个名字"
+              placeholder={t.common.giveGroupName}
               maxLength={30}
             />
           </div>
           <div className="form-group">
-            <label>小组介绍 *</label>
+            <label>{t.groups.groupDescription} *</label>
             <textarea
               value={formData.description}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
-              placeholder="描述你的小组目标和特色"
+              placeholder={t.common.describeGroupGoals}
               rows={3}
               maxLength={200}
             />
           </div>
           <div className="form-group">
-            <label>分类</label>
+            <label>{t.common.category}</label>
             <select
               value={formData.category}
               onChange={e => setFormData({ ...formData, category: e.target.value as GroupCategory })}
             >
-              <option value="beginner">入门</option>
-              <option value="intermediate">进阶</option>
-              <option value="advanced">高级</option>
-              <option value="mtt">MTT锦标赛</option>
-              <option value="cash">现金局</option>
+              <option value="beginner">{t.common.beginner}</option>
+              <option value="intermediate">{t.common.intermediate}</option>
+              <option value="advanced">{t.common.advanced}</option>
+              <option value="mtt">{t.common.mtt}</option>
+              <option value="cash">{t.common.cashGame}</option>
             </select>
           </div>
           <div className="form-group">
-            <label>标签 (用逗号分隔)</label>
+            <label>{t.common.tags} ({t.common.commaSeparated})</label>
             <input
               type="text"
               value={formData.tags}
               onChange={e => setFormData({ ...formData, tags: e.target.value })}
-              placeholder="例如: 新手友好, RFI, 基础"
+              placeholder={t.common.tagsPlaceholder}
             />
           </div>
           <div className="form-group">
-            <label>最大成员数</label>
+            <label>{t.common.maxMembers}</label>
             <input
               type="number"
               value={formData.maxMembers}
@@ -422,7 +425,7 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
                 checked={formData.isPublic}
                 onChange={e => setFormData({ ...formData, isPublic: e.target.checked })}
               />
-              <span>公开小组</span>
+              <span>{t.common.publicGroup}</span>
             </label>
             <label className="checkbox-label">
               <input
@@ -430,15 +433,15 @@ function CreateGroupModal({ onClose }: { onClose: () => void }) {
                 checked={formData.requireApproval}
                 onChange={e => setFormData({ ...formData, requireApproval: e.target.checked })}
               />
-              <span>需要审批</span>
+              <span>{t.common.requireApproval}</span>
             </label>
           </div>
           <div className="form-actions">
             <button type="button" className="cancel-btn" onClick={onClose}>
-              取消
+              {t.common.cancel}
             </button>
             <button type="submit" className="submit-btn" disabled={submitting}>
-              {submitting ? '创建中...' : '创建小组'}
+              {submitting ? t.common.creating : t.groups.create}
             </button>
           </div>
         </form>

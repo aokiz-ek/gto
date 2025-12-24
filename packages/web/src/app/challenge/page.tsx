@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { PokerCard } from '@gto/ui';
 import { ShareButton } from '@/components';
 import { useUserStore } from '@/store';
+import { useTranslation } from '@/i18n';
 import {
   createDeck,
   handToDisplayString,
@@ -146,12 +147,12 @@ interface ActionRating {
   bgColor: string;
 }
 
-function getActionRating(frequency: number): ActionRating {
-  if (frequency >= 80) return { level: 5, name: '完美', color: '#22c55e', bgColor: 'rgba(34, 197, 94, 0.15)' };
-  if (frequency >= 50) return { level: 4, name: '良好', color: '#84cc16', bgColor: 'rgba(132, 204, 22, 0.15)' };
-  if (frequency >= 20) return { level: 3, name: '小失误', color: '#eab308', bgColor: 'rgba(234, 179, 8, 0.15)' };
-  if (frequency >= 5) return { level: 2, name: '错误', color: '#f97316', bgColor: 'rgba(249, 115, 22, 0.15)' };
-  return { level: 1, name: '严重失误', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)' };
+function getActionRating(frequency: number, t: any): ActionRating {
+  if (frequency >= 80) return { level: 5, name: t.challenge.rating.perfect, color: '#22c55e', bgColor: 'rgba(34, 197, 94, 0.15)' };
+  if (frequency >= 50) return { level: 4, name: t.challenge.rating.good, color: '#84cc16', bgColor: 'rgba(132, 204, 22, 0.15)' };
+  if (frequency >= 20) return { level: 3, name: t.challenge.rating.minor, color: '#eab308', bgColor: 'rgba(234, 179, 8, 0.15)' };
+  if (frequency >= 5) return { level: 2, name: t.challenge.rating.mistake, color: '#f97316', bgColor: 'rgba(249, 115, 22, 0.15)' };
+  return { level: 1, name: t.challenge.rating.serious, color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)' };
 }
 
 function mapActionType(action: string): string {
@@ -161,6 +162,7 @@ function mapActionType(action: string): string {
 }
 
 export default function DailyChallengePage() {
+  const { t } = useTranslation();
   const {
     dailyChallenge,
     startDailyChallenge,
@@ -277,29 +279,29 @@ export default function DailyChallengePage() {
       <div className="challenge-page">
         <div className="completion-view">
           <div className="trophy">🏆</div>
-          <h1>每日挑战完成!</h1>
+          <h1>{t.challenge.completedTitle}</h1>
           <p className="date-label">{today}</p>
 
           <div className="summary-cards">
             <div className="summary-card">
               <div className="card-value">{avgScore}%</div>
-              <div className="card-label">平均分数</div>
+              <div className="card-label">{t.challenge.avgScore}</div>
             </div>
             <div className="summary-card highlight">
               <div className="card-value">{dailyChallenge.perfectCount}/{challenges.length}</div>
-              <div className="card-label">完美决策</div>
+              <div className="card-label">{t.challenge.perfectDecisions}</div>
             </div>
             <div className="summary-card">
               <div className="card-value">{perfectRate}%</div>
-              <div className="card-label">完美率</div>
+              <div className="card-label">{t.challenge.perfectRate}</div>
             </div>
           </div>
 
           <div className="results-list">
-            <h3>答题详情</h3>
+            <h3>{t.challenge.answerDetails}</h3>
             {dailyChallenge.results.map((result, idx) => {
               const question = challenges[idx];
-              const rating = getActionRating(result.score);
+              const rating = getActionRating(result.score, t);
               return (
                 <div key={idx} className="result-item">
                   <span className="q-num">#{idx + 1}</span>
@@ -315,15 +317,15 @@ export default function DailyChallengePage() {
 
           <div className="action-btns">
             <ShareButton
-              title={`我在Aokiz GTO完成了每日挑战！`}
-              desc={`得分: ${avgScore}% | 完美决策: ${dailyChallenge.perfectCount}/${challenges.length}，来挑战我吧！`}
+              title={t.challenge.shareTitle}
+              desc={t.challenge.shareDesc.replace('{avgScore}', avgScore.toString()).replace('{perfectCount}', dailyChallenge.perfectCount.toString()).replace('{total}', challenges.length.toString())}
               variant="secondary"
             >
-              分享战绩
+              {t.challenge.shareResults}
             </ShareButton>
-            <Link href="/challenge/seven-day" className="btn-highlight">7天挑战</Link>
-            <Link href="/practice" className="btn-secondary">自由练习</Link>
-            <Link href="/" className="btn-primary">返回首页</Link>
+            <Link href="/challenge/seven-day" className="btn-highlight">{t.challenge.sevenDayChallenge}</Link>
+            <Link href="/practice" className="btn-secondary">{t.challenge.freePractice}</Link>
+            <Link href="/" className="btn-primary">{t.challenge.backToHome}</Link>
           </div>
         </div>
 
@@ -544,10 +546,10 @@ export default function DailyChallengePage() {
     <div className="challenge-page">
       {/* Header */}
       <div className="header">
-        <Link href="/" className="back-link">← 返回</Link>
+        <Link href="/" className="back-link">← {t.challenge.back}</Link>
         <div className="title">
           <span className="challenge-icon">🎯</span>
-          每日挑战
+          {t.challenge.title}
         </div>
         <div className="progress">
           {currentIndex + 1} / {challenges.length}
@@ -567,7 +569,7 @@ export default function DailyChallengePage() {
         <div className="scenario-info">
           <span className="scenario-badge">
             {currentQuestion.preflopScenario === 'rfi' ? 'RFI' :
-             currentQuestion.preflopScenario === 'vs_rfi' ? '面对RFI' : '面对3-Bet'}
+             currentQuestion.preflopScenario === 'vs_rfi' ? t.challenge.facingRFI : t.challenge.facing3Bet}
           </span>
           <span className="position-info">
             {currentQuestion.heroPosition} vs {currentQuestion.villainPosition}
@@ -587,7 +589,7 @@ export default function DailyChallengePage() {
         <div className="result-panel">
           <div className="score-display">
             {(() => {
-              const rating = getActionRating(accuracyScore);
+              const rating = getActionRating(accuracyScore, t);
               return (
                 <>
                   <div className="rating-stars">
@@ -625,8 +627,8 @@ export default function DailyChallengePage() {
           </div>
 
           <button className="next-btn" onClick={handleNext}>
-            {currentIndex >= challenges.length - 1 ? '查看结果' : '下一题'}
-            <span className="hint">空格键继续</span>
+            {currentIndex >= challenges.length - 1 ? t.challenge.viewResults : t.challenge.nextQuestion}
+            <span className="hint">{t.challenge.spaceToContinue}</span>
           </button>
         </div>
       ) : (

@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useUserStore } from '@/store';
 import { createClient } from '@/lib/supabase/client';
 import { ReferralPanel } from '@/components';
+import { useTranslation } from '@/i18n';
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, practiceStats, logout } = useUserStore();
   const [isHovered, setIsHovered] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   // Redirect if not authenticated
   if (!isAuthenticated || !user) {
@@ -22,7 +24,7 @@ export default function ProfilePage() {
         background: '#0a0a0f',
       }}>
         <div style={{ textAlign: 'center' }}>
-          <p style={{ color: '#a0a0b0', marginBottom: '16px' }}>Please log in to view your profile</p>
+          <p style={{ color: '#a0a0b0', marginBottom: '16px' }}>{t.profile.loginRequired}</p>
           <button
             onClick={() => router.push('/auth/login')}
             style={{
@@ -35,7 +37,7 @@ export default function ProfilePage() {
               cursor: 'pointer',
             }}
           >
-            Log in
+            {t.profile.login}
           </button>
         </div>
       </div>
@@ -70,7 +72,7 @@ export default function ProfilePage() {
           color: '#ffffff',
           marginBottom: '32px',
         }}>
-          Profile
+          {t.profile.title}
         </h1>
 
         {/* User Info Card */}
@@ -127,7 +129,7 @@ export default function ProfilePage() {
                 marginTop: '8px',
                 textTransform: 'uppercase',
               }}>
-                {user.subscription} Plan
+                {user.subscription} {t.profile.plan}
               </div>
             </div>
           </div>
@@ -142,7 +144,7 @@ export default function ProfilePage() {
               padding: '16px',
               borderRadius: '8px',
             }}>
-              <p style={{ fontSize: '12px', color: '#666666', marginBottom: '4px' }}>Member Since</p>
+              <p style={{ fontSize: '12px', color: '#666666', marginBottom: '4px' }}>{t.profile.memberSince}</p>
               <p style={{ fontSize: '16px', color: '#ffffff', fontWeight: 500 }}>
                 {new Date(user.createdAt).toLocaleDateString()}
               </p>
@@ -152,7 +154,7 @@ export default function ProfilePage() {
               padding: '16px',
               borderRadius: '8px',
             }}>
-              <p style={{ fontSize: '12px', color: '#666666', marginBottom: '4px' }}>User ID</p>
+              <p style={{ fontSize: '12px', color: '#666666', marginBottom: '4px' }}>{t.profile.userId}</p>
               <p style={{ fontSize: '12px', color: '#ffffff', fontFamily: 'monospace' }}>
                 {user.id.slice(0, 8)}...
               </p>
@@ -174,7 +176,7 @@ export default function ProfilePage() {
             color: '#ffffff',
             marginBottom: '20px',
           }}>
-            Practice Statistics
+            {t.profile.practiceStats}
           </h3>
 
           <div style={{
@@ -182,11 +184,11 @@ export default function ProfilePage() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
             gap: '16px',
           }}>
-            <StatCard label="Total Sessions" value={practiceStats.totalSessions} />
-            <StatCard label="Total Decisions" value={practiceStats.totalDecisions} />
-            <StatCard label="Correct" value={practiceStats.correctDecisions} color="#22d3bf" />
-            <StatCard label="Accuracy" value={`${accuracy}%`} color={accuracy >= 70 ? '#22d3bf' : accuracy >= 50 ? '#f59e0b' : '#ef4444'} />
-            <StatCard label="Streak" value={`${practiceStats.streakDays} days`} color="#8b5cf6" />
+            <StatCard label={t.profile.totalSessions} value={practiceStats.totalSessions} />
+            <StatCard label={t.profile.totalDecisions} value={practiceStats.totalDecisions} />
+            <StatCard label={t.profile.correct} value={practiceStats.correctDecisions} color="#22d3bf" />
+            <StatCard label={t.profile.accuracy} value={`${accuracy}%`} color={accuracy >= 70 ? '#22d3bf' : accuracy >= 50 ? '#f59e0b' : '#ef4444'} />
+            <StatCard label={t.profile.streak} value={`${practiceStats.streakDays} ${t.profile.days}`} color="#8b5cf6" />
           </div>
         </div>
 
@@ -200,21 +202,21 @@ export default function ProfilePage() {
           flexWrap: 'wrap',
         }}>
           <ActionButton
-            label="Settings"
+            label={t.profile.settings}
             isHovered={isHovered === 'settings'}
             onHover={() => setIsHovered('settings')}
             onLeave={() => setIsHovered(null)}
             onClick={() => router.push('/settings')}
           />
           <ActionButton
-            label="Hand History"
+            label={t.profile.handHistory}
             isHovered={isHovered === 'history'}
             onHover={() => setIsHovered('history')}
             onLeave={() => setIsHovered(null)}
             onClick={() => router.push('/history')}
           />
           <ActionButton
-            label="Upgrade Plan"
+            label={t.profile.upgradePlan}
             isHovered={isHovered === 'upgrade'}
             onHover={() => setIsHovered('upgrade')}
             onLeave={() => setIsHovered(null)}
@@ -222,7 +224,7 @@ export default function ProfilePage() {
             variant="primary"
           />
           <ActionButton
-            label="Log out"
+            label={t.profile.logout}
             isHovered={isHovered === 'logout'}
             onHover={() => setIsHovered('logout')}
             onLeave={() => setIsHovered(null)}

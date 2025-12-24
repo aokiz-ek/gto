@@ -298,6 +298,7 @@ export const en = {
     callHighFreq: 'Call High Freq',
     mixed: 'Mixed',
     currentHand: 'Current Hand',
+    whatWouldYouDo: 'What would you do?',
 
     // Stats object for progress chart
     stats: {
@@ -556,6 +557,7 @@ export const en = {
     optimal: 'Optimal',
     notesPlaceholder: 'Add notes to record your thought process...',
     avgEquity: 'Avg Equity',
+    gtoStrategy: 'GTO Strategy',
   },
 
   // Solutions page
@@ -837,6 +839,59 @@ export const en = {
     handAnalyzer: 'Hand Analyzer',
     advancedStats: 'Advanced Stats',
     prioritySupport: 'Priority Support',
+  },
+
+  // Training page
+  training: {
+    title: 'Training Center',
+    subtitle: 'Systematic GTO training programs',
+    recommend: {
+      title: 'Recommended Training',
+      subtitle: 'Personalized training based on your performance',
+      basedOnWeakness: 'Based on Your Weaknesses',
+      startTraining: 'Start Training',
+      personalizedTraining: 'Personalized Training',
+      currentLevel: 'Current Level',
+      daysStreak: 'Day Streak',
+      progress: 'Progress',
+      nextGoal: 'Next Goal',
+      dailyGoal: 'Daily Goal',
+      todayAccuracy: 'Today\'s Accuracy',
+      totalPracticeSessions: 'Total Practice Sessions',
+      quickPractice: 'Quick Practice',
+      targetedRecommendations: 'Targeted Training Recommendations',
+      estimatedQuestions: 'Est. {count} questions',
+      difficultyLevel: {
+        beginner: 'Beginner',
+        intermediate: 'Intermediate',
+        advanced: 'Advanced',
+        expert: 'Expert',
+      },
+      quickActions: {
+        randomPractice: 'Random Practice',
+        weaknessReport: 'Weakness Report',
+        dailyChallenge: 'Daily Challenge',
+      },
+      loading: 'Generating personalized training plan...',
+      loadError: 'Load failed',
+      networkError: 'Network error, please retry',
+      backToHome: 'Back to Home',
+    },
+    programs: {
+      beginner: 'Beginner Program',
+      intermediate: 'Intermediate Program',
+      advanced: 'Advanced Program',
+      custom: 'Custom Training',
+    },
+    progress: 'Progress',
+    lessonsCompleted: 'Lessons Completed',
+    totalLessons: 'Total Lessons',
+    estimatedTime: 'Estimated Time',
+    minutes: 'min',
+    hours: 'hrs',
+    continue: 'Continue',
+    start: 'Start',
+    completed: 'Completed',
   },
 
   // Error messages

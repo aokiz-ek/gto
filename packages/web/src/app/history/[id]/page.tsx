@@ -7,6 +7,7 @@ import { PokerCard } from '@gto/ui';
 import { parseCard } from '@gto/core';
 import type { Card as CardType } from '@gto/core';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import './detail.css';
 
 interface HandHistory {
@@ -31,6 +32,7 @@ interface HandHistory {
 export default function HistoryDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useTranslation();
   const { isMobile, isMobileOrTablet } = useResponsive();
   const [history, setHistory] = useState<HandHistory | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ export default function HistoryDetailPage() {
   };
 
   const deleteHistory = async () => {
-    if (!history || !confirm('确定要删除这手牌吗？')) return;
+    if (!history || !confirm(t.history.confirmClear)) return;
 
     try {
       const response = await fetch(`/api/history?id=${history.id}`, {
@@ -166,13 +168,12 @@ export default function HistoryDetailPage() {
   };
 
   const getStreetLabel = (street: string) => {
-    const labels: Record<string, string> = {
-      preflop: '翻牌前',
-      flop: '翻牌',
-      turn: '转牌',
-      river: '河牌',
-    };
-    return labels[street.toLowerCase()] || street;
+    const streetLower = street.toLowerCase();
+    if (streetLower === 'preflop') return t.poker.preflop;
+    if (streetLower === 'flop') return t.poker.flop;
+    if (streetLower === 'turn') return t.poker.turn;
+    if (streetLower === 'river') return t.poker.river;
+    return street;
   };
 
   if (loading) {
@@ -180,7 +181,7 @@ export default function HistoryDetailPage() {
       <div className="detail-page">
         <div className="loading-container">
           <div className="loading-spinner" />
-          <p className="loading-text">加载牌局详情...</p>
+          <p className="loading-text">{t.common.loading}</p>
         </div>
       </div>
     );
@@ -191,10 +192,10 @@ export default function HistoryDetailPage() {
       <div className="detail-page">
         <div className="error-container">
           <div className="error-icon">❌</div>
-          <h2>加载失败</h2>
-          <p>{error || '找不到该牌局'}</p>
+          <h2>{t.common.error}</h2>
+          <p>{error || t.errors.notFound}</p>
           <Link href="/history" className="back-link">
-            返回牌局列表
+            {t.common.back}
           </Link>
         </div>
       </div>
@@ -215,7 +216,7 @@ export default function HistoryDetailPage() {
             </svg>
           </Link>
           <div className="header-title">
-            <h1>牌局详情</h1>
+            <h1>{t.history.title}</h1>
             <span className="header-date">{formatDate(history.created_at)}</span>
           </div>
         </div>
@@ -223,7 +224,7 @@ export default function HistoryDetailPage() {
           <button
             className={`action-btn icon-btn ${history.is_favorite ? 'active' : ''}`}
             onClick={toggleFavorite}
-            title={history.is_favorite ? '取消收藏' : '添加收藏'}
+            title={history.is_favorite ? t.hands.delete : t.hands.addNotes}
           >
             {history.is_favorite ? '⭐' : '☆'}
           </button>
@@ -231,10 +232,10 @@ export default function HistoryDetailPage() {
             href={`/analyzer?hand=${history.hero_hand}&board=${history.board}&position=${history.hero_position}`}
             className="action-btn primary"
           >
-            重新分析
+            {t.hands.analyze}
           </Link>
           <button className="action-btn danger" onClick={deleteHistory}>
-            删除
+            {t.common.delete}
           </button>
         </div>
       </header>
@@ -259,7 +260,7 @@ export default function HistoryDetailPage() {
 
           {/* Hero Hand */}
           <section className="card-section">
-            <h2 className="section-title">手牌</h2>
+            <h2 className="section-title">{t.analyzer.yourHand}</h2>
             <div className="cards-display hero-cards">
               {hand && (
                 <>
@@ -273,7 +274,7 @@ export default function HistoryDetailPage() {
           {/* Board */}
           {board.length > 0 && (
             <section className="card-section">
-              <h2 className="section-title">公共牌</h2>
+              <h2 className="section-title">{t.analyzer.communityCards}</h2>
               <div className="cards-display board-cards">
                 {board.map((card, i) => (
                   <PokerCard key={i} card={card} size={isMobile ? 'md' : 'lg'} variant="dark" />
@@ -296,21 +297,21 @@ export default function HistoryDetailPage() {
               <div className="info-card">
                 <div className="info-icon">💰</div>
                 <div className="info-content">
-                  <span className="info-label">底池大小</span>
+                  <span className="info-label">{t.analyzer.potSize}</span>
                   <span className="info-value">{history.pot_size} <span className="unit">BB</span></span>
                 </div>
               </div>
               <div className="info-card">
                 <div className="info-icon">📊</div>
                 <div className="info-content">
-                  <span className="info-label">有效筹码</span>
+                  <span className="info-label">{t.analyzer.effectiveStack}</span>
                   <span className="info-value">{history.stack_size} <span className="unit">BB</span></span>
                 </div>
               </div>
               <div className="info-card">
                 <div className="info-icon">📈</div>
                 <div className="info-content">
-                  <span className="info-label">SPR</span>
+                  <span className="info-label">{t.analyzer.spr}</span>
                   <span className="info-value">
                     {history.pot_size > 0 ? (history.stack_size / history.pot_size).toFixed(1) : '∞'}
                   </span>
@@ -325,12 +326,12 @@ export default function HistoryDetailPage() {
           {/* Analysis Result */}
           {history.analysis_result && (
             <section className="analysis-section">
-              <h2 className="section-title">分析结果</h2>
+              <h2 className="section-title">{t.analyzer.analysisResults}</h2>
 
               {history.analysis_result.equity !== undefined && (
                 <div className="analysis-card">
                   <div className="analysis-header">
-                    <span className="analysis-label">权益 (Equity)</span>
+                    <span className="analysis-label">{t.analyzer.equity}</span>
                     <span className={`analysis-value ${getEquityClass(history.analysis_result.equity)}`}>
                       {(history.analysis_result.equity * 100).toFixed(1)}%
                     </span>
@@ -343,10 +344,10 @@ export default function HistoryDetailPage() {
                   </div>
                   <p className="analysis-desc">
                     {history.analysis_result.equity >= 0.6
-                      ? '强势手牌，有较高的获胜概率'
+                      ? t.postflop.handStrength.strong
                       : history.analysis_result.equity >= 0.4
-                      ? '中等手牌，需要谨慎处理'
-                      : '弱势手牌，建议保守行动'}
+                      ? t.postflop.handStrength.medium
+                      : t.postflop.handStrength.weak}
                   </p>
                 </div>
               )}
@@ -354,24 +355,24 @@ export default function HistoryDetailPage() {
               {history.analysis_result.ev !== undefined && (
                 <div className="analysis-card">
                   <div className="analysis-header">
-                    <span className="analysis-label">期望值 (EV)</span>
+                    <span className="analysis-label">{t.analyzer.expectedValue}</span>
                     <span className={`analysis-value ${history.analysis_result.ev >= 0 ? 'positive' : 'negative'}`}>
                       {history.analysis_result.ev >= 0 ? '+' : ''}{history.analysis_result.ev.toFixed(2)} BB
                     </span>
                   </div>
                   <p className="analysis-desc">
                     {history.analysis_result.ev > 0
-                      ? '正EV操作，长期有利可图'
+                      ? t.analyzer.bestEv
                       : history.analysis_result.ev === 0
-                      ? '边缘情况，EV接近零'
-                      : '负EV操作，长期会亏损'}
+                      ? t.postflop.handStrength.marginal
+                      : t.postflop.handStrength.weak}
                   </p>
                 </div>
               )}
 
               {history.analysis_result.recommendedAction && (
                 <div className="recommendation-card">
-                  <span className="recommendation-label">推荐动作</span>
+                  <span className="recommendation-label">{t.analyzer.recommendedAction}</span>
                   <span className={`recommendation-action ${getActionClass(history.analysis_result.recommendedAction)}`}>
                     {history.analysis_result.recommendedAction}
                   </span>
@@ -383,10 +384,10 @@ export default function HistoryDetailPage() {
           {/* Notes */}
           <section className="notes-section">
             <div className="section-header">
-              <h2 className="section-title">笔记</h2>
+              <h2 className="section-title">{t.hands.notes}</h2>
               {!isEditing && (
                 <button className="edit-btn" onClick={() => setIsEditing(true)}>
-                  编辑
+                  {t.common.edit}
                 </button>
               )}
             </div>
@@ -397,15 +398,15 @@ export default function HistoryDetailPage() {
                   className="notes-textarea"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="添加你对这手牌的思考和笔记..."
+                  placeholder={t.analyzer.notesPlaceholder}
                   rows={6}
                 />
                 <div className="notes-actions">
                   <button className="btn-cancel" onClick={() => { setIsEditing(false); setNotes(history.notes || ''); }}>
-                    取消
+                    {t.common.cancel}
                   </button>
                   <button className="btn-save" onClick={saveNotes}>
-                    保存
+                    {t.common.save}
                   </button>
                 </div>
               </div>
@@ -414,7 +415,7 @@ export default function HistoryDetailPage() {
                 {history.notes ? (
                   <p>{history.notes}</p>
                 ) : (
-                  <p className="notes-empty">暂无笔记，点击编辑添加...</p>
+                  <p className="notes-empty">{t.hands.addNotes}</p>
                 )}
               </div>
             )}
@@ -422,14 +423,14 @@ export default function HistoryDetailPage() {
 
           {/* Quick Actions */}
           <section className="actions-section">
-            <h2 className="section-title">快速操作</h2>
+            <h2 className="section-title">{t.hands.actions}</h2>
             <div className="quick-actions-grid">
               <Link
                 href={`/analyzer?hand=${history.hero_hand}&board=${history.board}&position=${history.hero_position}`}
                 className="quick-action-card"
               >
                 <span className="quick-action-icon">🔄</span>
-                <span className="quick-action-label">重新分析</span>
+                <span className="quick-action-label">{t.hands.analyze}</span>
               </Link>
               <button className="quick-action-card" onClick={() => {
                 const data = JSON.stringify(history, null, 2);
@@ -442,19 +443,19 @@ export default function HistoryDetailPage() {
                 URL.revokeObjectURL(url);
               }}>
                 <span className="quick-action-icon">📤</span>
-                <span className="quick-action-label">导出</span>
+                <span className="quick-action-label">{t.history.export}</span>
               </button>
               <button className="quick-action-card" onClick={() => {
-                const text = `手牌: ${history.hero_hand}\n公共牌: ${history.board}\n位置: ${history.hero_position}\n权益: ${history.analysis_result?.equity ? (history.analysis_result.equity * 100).toFixed(1) + '%' : 'N/A'}`;
+                const text = `${t.analyzer.yourHand}: ${history.hero_hand}\n${t.analyzer.communityCards}: ${history.board}\n${t.poker.position}: ${history.hero_position}\n${t.analyzer.equity}: ${history.analysis_result?.equity ? (history.analysis_result.equity * 100).toFixed(1) + '%' : 'N/A'}`;
                 navigator.clipboard.writeText(text);
-                alert('已复制到剪贴板');
+                alert(t.common.success);
               }}>
                 <span className="quick-action-icon">📋</span>
-                <span className="quick-action-label">复制信息</span>
+                <span className="quick-action-label">{t.community.share}</span>
               </button>
               <Link href="/practice" className="quick-action-card">
                 <span className="quick-action-icon">🎯</span>
-                <span className="quick-action-label">开始练习</span>
+                <span className="quick-action-label">{t.practice.startPractice}</span>
               </Link>
             </div>
           </section>

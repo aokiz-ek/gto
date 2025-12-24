@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import './course-detail.css';
 
 // Types
@@ -86,6 +87,7 @@ export default function CourseDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { isMobile, isMobileOrTablet } = useResponsive();
+  const { t } = useTranslation();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [labels, setLabels] = useState<Labels | null>(null);
@@ -186,12 +188,12 @@ export default function CourseDetailPage() {
             <Link href="/courses" className="back-btn">
               <span>←</span>
             </Link>
-            <h1>加载中...</h1>
+            <h1>{t.courses.loading}...</h1>
           </div>
         </header>
         <div className="loading-container">
           <div className="loading-spinner" />
-          <p>加载课程...</p>
+          <p>{t.courses.loadingCourse}...</p>
         </div>
       </div>
     );
@@ -205,14 +207,14 @@ export default function CourseDetailPage() {
             <Link href="/courses" className="back-btn">
               <span>←</span>
             </Link>
-            <h1>课程未找到</h1>
+            <h1>{t.courses.courseNotFound}</h1>
           </div>
         </header>
         <div className="empty-container">
           <div className="empty-icon">📚</div>
-          <h3>课程不存在</h3>
-          <p>请返回课程列表选择其他课程</p>
-          <Link href="/courses" className="back-link">返回课程列表</Link>
+          <h3>{t.courses.courseDoesNotExist}</h3>
+          <p>{t.courses.backToListMessage}</p>
+          <Link href="/courses" className="back-link">{t.courses.backToList}</Link>
         </div>
       </div>
     );
@@ -240,7 +242,7 @@ export default function CourseDetailPage() {
                   {labels.categories[course.category]?.icon}{' '}
                   {labels.categories[course.category]?.zh}
                 </span>
-                {course.isFree && <span className="free-badge">免费</span>}
+                {course.isFree && <span className="free-badge">{t.courses.free}</span>}
               </div>
             )}
           </div>
@@ -256,21 +258,21 @@ export default function CourseDetailPage() {
             <div className="course-stats">
               <div className="stat-item">
                 <span className="stat-icon">📚</span>
-                <span>{course.moduleCount} 模块</span>
+                <span>{course.moduleCount} {t.courses.modules}</span>
               </div>
               <div className="stat-item">
                 <span className="stat-icon">📝</span>
-                <span>{course.lessonCount} 节课</span>
+                <span>{course.lessonCount} {t.courses.lessons}</span>
               </div>
               <div className="stat-item">
                 <span className="stat-icon">⏱️</span>
-                <span>{course.estimatedHours} 小时</span>
+                <span>{course.estimatedHours} {t.courses.hours}</span>
               </div>
             </div>
           </div>
 
           <div className="course-outline">
-            <h3>课程大纲</h3>
+            <h3>{t.courses.curriculum}</h3>
             <div className="modules-list">
               {course.modules.map((module, moduleIndex) => (
                 <div key={module.id} className="module-item">
@@ -297,7 +299,7 @@ export default function CourseDetailPage() {
                             {LESSON_TYPE_ICONS[lesson.type]}
                           </span>
                           <span className="lesson-title">{lesson.titleZh}</span>
-                          <span className="lesson-duration">{lesson.duration}分钟</span>
+                          <span className="lesson-duration">{lesson.duration}{t.courses.minutes}</span>
                         </div>
                       ))}
                     </div>
@@ -343,10 +345,10 @@ export default function CourseDetailPage() {
               {selectedLesson.type === 'quiz' && selectedLesson.quizzes && (
                 <div className="quiz-content">
                   <div className="quiz-progress">
-                    问题 {quizIndex + 1} / {selectedLesson.quizzes.length}
+                    {t.courses.question} {quizIndex + 1} / {selectedLesson.quizzes.length}
                     {quizScore.total > 0 && (
                       <span className="quiz-score">
-                        得分: {quizScore.correct}/{quizScore.total}
+                        {t.courses.score}: {quizScore.correct}/{quizScore.total}
                       </span>
                     )}
                   </div>
@@ -387,8 +389,8 @@ export default function CourseDetailPage() {
                     }`}>
                       <div className="result-header">
                         {selectedAnswer === selectedLesson.quizzes[quizIndex].correctIndex
-                          ? '✓ 正确!'
-                          : '✗ 错误'}
+                          ? `✓ ${t.courses.correct}!`
+                          : `✗ ${t.courses.incorrect}`}
                       </div>
                       <p className="result-explanation">
                         {selectedLesson.quizzes[quizIndex].explanationZh}
@@ -403,15 +405,15 @@ export default function CourseDetailPage() {
                         onClick={handleSubmitAnswer}
                         disabled={selectedAnswer === null}
                       >
-                        提交答案
+                        {t.courses.submitAnswer}
                       </button>
                     ) : quizIndex < selectedLesson.quizzes.length - 1 ? (
                       <button className="next-btn" onClick={handleNextQuiz}>
-                        下一题 →
+                        {t.courses.nextQuestion} →
                       </button>
                     ) : (
                       <div className="quiz-complete">
-                        <p>测验完成! 最终得分: {quizScore.correct}/{quizScore.total}</p>
+                        <p>{t.courses.quizComplete}! {t.courses.finalScore}: {quizScore.correct}/{quizScore.total}</p>
                         <button
                           className="restart-btn"
                           onClick={() => {
@@ -421,7 +423,7 @@ export default function CourseDetailPage() {
                             setQuizScore({ correct: 0, total: 0 });
                           }}
                         >
-                          重新开始
+                          {t.courses.restart}
                         </button>
                       </div>
                     )}
@@ -433,24 +435,24 @@ export default function CourseDetailPage() {
               {selectedLesson.type === 'practice' && selectedLesson.practiceConfig && (
                 <div className="practice-content">
                   <div className="practice-info">
-                    <h3>实战练习</h3>
-                    <p>通过练习巩固所学知识，将理论应用到实际场景中。</p>
+                    <h3>{t.courses.practiceExercise}</h3>
+                    <p>{t.courses.practiceDescription}</p>
 
                     <div className="practice-config">
                       <div className="config-item">
-                        <span className="config-label">练习场景</span>
+                        <span className="config-label">{t.courses.practiceScenario}</span>
                         <span className="config-value">
                           {selectedLesson.practiceConfig.scenario}
                         </span>
                       </div>
                       <div className="config-item">
-                        <span className="config-label">题目数量</span>
+                        <span className="config-label">{t.courses.questionCount}</span>
                         <span className="config-value">
-                          {selectedLesson.practiceConfig.questionCount} 题
+                          {selectedLesson.practiceConfig.questionCount} {t.courses.questions}
                         </span>
                       </div>
                       <div className="config-item">
-                        <span className="config-label">目标准确率</span>
+                        <span className="config-label">{t.courses.targetAccuracy}</span>
                         <span className="config-value">
                           {selectedLesson.practiceConfig.targetAccuracy}%
                         </span>
@@ -458,7 +460,7 @@ export default function CourseDetailPage() {
                     </div>
 
                     <button className="start-practice-btn" onClick={handleStartPractice}>
-                      开始练习 →
+                      {t.courses.startPractice} →
                     </button>
                   </div>
                 </div>
@@ -469,7 +471,7 @@ export default function CourseDetailPage() {
                 <div className="video-content">
                   <div className="video-placeholder">
                     <div className="video-icon">🎬</div>
-                    <p>视频内容即将上线</p>
+                    <p>{t.courses.videoComingSoon}</p>
                   </div>
                 </div>
               )}
@@ -477,8 +479,8 @@ export default function CourseDetailPage() {
           ) : (
             <div className="empty-lesson">
               <div className="empty-icon">📖</div>
-              <h3>选择一节课开始学习</h3>
-              <p>从左侧课程大纲中选择一节课程开始学习</p>
+              <h3>{t.courses.selectLesson}</h3>
+              <p>{t.courses.selectLessonDescription}</p>
             </div>
           )}
         </div>

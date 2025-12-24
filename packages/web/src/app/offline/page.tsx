@@ -1,9 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslation } from '@/i18n';
 import './offline.css';
 
 export default function OfflinePage() {
+  const { t } = useTranslation();
+
   const handleRetry = () => {
     window.location.reload();
   };
@@ -23,44 +26,43 @@ export default function OfflinePage() {
           </svg>
         </div>
 
-        <h1>You're Offline</h1>
+        <h1>{t.offline.pageTitle}</h1>
         <p className="offline-message">
-          It looks like you've lost your internet connection.
-          Some features may not be available until you're back online.
+          {t.offline.message}
         </p>
 
         <div className="offline-features">
-          <h3>Available Offline:</h3>
+          <h3>{t.offline.availableOfflineTitle}</h3>
           <ul>
             <li>
               <span className="feature-icon">&#9989;</span>
-              Previously viewed range charts
+              {t.offline.previouslyViewedRangeCharts}
             </li>
             <li>
               <span className="feature-icon">&#9989;</span>
-              Cached course content
+              {t.offline.cachedCourseContent}
             </li>
             <li>
               <span className="feature-icon">&#9989;</span>
-              Recently visited pages
+              {t.offline.recentlyVisitedPages}
             </li>
           </ul>
         </div>
 
         <div className="offline-unavailable">
-          <h3>Requires Connection:</h3>
+          <h3>{t.offline.requiresConnectionTitle}</h3>
           <ul>
             <li>
               <span className="feature-icon">&#10060;</span>
-              Live PK battles
+              {t.offline.livePKBattles}
             </li>
             <li>
               <span className="feature-icon">&#10060;</span>
-              Community posts
+              {t.offline.communityPosts}
             </li>
             <li>
               <span className="feature-icon">&#10060;</span>
-              Syncing progress
+              {t.offline.syncingProgress}
             </li>
           </ul>
         </div>
@@ -72,19 +74,18 @@ export default function OfflinePage() {
               <path d="M1 20v-6h6" />
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
             </svg>
-            Try Again
+            {t.offline.tryAgain}
           </button>
 
           <Link href="/" className="home-link">
-            Go to Home
+            {t.offline.goToHome}
           </Link>
         </div>
 
         <div className="offline-tips">
-          <h4>Tips:</h4>
+          <h4>{t.offline.tipsTitle}</h4>
           <p>
-            Make sure your device is connected to Wi-Fi or mobile data,
-            then tap "Try Again" to reconnect.
+            {t.offline.tips}
           </p>
         </div>
       </div>

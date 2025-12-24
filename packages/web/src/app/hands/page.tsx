@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import './hands.css';
 
 // Types
@@ -49,6 +50,7 @@ interface SharedHand {
 type SortOption = 'latest' | 'hot' | 'top' | 'views';
 
 export default function HandsPage() {
+  const { t } = useTranslation();
   const { isMobile, isMobileOrTablet } = useResponsive();
   const [hands, setHands] = useState<SharedHand[]>([]);
   const [popularTags, setPopularTags] = useState<string[]>([]);
@@ -91,10 +93,10 @@ export default function HandsPage() {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
 
-    if (hours < 1) return '刚刚';
-    if (hours < 24) return `${hours}小时前`;
-    if (days < 7) return `${days}天前`;
-    return date.toLocaleDateString('zh-CN');
+    if (hours < 1) return t.hands.justNow;
+    if (hours < 24) return `${hours}${t.hands.hoursAgo}`;
+    if (days < 7) return `${days}${t.hands.daysAgo}`;
+    return date.toLocaleDateString();
   };
 
   const formatNumber = (num: number) => {
@@ -140,12 +142,12 @@ export default function HandsPage() {
             <span>&larr;</span>
           </Link>
           <div>
-            <h1>牌谱分享</h1>
-            <p className="header-subtitle">分享你的精彩牌局，学习他人的策略</p>
+            <h1>{t.hands.communityTitle}</h1>
+            <p className="header-subtitle">{t.hands.communitySubtitle}</p>
           </div>
         </div>
         <Link href="/hands/share" className="share-btn">
-          分享牌谱
+          {t.hands.shareHand}
         </Link>
       </header>
 
@@ -155,13 +157,13 @@ export default function HandsPage() {
         <aside className="sidebar">
           {/* Sort options */}
           <div className="sort-section">
-            <h3>排序</h3>
+            <h3>{t.hands.sort}</h3>
             <div className="sort-list">
               {[
-                { value: 'latest', label: '最新', icon: '&#128337;' },
-                { value: 'hot', label: '热门', icon: '&#128293;' },
-                { value: 'top', label: '最赞', icon: '&#128077;' },
-                { value: 'views', label: '浏览量', icon: '&#128065;' },
+                { value: 'latest', label: t.hands.latest, icon: '&#128337;' },
+                { value: 'hot', label: t.hands.hot, icon: '&#128293;' },
+                { value: 'top', label: t.hands.top, icon: '&#128077;' },
+                { value: 'views', label: t.hands.views, icon: '&#128065;' },
               ].map(opt => (
                 <button
                   key={opt.value}
@@ -175,14 +177,14 @@ export default function HandsPage() {
 
           {/* Popular tags */}
           <div className="tags-section">
-            <h3>热门标签</h3>
+            <h3>{t.hands.popularTags}</h3>
             <div className="tags-cloud">
               {selectedTag && (
                 <button
                   className="tag-clear"
                   onClick={() => { setSelectedTag(null); setPage(1); }}
                 >
-                  清除筛选
+                  {t.hands.clearFilter}
                 </button>
               )}
               {popularTags.map(tag => (
@@ -199,7 +201,7 @@ export default function HandsPage() {
 
           {/* Featured hands */}
           <div className="featured-section">
-            <h3>精选牌谱</h3>
+            <h3>{t.hands.featuredHands}</h3>
             <div className="featured-list">
               {hands.filter(h => h.isFeatured).slice(0, 3).map(hand => (
                 <Link key={hand.id} href={`/hands/${hand.id}`} className="featured-item">
@@ -216,7 +218,7 @@ export default function HandsPage() {
           {/* Results info */}
           <div className="results-bar">
             <span className="results-count">
-              {selectedTag ? `"${selectedTag}" 相关牌谱` : '全部牌谱'} ({hands.length})
+              {selectedTag ? `"${selectedTag}" ${t.hands.relatedHands}` : t.hands.allHands} ({hands.length})
             </span>
           </div>
 
@@ -225,13 +227,13 @@ export default function HandsPage() {
             {loading ? (
               <div className="loading-state">
                 <div className="loading-spinner" />
-                <p>加载中...</p>
+                <p>{t.hands.loading}</p>
               </div>
             ) : hands.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">&#127183;</div>
-                <h3>暂无牌谱</h3>
-                <p>成为第一个分享牌谱的人吧！</p>
+                <h3>{t.hands.noHandsYet}</h3>
+                <p>{t.hands.beFirstToShare}</p>
               </div>
             ) : (
               hands.map(hand => (
@@ -239,8 +241,8 @@ export default function HandsPage() {
                   {/* Hand header */}
                   <div className="hand-header">
                     <div className="hand-badges">
-                      {hand.isFeatured && <span className="badge featured">精选</span>}
-                      {hand.isHot && <span className="badge hot">热门</span>}
+                      {hand.isFeatured && <span className="badge featured">{t.hands.featured}</span>}
+                      {hand.isHot && <span className="badge hot">{t.hands.hot}</span>}
                       <span className="badge position">{hand.heroPosition}</span>
                     </div>
                     <span className="hand-time">{formatTime(hand.createdAt)}</span>
@@ -263,7 +265,7 @@ export default function HandsPage() {
                   {/* Key decision */}
                   {hand.keyDecision && (
                     <div className="key-decision">
-                      <span className="decision-label">关键决策:</span>
+                      <span className="decision-label">{t.hands.keyDecision}:</span>
                       <span className="decision-desc">{hand.keyDecision.description}</span>
                     </div>
                   )}
@@ -323,7 +325,7 @@ export default function HandsPage() {
                 disabled={page === 1}
                 onClick={() => setPage(p => p - 1)}
               >
-                上一页
+                {t.hands.prevPage}
               </button>
               <span className="page-info">{page} / {totalPages}</span>
               <button
@@ -331,7 +333,7 @@ export default function HandsPage() {
                 disabled={page === totalPages}
                 onClick={() => setPage(p => p + 1)}
               >
-                下一页
+                {t.hands.nextPage}
               </button>
             </div>
           )}

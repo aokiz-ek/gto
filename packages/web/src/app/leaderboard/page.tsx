@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, Button, Skeleton, SkeletonGroup, Modal } from '@gto/ui';
 import { useUserStore } from '@/store';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import './leaderboard.css';
 
 interface LeaderboardEntry {
@@ -190,6 +191,7 @@ const generateMockRankHistory = (): RankHistoryPoint[] => {
 };
 
 export default function LeaderboardPage() {
+  const { t } = useTranslation();
   const { isAuthenticated, user } = useUserStore();
   const { isMobile, isTablet } = useResponsive();
 
@@ -569,7 +571,7 @@ export default function LeaderboardPage() {
             {/* Connection Status */}
             <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
               <span className="status-dot" />
-              <span className="status-text">{isConnected ? 'Live' : 'Offline'}</span>
+              <span className="status-text">{isConnected ? t.leaderboard.live : 'Offline'}</span>
             </div>
 
             {/* Header Actions */}
@@ -647,10 +649,10 @@ export default function LeaderboardPage() {
             <span className="badge-text">COMPETITIVE</span>
           </div>
           <h1 className="header-title">
-            <span className="title-gradient">Leaderboard</span>
+            <span className="title-gradient">{t.leaderboard.title}</span>
           </h1>
           <p className="header-subtitle">
-            Compete with the best. Prove your GTO mastery.
+            {t.leaderboard.subtitle}
           </p>
 
           {/* Last update indicator */}
@@ -740,14 +742,14 @@ export default function LeaderboardPage() {
             onClick={() => setViewMode('all')}
           >
             <span className="view-icon">🌍</span>
-            Global
+            {t.leaderboard.global}
           </button>
           <button
             className={`view-mode-btn ${viewMode === 'friends' ? 'active' : ''}`}
             onClick={() => setViewMode('friends')}
           >
             <span className="view-icon">👥</span>
-            Friends
+            {t.leaderboard.friends}
           </button>
         </div>
 
@@ -759,7 +761,7 @@ export default function LeaderboardPage() {
               className={`period-btn ${period === p ? 'active' : ''}`}
               onClick={() => setPeriod(p)}
             >
-              {p === 'all_time' ? 'All Time' : p.charAt(0).toUpperCase() + p.slice(1)}
+              {p === 'season' ? t.leaderboard.season : p === 'weekly' ? t.leaderboard.weekly : p === 'monthly' ? t.leaderboard.monthly : t.leaderboard.allTime}
               {period === p && <span className="btn-glow" />}
             </button>
           ))}
@@ -769,7 +771,7 @@ export default function LeaderboardPage() {
         <div className="enhanced-filters">
           {/* Region Filter */}
           <div className="filter-group">
-            <label className="filter-label">Region</label>
+            <label className="filter-label">{t.leaderboard.region}</label>
             <div className="filter-options">
               {COUNTRIES.map(country => (
                 <button
@@ -854,7 +856,7 @@ export default function LeaderboardPage() {
           return (
             <div className="user-rank-card animate-slideUp">
               <div className="user-rank-position">
-                <span className="position-label">Your Rank</span>
+                <span className="position-label">{t.leaderboard.yourRank}</span>
                 <span className="position-number">#{userRank.rank}</span>
               </div>
               <div className="user-rank-info">
@@ -978,7 +980,7 @@ export default function LeaderboardPage() {
                           className="podium-tier-badge"
                           style={{ background: `${RANK_CONFIG[entry.rank_tier]?.color}20`, color: RANK_CONFIG[entry.rank_tier]?.color }}
                         >
-                          {entry.rank_tier?.toUpperCase() || 'BRONZE'}
+                          {entry.rank_tier === 'grandmaster' ? t.leaderboard.tiers.grandmaster.toUpperCase() : entry.rank_tier === 'diamond' ? t.leaderboard.tiers.diamond.toUpperCase() : entry.rank_tier === 'platinum' ? t.leaderboard.tiers.platinum.toUpperCase() : entry.rank_tier === 'gold' ? t.leaderboard.tiers.gold.toUpperCase() : entry.rank_tier === 'silver' ? t.leaderboard.tiers.silver.toUpperCase() : t.leaderboard.tiers.bronze.toUpperCase()}
                         </span>
                       </div>
 
@@ -997,15 +999,15 @@ export default function LeaderboardPage() {
                       <div className="podium-stats">
                         <div className="stat-item">
                           <span className="stat-value">{entry.score?.toLocaleString() || '0'}</span>
-                          <span className="stat-label">Points</span>
+                          <span className="stat-label">{t.leaderboard.points}</span>
                         </div>
                         <div className="stat-item">
                           <span className="stat-value">{entry.gto_rating || '--'}</span>
-                          <span className="stat-label">GTO</span>
+                          <span className="stat-label">{t.leaderboard.gtoRating}</span>
                         </div>
                         <div className="stat-item">
                           <span className="stat-value">{entry.win_rate?.toFixed(0) || '--'}%</span>
-                          <span className="stat-label">Win</span>
+                          <span className="stat-label">{t.leaderboard.winRate}</span>
                         </div>
                       </div>
 
@@ -1083,7 +1085,7 @@ export default function LeaderboardPage() {
                             className="player-tier"
                             style={{ background: `${RANK_CONFIG[entry.rank_tier]?.color}20`, color: RANK_CONFIG[entry.rank_tier]?.color }}
                           >
-                            {RANK_CONFIG[entry.rank_tier]?.icon} {entry.rank_tier || 'bronze'}
+                            {RANK_CONFIG[entry.rank_tier]?.icon} {entry.rank_tier === 'grandmaster' ? t.leaderboard.tiers.grandmaster : entry.rank_tier === 'diamond' ? t.leaderboard.tiers.diamond : entry.rank_tier === 'platinum' ? t.leaderboard.tiers.platinum : entry.rank_tier === 'gold' ? t.leaderboard.tiers.gold : entry.rank_tier === 'silver' ? t.leaderboard.tiers.silver : t.leaderboard.tiers.bronze}
                           </span>
                           {/* Achievements */}
                           {entry.achievements && entry.achievements.length > 0 && (
@@ -1123,11 +1125,11 @@ export default function LeaderboardPage() {
                     <div className="row-stats hide-mobile">
                       <div className="stat-cell">
                         <span className="stat-value">{entry.gto_rating || '--'}</span>
-                        <span className="stat-label">GTO</span>
+                        <span className="stat-label">{t.leaderboard.gtoRating}</span>
                       </div>
                       <div className="stat-cell">
                         <span className="stat-value">{entry.win_rate?.toFixed(0) || '--'}%</span>
-                        <span className="stat-label">Win</span>
+                        <span className="stat-label">{t.leaderboard.winRate}</span>
                       </div>
                     </div>
 
@@ -1188,7 +1190,7 @@ export default function LeaderboardPage() {
         <div className="tiers-legend animate-slideUp">
           <h3 className="legend-title">
             <span className="legend-icon">📊</span>
-            Rank Tiers
+            {t.leaderboard.rankTiers}
           </h3>
           <div className="tiers-grid">
             {Object.entries(RANK_CONFIG).map(([tier, config]) => (
@@ -1198,7 +1200,7 @@ export default function LeaderboardPage() {
                 </div>
                 <div className="tier-info">
                   <span className="tier-name" style={{ color: config.color }}>
-                    {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                    {tier === 'grandmaster' ? t.leaderboard.tiers.grandmaster : tier === 'diamond' ? t.leaderboard.tiers.diamond : tier === 'platinum' ? t.leaderboard.tiers.platinum : tier === 'gold' ? t.leaderboard.tiers.gold : tier === 'silver' ? t.leaderboard.tiers.silver : t.leaderboard.tiers.bronze}
                   </span>
                   <span className="tier-requirement">
                     {config.minScore.toLocaleString()}+ pts
@@ -1213,7 +1215,7 @@ export default function LeaderboardPage() {
         <div className="achievements-showcase animate-slideUp">
           <h3 className="section-title">
             <span className="section-icon">🏅</span>
-            Achievements
+            {t.leaderboard.achievements}
           </h3>
           <div className="achievements-grid">
             {Object.entries(ACHIEVEMENTS_CONFIG).map(([id, config]) => (
@@ -1232,7 +1234,7 @@ export default function LeaderboardPage() {
         <div className="how-it-works animate-slideUp">
           <h3 className="section-title">
             <span className="section-icon">💡</span>
-            How Rankings Work
+            {t.leaderboard.howItWorks}
           </h3>
           <div className="info-cards">
             <div className="info-card">
@@ -1277,7 +1279,7 @@ export default function LeaderboardPage() {
                   className="modal-tier"
                   style={{ background: `${RANK_CONFIG[selectedPlayer.rank_tier]?.color}20`, color: RANK_CONFIG[selectedPlayer.rank_tier]?.color }}
                 >
-                  {RANK_CONFIG[selectedPlayer.rank_tier]?.icon} {selectedPlayer.rank_tier?.toUpperCase() || 'BRONZE'}
+                  {RANK_CONFIG[selectedPlayer.rank_tier]?.icon} {selectedPlayer.rank_tier === 'grandmaster' ? t.leaderboard.tiers.grandmaster.toUpperCase() : selectedPlayer.rank_tier === 'diamond' ? t.leaderboard.tiers.diamond.toUpperCase() : selectedPlayer.rank_tier === 'platinum' ? t.leaderboard.tiers.platinum.toUpperCase() : selectedPlayer.rank_tier === 'gold' ? t.leaderboard.tiers.gold.toUpperCase() : selectedPlayer.rank_tier === 'silver' ? t.leaderboard.tiers.silver.toUpperCase() : t.leaderboard.tiers.bronze.toUpperCase()}
                 </span>
                 <span className="modal-rank">Rank #{selectedPlayer.rank}</span>
               </div>
@@ -1286,33 +1288,33 @@ export default function LeaderboardPage() {
             <div className="modal-stats-grid">
               <div className="modal-stat">
                 <span className="modal-stat-value">{selectedPlayer.score?.toLocaleString() || '0'}</span>
-                <span className="modal-stat-label">Points</span>
+                <span className="modal-stat-label">{t.leaderboard.points}</span>
               </div>
               <div className="modal-stat">
                 <span className="modal-stat-value">{selectedPlayer.gto_rating || '--'}</span>
-                <span className="modal-stat-label">GTO Rating</span>
+                <span className="modal-stat-label">{t.leaderboard.gtoRating}</span>
               </div>
               <div className="modal-stat">
                 <span className="modal-stat-value">{selectedPlayer.games_played || 0}</span>
-                <span className="modal-stat-label">Games</span>
+                <span className="modal-stat-label">{t.leaderboard.games}</span>
               </div>
               <div className="modal-stat">
                 <span className="modal-stat-value">{selectedPlayer.win_rate?.toFixed(1) || 0}%</span>
-                <span className="modal-stat-label">Win Rate</span>
+                <span className="modal-stat-label">{t.leaderboard.winRate}</span>
               </div>
               <div className="modal-stat">
                 <span className="modal-stat-value">{selectedPlayer.current_streak || 0}</span>
-                <span className="modal-stat-label">Current Streak</span>
+                <span className="modal-stat-label">{t.leaderboard.currentStreak}</span>
               </div>
               <div className="modal-stat">
                 <span className="modal-stat-value">{selectedPlayer.best_streak || 0}</span>
-                <span className="modal-stat-label">Best Streak</span>
+                <span className="modal-stat-label">{t.leaderboard.bestStreak}</span>
               </div>
             </div>
 
             {/* Achievements */}
             <div className="modal-section">
-              <h4>Achievements</h4>
+              <h4>{t.leaderboard.achievements}</h4>
               <div className="modal-achievements">
                 {selectedPlayer.achievements && selectedPlayer.achievements.length > 0 ? (
                   selectedPlayer.achievements.map(ach => (
@@ -1415,11 +1417,11 @@ export default function LeaderboardPage() {
 
             <div className="compare-stats">
               {[
-                { label: 'Points', key: 'score' },
-                { label: 'GTO Rating', key: 'gto_rating' },
-                { label: 'Games', key: 'games_played' },
-                { label: 'Win Rate', key: 'win_rate', suffix: '%' },
-                { label: 'Best Streak', key: 'best_streak' },
+                { label: t.leaderboard.points, key: 'score' },
+                { label: t.leaderboard.gtoRating, key: 'gto_rating' },
+                { label: t.leaderboard.games, key: 'games_played' },
+                { label: t.leaderboard.winRate, key: 'win_rate', suffix: '%' },
+                { label: t.leaderboard.bestStreak, key: 'best_streak' },
               ].map(({ label, key, suffix }) => {
                 const val1 = comparePlayer[key as keyof LeaderboardEntry] as number || 0;
                 const val2 = selectedPlayer[key as keyof LeaderboardEntry] as number || 0;

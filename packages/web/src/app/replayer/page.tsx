@@ -6,6 +6,7 @@ import { parseCard } from '@gto/core';
 import { useUserStore } from '@/store';
 import { HandReplayer, type SavedHand as ReplayerSavedHand } from '@/components/HandReplayer';
 import type { Card, Position } from '@gto/core';
+import { useTranslation } from '@/i18n';
 import './replayer.css';
 
 // Store SavedHand type (matching userStore.ts)
@@ -50,6 +51,7 @@ function convertToReplayerFormat(savedHand: StoreSavedHand): ReplayerSavedHand {
 }
 
 export default function ReplayerPage() {
+  const { t } = useTranslation();
   const { savedHands, deleteHand } = useUserStore();
   const [selectedHand, setSelectedHand] = useState<ReplayerSavedHand | null>(null);
   const [sortBy, setSortBy] = useState<'date' | 'score'>('date');
@@ -101,7 +103,8 @@ export default function ReplayerPage() {
   };
 
   const formatDate = (timestamp: string) => {
-    return new Date(timestamp).toLocaleDateString('zh-CN', {
+    const locale = t.common.language === 'en' ? 'en-US' : 'zh-CN';
+    return new Date(timestamp).toLocaleDateString(locale, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -120,8 +123,8 @@ export default function ReplayerPage() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1>Hand Replayer</h1>
-          <p>Review and analyze your practice hands</p>
+          <h1>{t.replayer.title}</h1>
+          <p>{t.replayer.subtitle}</p>
         </div>
       </div>
 
@@ -130,21 +133,21 @@ export default function ReplayerPage() {
         <div className="stats-summary">
           <div className="stat-card">
             <div className="stat-value">{stats.total}</div>
-            <div className="stat-label">Total Hands</div>
+            <div className="stat-label">{t.replayer.totalHands}</div>
           </div>
           <div className="stat-card">
             <div className="stat-value" style={{ color: getScoreColor(stats.avgScore) }}>
               {stats.avgScore.toFixed(1)}%
             </div>
-            <div className="stat-label">Avg Score</div>
+            <div className="stat-label">{t.replayer.avgScore}</div>
           </div>
           <div className="stat-card">
             <div className="stat-value" style={{ color: 'var(--success)' }}>{stats.goodHands}</div>
-            <div className="stat-label">Good (≥70%)</div>
+            <div className="stat-label">{t.replayer.good}</div>
           </div>
           <div className="stat-card">
             <div className="stat-value" style={{ color: 'var(--error)' }}>{stats.badHands}</div>
-            <div className="stat-label">Needs Work (&lt;70%)</div>
+            <div className="stat-label">{t.replayer.needsWork}</div>
           </div>
         </div>
       )}
@@ -152,18 +155,18 @@ export default function ReplayerPage() {
       {/* Filters */}
       <div className="filters">
         <div className="filter-group">
-          <label>Sort by:</label>
+          <label>{t.replayer.sortBy}</label>
           <select value={sortBy} onChange={e => setSortBy(e.target.value as 'date' | 'score')}>
-            <option value="date">Date</option>
-            <option value="score">Score</option>
+            <option value="date">{t.replayer.date}</option>
+            <option value="score">{t.replayer.score}</option>
           </select>
         </div>
         <div className="filter-group">
-          <label>Filter:</label>
+          <label>{t.replayer.filter}</label>
           <select value={filterScore} onChange={e => setFilterScore(e.target.value as 'all' | 'good' | 'bad')}>
-            <option value="all">All Hands</option>
-            <option value="good">Good (≥70%)</option>
-            <option value="bad">Needs Work</option>
+            <option value="all">{t.replayer.allHands}</option>
+            <option value="good">{t.replayer.good}</option>
+            <option value="bad">{t.replayer.needsWork}</option>
           </select>
         </div>
       </div>
@@ -172,10 +175,10 @@ export default function ReplayerPage() {
       {filteredHands.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">🃏</div>
-          <h3>No saved hands yet</h3>
-          <p>Complete practice sessions to save hands for review</p>
+          <h3>{t.replayer.noHands}</h3>
+          <p>{t.replayer.completeToSave}</p>
           <Button variant="primary" onClick={() => window.location.href = '/practice'}>
-            Start Practice
+            {t.replayer.startPractice}
           </Button>
         </div>
       ) : (
@@ -199,7 +202,7 @@ export default function ReplayerPage() {
                 <div className="hand-info">
                   <div className="hand-positions">
                     <PositionBadge position={hand.heroPosition as Position} size="sm" />
-                    <span className="vs">vs</span>
+                    <span className="vs">{t.replayer.vs}</span>
                     <PositionBadge position={hand.villainPosition as Position} size="sm" />
                   </div>
                   <div className="hand-scenario">
@@ -215,7 +218,7 @@ export default function ReplayerPage() {
 
                 {/* Actions count */}
                 <div className="hand-actions-count">
-                  {hand.results.length} actions
+                  {hand.results.length} {t.replayer.actions}
                 </div>
 
                 {/* Delete button */}
@@ -223,7 +226,7 @@ export default function ReplayerPage() {
                   className="delete-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (confirm('Delete this hand?')) {
+                    if (confirm(t.replayer.deleteConfirm)) {
                       deleteHand(hand.id);
                     }
                   }}

@@ -1,0 +1,109 @@
+// Add these keys to the stats section in both zh-CN.ts and en.ts
+
+// For zh-CN.ts - add after "strongAreas: '擅长领域'," and before the closing }:
+
+    // Practice stats page specific
+    backToPractice: "返回练习",
+    resetData: "重置数据",
+    confirmReset: "确定要重置所有统计数据吗？",
+    overallAccuracy: "总体正确率",
+    decisions: "次决策",
+    streakDays: "连续天数",
+    days: "天",
+    correctDecisions: "正确决策",
+    weakSpotsTitle: "需要加强的领域",
+    preflop: "翻前",
+    flop: "翻牌",
+    turn: "转牌",
+    river: "河牌",
+    pairs: "对子",
+    suited: "同花",
+    offsuit: "杂色",
+    noData: "暂无数据",
+    last7DaysTrend: "近7天趋势",
+    noHistoryData: "暂无历史数据，开始练习来记录你的进步！",
+    startPractice: "开始练习",
+    decisionCount: "决策次数",
+
+    // Weak spots
+    weakSpots: {
+      preflopStreet: "翻前街",
+      flopStreet: "翻牌街",
+      turnStreet: "转牌街",
+      riverStreet: "河牌街",
+      rfiScenario: "RFI场景",
+      vsRfiScenario: "vs RFI场景",
+      vs3betScenario: "vs 3-Bet场景",
+      pairsHands: "对子手牌",
+      suitedHands: "同花手牌",
+      offsuitHands: "杂色手牌",
+    },
+
+    // Share modal
+    share: {
+      title: "分享我的成绩",
+      button: "分享",
+      modalTitle: "分享我的GTO成绩",
+      cardTitle: "GTO训练打卡",
+      footer: "GTO Play - 科学提升扑克水平",
+      copyText: "复制文字",
+      shareToTwitter: "分享到 Twitter",
+      copySuccess: "已复制到剪贴板，快去分享吧！",
+      copyFailed: "复制失败，请手动复制",
+      text: (streak: number, accuracy: number, decisions: number) =>
+        `GTO训练连续打卡${streak}天！\n📊 总正确率: ${accuracy}%\n🎴 已完成${decisions}次决策\n\n和我一起提升GTO水平吧！\n#GTO训练 #扑克`,
+    },
+
+// For en.ts - add after "strongAreas: 'Strong Areas'," and before the closing }:
+
+    // Practice stats page specific
+    backToPractice: "Back to Practice",
+    resetData: "Reset Data",
+    confirmReset: "Are you sure you want to reset all statistics?",
+    overallAccuracy: "Overall Accuracy",
+    decisions: "decisions",
+    streakDays: "Streak Days",
+    days: "days",
+    correctDecisions: "Correct Decisions",
+    weakSpotsTitle: "Areas to Improve",
+    preflop: "Preflop",
+    flop: "Flop",
+    turn: "Turn",
+    river: "River",
+    pairs: "Pairs",
+    suited: "Suited",
+    offsuit: "Offsuit",
+    noData: "No data available",
+    last7DaysTrend: "Last 7 Days Trend",
+    noHistoryData: "No history data yet. Start practicing to track your progress!",
+    startPractice: "Start Practice",
+    decisionCount: "Decision Count",
+
+    // Weak spots
+    weakSpots: {
+      preflopStreet: "Preflop Street",
+      flopStreet: "Flop Street",
+      turnStreet: "Turn Street",
+      riverStreet: "River Street",
+      rfiScenario: "RFI Scenario",
+      vsRfiScenario: "vs RFI Scenario",
+      vs3betScenario: "vs 3-Bet Scenario",
+      pairsHands: "Pocket Pairs",
+      suitedHands: "Suited Hands",
+      offsuitHands: "Offsuit Hands",
+    },
+
+    // Share modal
+    share: {
+      title: "Share My Stats",
+      button: "Share",
+      modalTitle: "Share My GTO Stats",
+      cardTitle: "GTO Training Check-in",
+      footer: "GTO Play - Level Up Your Poker Game",
+      copyText: "Copy Text",
+      shareToTwitter: "Share to Twitter",
+      copySuccess: "Copied to clipboard, go share it!",
+      copyFailed: "Copy failed, please copy manually",
+      text: (streak: number, accuracy: number, decisions: number) =>
+        `GTO Training ${streak} days streak!\n📊 Overall Accuracy: ${accuracy}%\n🎴 Completed ${decisions} decisions\n\nJoin me in improving your GTO skills!\n#GTOTraining #Poker`,
+    },

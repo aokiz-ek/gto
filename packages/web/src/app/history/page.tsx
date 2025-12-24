@@ -6,6 +6,7 @@ import { PokerCard } from '@gto/ui';
 import { parseCard } from '@gto/core';
 import type { Card as CardType } from '@gto/core';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import './history.css';
 
 interface HandHistory {
@@ -36,6 +37,7 @@ const STREETS = ['preflop', 'flop', 'turn', 'river'];
 const ITEMS_PER_PAGE = 20;
 
 export default function HistoryPage() {
+  const { t } = useTranslation();
   const { isMobile, isMobileOrTablet } = useResponsive();
   const [histories, setHistories] = useState<HandHistory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,7 +122,7 @@ export default function HistoryPage() {
   };
 
   const deleteHistory = async (id: string) => {
-    if (!confirm('确定要删除这手牌吗？')) return;
+    if (!confirm(t.history.confirmDelete || '确定要删除这手牌吗？')) return;
 
     try {
       const response = await fetch(`/api/history?id=${id}`, {
@@ -142,7 +144,7 @@ export default function HistoryPage() {
 
   const deleteSelected = async () => {
     if (selectedIds.size === 0) return;
-    if (!confirm(`确定要删除选中的 ${selectedIds.size} 手牌吗？`)) return;
+    if (!confirm(t.history.confirmDeleteMultiple?.replace('{count}', selectedIds.size.toString()) || `确定要删除选中的 ${selectedIds.size} 手牌吗？`)) return;
 
     try {
       await Promise.all(
@@ -202,10 +204,10 @@ export default function HistoryPage() {
 
       // Refresh histories
       fetchHistories();
-      alert(`成功导入 ${handsToImport.length} 手牌`);
+      alert(t.history.importSuccess?.replace('{count}', handsToImport.length.toString()) || `成功导入 ${handsToImport.length} 手牌`);
     } catch (error) {
       console.error('Import failed:', error);
-      alert('导入失败，请检查文件格式');
+      alert(t.history.importError || '导入失败，请检查文件格式');
     }
 
     // Reset input
@@ -348,9 +350,9 @@ export default function HistoryPage() {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(hours / 24);
 
-    if (hours < 1) return '刚刚';
-    if (hours < 24) return `${hours}小时前`;
-    if (days < 7) return `${days}天前`;
+    if (hours < 1) return t.history.justNow || '刚刚';
+    if (hours < 24) return t.history.hoursAgo?.replace('{hours}', hours.toString()) || `${hours}小时前`;
+    if (days < 7) return t.history.daysAgo?.replace('{days}', days.toString()) || `${days}天前`;
     return formatDate(dateStr);
   };
 
@@ -360,8 +362,8 @@ export default function HistoryPage() {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (date.toDateString() === today.toDateString()) return '今天';
-    if (date.toDateString() === yesterday.toDateString()) return '昨天';
+    if (date.toDateString() === today.toDateString()) return t.history.today;
+    if (date.toDateString() === yesterday.toDateString()) return t.history.yesterday || '昨天';
     return date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
   };
 
@@ -518,10 +520,10 @@ export default function HistoryPage() {
 
   const getStreetLabel = (street: string) => {
     const labels: Record<string, string> = {
-      preflop: '翻牌前',
-      flop: '翻牌',
-      turn: '转牌',
-      river: '河牌',
+      preflop: t.history.preflop || '翻牌前',
+      flop: t.history.flop || '翻牌',
+      turn: t.history.turn || '转牌',
+      river: t.history.river || '河牌',
     };
     return labels[street.toLowerCase()] || street;
   };
@@ -591,13 +593,13 @@ export default function HistoryPage() {
                   <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
               </Link>
-              <h1 className="page-title">牌局历史</h1>
+              <h1 className="page-title">{t.history.title}</h1>
             </div>
             <p className="page-subtitle">
-              回顾和分析你保存的牌局
+              {t.history.subtitle}
               {filteredHistories.length !== histories.length && (
                 <span className="result-count">
-                  · 显示 {filteredHistories.length} / {histories.length} 条
+                  · {t.history.showing || '显示'} {filteredHistories.length} / {histories.length} {t.history.items || '条'}
                 </span>
               )}
             </p>
@@ -607,25 +609,25 @@ export default function HistoryPage() {
               <>
                 <button className="action-btn" onClick={exportSelected}>
                   <span>📤</span>
-                  导出 ({selectedIds.size})
+                  {t.history.export} ({selectedIds.size})
                 </button>
                 <button className="action-btn danger" onClick={deleteSelected}>
                   <span>🗑️</span>
-                  删除
+                  {t.history.delete || '删除'}
                 </button>
                 <button className="action-btn" onClick={() => { setSelectedIds(new Set()); setSelectionMode(false); }}>
-                  取消
+                  {t.history.cancel || '取消'}
                 </button>
               </>
             ) : (
               <>
                 <button className="action-btn" onClick={() => importInputRef.current?.click()}>
                   <span>📥</span>
-                  导入
+                  {t.history.import}
                 </button>
                 <Link href="/analyzer" className="action-btn primary">
                   <span>➕</span>
-                  分析新牌局
+                  {t.history.analyzeNew || '分析新牌局'}
                 </Link>
               </>
             )}
@@ -637,28 +639,28 @@ export default function HistoryPage() {
           <div className="stats-dashboard">
             <div className="stat-card">
               <div className="stat-icon sessions">📊</div>
-              <div className="stat-label">总牌局数</div>
+              <div className="stat-label">{t.history.totalHands || '总牌局数'}</div>
               <div className="stat-value">{stats.totalHands}</div>
             </div>
             <div className="stat-card">
               <div className="stat-icon equity">📈</div>
-              <div className="stat-label">平均权益</div>
+              <div className="stat-label">{t.history.avgEquity || '平均权益'}</div>
               <div className="stat-value">{(stats.avgEquity * 100).toFixed(1)}%</div>
             </div>
             <div className="stat-card">
               <div className="stat-icon ev">💰</div>
-              <div className="stat-label">累计 EV</div>
+              <div className="stat-label">{t.history.totalEV || '累计 EV'}</div>
               <div className={`stat-value ${stats.totalEV >= 0 ? 'positive' : 'negative'}`}>
                 {stats.totalEV >= 0 ? '+' : ''}{stats.totalEV.toFixed(2)} BB
               </div>
             </div>
             <div className="stat-card">
               <div className="stat-icon streak">🎯</div>
-              <div className="stat-label">正EV比例</div>
+              <div className="stat-label">{t.history.positiveEVRate || '正EV比例'}</div>
               <div className="stat-value">{(stats.winRate * 100).toFixed(0)}%</div>
               {stats.winRate > 0.5 && (
                 <span className="stat-change">
-                  <span>↑</span> 高于平均
+                  <span>↑</span> {t.history.aboveAverage || '高于平均'}
                 </span>
               )}
             </div>
@@ -674,7 +676,7 @@ export default function HistoryPage() {
               <input
                 type="text"
                 className="search-input"
-                placeholder="搜索手牌、公共牌、笔记..."
+                placeholder={t.history.searchPlaceholder || '搜索手牌、公共牌、笔记...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -684,10 +686,10 @@ export default function HistoryPage() {
             <button
               className={`filter-btn ${showFavoritesOnly ? 'active' : ''}`}
               onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-              title="仅显示收藏"
+              title={t.history.favoritesOnly || '仅显示收藏'}
             >
               <span>{showFavoritesOnly ? '⭐' : '☆'}</span>
-              收藏
+              {t.history.favorites || '收藏'}
             </button>
 
             {/* View toggle */}
@@ -696,13 +698,13 @@ export default function HistoryPage() {
                 className={`view-btn ${viewType === 'list' ? 'active' : ''}`}
                 onClick={() => setViewType('list')}
               >
-                列表
+                {t.history.listView || '列表'}
               </button>
               <button
                 className={`view-btn ${viewType === 'grid' ? 'active' : ''}`}
                 onClick={() => setViewType('grid')}
               >
-                卡片
+                {t.history.gridView || '卡片'}
               </button>
             </div>
 
@@ -715,17 +717,17 @@ export default function HistoryPage() {
                   setShowPositionDropdown(false);
                 }}
               >
-                <span>排序</span>
+                <span>{t.history.sortBy}</span>
                 <span className="arrow">▼</span>
               </button>
               <div className={`dropdown-menu ${showSortDropdown ? 'open' : ''}`}>
                 {[
-                  { value: 'newest', label: '最新优先' },
-                  { value: 'oldest', label: '最早优先' },
-                  { value: 'equity_high', label: '权益从高到低' },
-                  { value: 'equity_low', label: '权益从低到高' },
-                  { value: 'ev_high', label: 'EV 从高到低' },
-                  { value: 'ev_low', label: 'EV 从低到高' },
+                  { value: 'newest', label: t.history.newest },
+                  { value: 'oldest', label: t.history.oldest },
+                  { value: 'equity_high', label: t.history.equityHighToLow || '权益从高到低' },
+                  { value: 'equity_low', label: t.history.equityLowToHigh || '权益从低到高' },
+                  { value: 'ev_high', label: t.history.highestEv },
+                  { value: 'ev_low', label: t.history.lowestEv },
                 ].map(option => (
                   <button
                     key={option.value}
@@ -750,7 +752,7 @@ export default function HistoryPage() {
                   setShowSortDropdown(false);
                 }}
               >
-                <span>{positionFilter || '所有位置'}</span>
+                <span>{positionFilter || t.history.allPositions || '所有位置'}</span>
                 <span className="arrow">▼</span>
               </button>
               <div className={`dropdown-menu ${showPositionDropdown ? 'open' : ''}`}>
@@ -761,7 +763,7 @@ export default function HistoryPage() {
                     setShowPositionDropdown(false);
                   }}
                 >
-                  所有位置
+                  {t.history.allPositions || '所有位置'}
                 </button>
                 {POSITIONS.map(pos => (
                   <button
@@ -781,7 +783,7 @@ export default function HistoryPage() {
             {/* Select all */}
             {filteredHistories.length > 0 && (
               <button className="action-btn" onClick={selectAll}>
-                {selectedIds.size === filteredHistories.length ? '取消全选' : '全选'}
+                {selectedIds.size === filteredHistories.length ? (t.history.deselectAll || '取消全选') : (t.history.selectAll || '全选')}
               </button>
             )}
           </div>
@@ -794,7 +796,7 @@ export default function HistoryPage() {
                 className={`filter-chip ${streetFilter === street ? 'active' : ''}`}
                 onClick={() => setStreetFilter(street)}
               >
-                <span>{street === 'all' ? '全部' : street.charAt(0).toUpperCase() + street.slice(1)}</span>
+                <span>{street === 'all' ? t.history.all : (street.charAt(0).toUpperCase() + street.slice(1))}</span>
                 <span className="chip-count">{streetCounts[street] || 0}</span>
               </button>
             ))}
@@ -806,12 +808,12 @@ export default function HistoryPage() {
       {histories.length === 0 ? (
         <div className="empty-state">
           <div className="empty-illustration">🃏</div>
-          <h3 className="empty-title">暂无牌局历史</h3>
+          <h3 className="empty-title">{t.history.noHistory}</h3>
           <p className="empty-description">
-            开始分析你的第一手牌，记录并优化你的策略
+            {t.history.startAnalyzing}
           </p>
           <button className="action-btn primary" onClick={() => window.location.href = '/analyzer'}>
-            分析第一手牌
+            {t.history.analyzeFirstHand || '分析第一手牌'}
           </button>
         </div>
       ) : (
@@ -832,16 +834,16 @@ export default function HistoryPage() {
             {hasMore && paginatedHistories.length > 0 && (
               <div ref={loadMoreRef} className="load-more-trigger">
                 <div className="loading-spinner small" />
-                <span>加载更多...</span>
+                <span>{t.history.loadMore || '加载更多...'}</span>
               </div>
             )}
 
             {filteredHistories.length === 0 && histories.length > 0 && (
               <div className="empty-state">
                 <div className="empty-illustration">🔍</div>
-                <h3 className="empty-title">没有找到匹配的牌局</h3>
+                <h3 className="empty-title">{t.history.noMatchingHands || '没有找到匹配的牌局'}</h3>
                 <p className="empty-description">
-                  尝试调整筛选条件
+                  {t.history.tryAdjustingFilters || '尝试调整筛选条件'}
                 </p>
               </div>
             )}
@@ -853,18 +855,18 @@ export default function HistoryPage() {
       {/* Batch Action Bar */}
       {selectedIds.size > 0 && (
         <div className="batch-action-bar">
-          <span className="selected-count">{selectedIds.size} 已选择</span>
+          <span className="selected-count">{selectedIds.size} {t.history.selected || '已选择'}</span>
           <span className="divider" />
           <button className="batch-btn" onClick={exportSelected}>
             <span>📤</span>
-            导出
+            {t.history.export}
           </button>
           <button className="batch-btn danger" onClick={deleteSelected}>
             <span>🗑️</span>
-            删除
+            {t.history.delete || '删除'}
           </button>
           <button className="batch-btn" onClick={() => setSelectedIds(new Set())}>
-            取消
+            {t.history.cancel || '取消'}
           </button>
         </div>
       )}
@@ -893,7 +895,7 @@ export default function HistoryPage() {
         {isMobile && (
           <div className="swipe-action delete" onClick={() => { resetSwipe(); deleteHistory(history.id); }}>
             <span>🗑️</span>
-            <span>删除</span>
+            <span>{t.history.delete || '删除'}</span>
           </div>
         )}
 
@@ -943,11 +945,11 @@ export default function HistoryPage() {
             <div className="info-bottom">
               <div className="pot-stack">
                 <span className="pot-info">
-                  <span className="label">底池</span>
+                  <span className="label">{t.history.pot || '底池'}</span>
                   <span className="value">{history.pot_size} BB</span>
                 </span>
                 <span className="stack-info">
-                  <span className="label">筹码</span>
+                  <span className="label">{t.history.stack || '筹码'}</span>
                   <span className="value">{history.stack_size} BB</span>
                 </span>
               </div>
@@ -959,7 +961,7 @@ export default function HistoryPage() {
           <div className="card-result">
             {history.analysis_result?.equity !== undefined && (
               <div className="result-item equity">
-                <span className="result-label">权益</span>
+                <span className="result-label">{t.history.equity || '权益'}</span>
                 <span className={`result-value ${getEquityClass(history.analysis_result.equity)}`}>
                   {(history.analysis_result.equity * 100).toFixed(1)}%
                 </span>
@@ -986,7 +988,7 @@ export default function HistoryPage() {
               <button
                 className={`quick-action-btn favorite ${history.is_favorite ? 'active' : ''}`}
                 onClick={(e) => toggleFavorite(history.id, e)}
-                title={history.is_favorite ? '取消收藏' : '添加收藏'}
+                title={history.is_favorite ? (t.history.unfavorite || '取消收藏') : (t.history.addToFavorites || '添加收藏')}
               >
                 {history.is_favorite ? '⭐' : '☆'}
               </button>
@@ -994,14 +996,14 @@ export default function HistoryPage() {
                 href={`/analyzer?hand=${history.hero_hand}&board=${history.board}&position=${history.hero_position}`}
                 className="quick-action-btn"
                 onClick={(e) => e.stopPropagation()}
-                title="重新分析"
+                title={t.history.reanalyze || '重新分析'}
               >
                 🔄
               </Link>
               <button
                 className="quick-action-btn danger"
                 onClick={(e) => { e.stopPropagation(); deleteHistory(history.id); }}
-                title="删除"
+                title={t.history.delete || '删除'}
               >
                 🗑️
               </button>
@@ -1066,7 +1068,7 @@ export default function HistoryPage() {
         {/* Board Cards */}
         {board.length > 0 && (
           <div className="grid-card-board">
-            <span className="board-label">公共牌</span>
+            <span className="board-label">{t.history.board || '公共牌'}</span>
             <div className="board-cards">
               {board.map((card, i) => (
                 <PokerCard key={i} card={card} size="xs" variant="dark" />
@@ -1079,11 +1081,11 @@ export default function HistoryPage() {
         <div className="grid-card-stats">
           <div className="stat-row">
             <span className="stat-item">
-              <span className="stat-label">底池</span>
+              <span className="stat-label">{t.history.pot || '底池'}</span>
               <span className="stat-value">{history.pot_size} BB</span>
             </span>
             <span className="stat-item">
-              <span className="stat-label">筹码</span>
+              <span className="stat-label">{t.history.stack || '筹码'}</span>
               <span className="stat-value">{history.stack_size} BB</span>
             </span>
           </div>
@@ -1094,7 +1096,7 @@ export default function HistoryPage() {
           <div className="grid-card-result">
             {history.analysis_result.equity !== undefined && (
               <div className={`result-badge equity ${getEquityClass(history.analysis_result.equity)}`}>
-                <span className="badge-label">权益</span>
+                <span className="badge-label">{t.history.equity || '权益'}</span>
                 <span className="badge-value">{(history.analysis_result.equity * 100).toFixed(1)}%</span>
               </div>
             )}
@@ -1120,11 +1122,11 @@ export default function HistoryPage() {
         <div className="grid-card-footer">
           <span className="time-stamp">{formatRelativeTime(history.created_at)}</span>
           <div className="grid-card-meta">
-            {history.notes && <span className="has-notes" title="有笔记">📝</span>}
+            {history.notes && <span className="has-notes" title={t.history.hasNotes || '有笔记'}>📝</span>}
             <button
               className={`favorite-btn ${history.is_favorite ? 'active' : ''}`}
               onClick={(e) => toggleFavorite(history.id, e)}
-              title={history.is_favorite ? '取消收藏' : '添加收藏'}
+              title={history.is_favorite ? (t.history.unfavorite || '取消收藏') : (t.history.addToFavorites || '添加收藏')}
             >
               {history.is_favorite ? '⭐' : '☆'}
             </button>
@@ -1138,13 +1140,13 @@ export default function HistoryPage() {
             className="grid-quick-btn"
             onClick={(e) => e.stopPropagation()}
           >
-            🔄 重新分析
+            🔄 {t.history.reanalyze || '重新分析'}
           </Link>
           <button
             className="grid-quick-btn danger"
             onClick={(e) => { e.stopPropagation(); e.preventDefault(); deleteHistory(history.id); }}
           >
-            🗑️ 删除
+            🗑️ {t.history.delete || '删除'}
           </button>
         </div>
       </Link>

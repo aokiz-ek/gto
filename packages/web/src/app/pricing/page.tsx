@@ -11,9 +11,11 @@ import {
   MembershipTier,
 } from '@/config/membership';
 import { PromoCodeInput } from '@/components';
+import { useTranslation } from '@/i18n';
 import './pricing.css';
 
 function PricingContent() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, isAuthenticated } = useUserStore();
@@ -54,10 +56,10 @@ function PricingContent() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || '创建订单失败');
+        alert(data.error || t.pricing.createOrderFailed);
       }
     } catch (error) {
-      alert('创建订单失败，请稍后重试');
+      alert(t.pricing.createOrderFailed);
     } finally {
       setLoading(null);
     }
@@ -75,7 +77,7 @@ function PricingContent() {
         window.location.href = data.url;
       }
     } catch (error) {
-      alert('打开订阅管理失败');
+      alert(t.pricing.openManageFailed);
     }
   };
 
@@ -86,9 +88,9 @@ function PricingContent() {
       <div className="pricing-container">
         {/* Header */}
         <header className="pricing-header">
-          <h1 className="pricing-title">选择您的计划</h1>
+          <h1 className="pricing-title">{t.pricing.title}</h1>
           <p className="pricing-subtitle">
-            升级会员解锁高级GTO功能，提升您的扑克水平
+            {t.pricing.subtitle}
           </p>
 
           {/* Success/Cancel Messages */}
@@ -101,7 +103,7 @@ function PricingContent() {
               color: '#00f5d4',
               marginBottom: '24px',
             }}>
-              订阅成功！
+              {t.pricing.subscriptionSuccess}
             </div>
           )}
 
@@ -114,13 +116,13 @@ function PricingContent() {
               color: '#ff6b6b',
               marginBottom: '24px',
             }}>
-              订单已取消
+              {t.pricing.orderCanceled}
             </div>
           )}
 
           {/* Billing Toggle */}
           <div className="billing-toggle">
-            <span className={`billing-option ${!isYearly ? 'active' : ''}`}>月付</span>
+            <span className={`billing-option ${!isYearly ? 'active' : ''}`}>{t.pricing.monthly}</span>
             <button
               className={`billing-toggle-switch ${isYearly ? 'active' : ''}`}
               onClick={() => setIsYearly(!isYearly)}
@@ -128,8 +130,8 @@ function PricingContent() {
               <span className="billing-toggle-knob" />
             </button>
             <span className={`billing-option ${isYearly ? 'active' : ''}`}>
-              年付
-              <span className="save-badge">省20%</span>
+              {t.pricing.yearly}
+              <span className="save-badge">{t.pricing.save}20%</span>
             </span>
           </div>
 
@@ -182,7 +184,7 @@ function PricingContent() {
                 </div>
 
                 <ul className="plan-features">
-                  {getQuickFeatures(tierId).map((feature, i) => (
+                  {getQuickFeatures(tierId, t).map((feature, i) => (
                     <li key={i}>
                       <span className="feature-check">✓</span>
                       {feature}
@@ -195,7 +197,7 @@ function PricingContent() {
                     className="plan-button current"
                     onClick={tierId !== 'free' ? handleManageSubscription : undefined}
                   >
-                    {tierId === 'free' ? '当前计划' : '管理订阅'}
+                    {tierId === 'free' ? t.pricing.currentPlan : t.pricing.manageSubscription}
                   </button>
                 ) : (
                   <button
@@ -203,7 +205,7 @@ function PricingContent() {
                     onClick={() => handleSubscribe(tierId)}
                     disabled={loading === tierId}
                   >
-                    {loading === tierId ? '处理中...' : tierId === 'free' ? '免费开始' : '立即订阅'}
+                    {loading === tierId ? t.pricing.processing : tierId === 'free' ? t.pricing.freeStart : t.pricing.subscribe}
                   </button>
                 )}
               </div>
@@ -213,14 +215,14 @@ function PricingContent() {
 
         {/* Feature Comparison Table */}
         <section className="comparison-section">
-          <h2 className="comparison-title">完整功能对比</h2>
+          <h2 className="comparison-title">{t.pricing.featureComparison}</h2>
           <table className="comparison-table">
             <thead>
               <tr>
-                <th>功能</th>
-                <th>免费版</th>
-                <th>专业版</th>
-                <th>旗舰版</th>
+                <th>{t.pricing.feature}</th>
+                <th>{MEMBERSHIP_PLANS.free.nameCn}</th>
+                <th>{MEMBERSHIP_PLANS.pro.nameCn}</th>
+                <th>{MEMBERSHIP_PLANS.premium.nameCn}</th>
               </tr>
             </thead>
             <tbody>
@@ -262,30 +264,30 @@ function PricingContent() {
 
         {/* FAQ Section */}
         <section className="faq-section">
-          <h2 className="faq-title">常见问题</h2>
+          <h2 className="faq-title">{t.pricing.faq}</h2>
           <div className="faq-list">
             <div className="faq-item">
-              <h3 className="faq-question">可以免费试用吗？</h3>
+              <h3 className="faq-question">{t.pricing.faqFreeTrial}</h3>
               <p className="faq-answer">
-                是的，所有付费计划都提供7天免费试用。试用期内可随时取消，不会产生任何费用。
+                {t.pricing.faqFreeTrialAnswer}
               </p>
             </div>
             <div className="faq-item">
-              <h3 className="faq-question">如何取消订阅？</h3>
+              <h3 className="faq-question">{t.pricing.faqCancelSubscription}</h3>
               <p className="faq-answer">
-                您可以在"设置"页面的"订阅管理"中随时取消订阅。取消后，您仍可使用剩余的订阅时间。
+                {t.pricing.faqCancelSubscriptionAnswer}
               </p>
             </div>
             <div className="faq-item">
-              <h3 className="faq-question">支持哪些支付方式？</h3>
+              <h3 className="faq-question">{t.pricing.faqPaymentMethods}</h3>
               <p className="faq-answer">
-                我们支持微信支付、支付宝和信用卡支付。企业用户还可以选择银行转账。
+                {t.pricing.faqPaymentMethodsAnswer}
               </p>
             </div>
             <div className="faq-item">
-              <h3 className="faq-question">可以升级或降级计划吗？</h3>
+              <h3 className="faq-question">{t.pricing.faqUpgradeDowngrade}</h3>
               <p className="faq-answer">
-                可以随时升级计划，差价会按剩余时间比例计算。降级将在当前计划到期后生效。
+                {t.pricing.faqUpgradeDowngradeAnswer}
               </p>
             </div>
           </div>
@@ -295,7 +297,7 @@ function PricingContent() {
         <footer className="pricing-footer">
           <p>有问题？联系我们：support@gtoplay.com</p>
           <p>
-            <a href="/terms">服务条款</a> · <a href="/privacy">隐私政策</a>
+            <a href="/terms">{t.pricing.terms}</a> · <a href="/privacy">{t.pricing.privacy}</a>
           </p>
         </footer>
       </div>
@@ -304,35 +306,35 @@ function PricingContent() {
 }
 
 // Quick features for plan cards
-function getQuickFeatures(tier: MembershipTier): string[] {
+function getQuickFeatures(tier: MembershipTier, t: any): string[] {
   switch (tier) {
     case 'free':
       return [
-        '基础翻牌前范围',
-        '每日10次练习',
-        '每日3次手牌分析',
-        '入门课程',
-        '社区只读访问',
+        t.pricing.features.basicRanges,
+        t.pricing.features.practice10,
+        t.pricing.features.analysis3,
+        t.pricing.features.basicCourses,
+        t.pricing.features.communityReadOnly,
       ];
     case 'pro':
       return [
-        '全部范围（含翻牌后）',
-        '无限练习',
-        '每日50次手牌分析',
-        'EV计算器',
-        '弱点诊断报告',
-        '全部课程',
-        '优先客服支持',
+        t.pricing.features.allRanges,
+        t.pricing.features.unlimitedPractice,
+        t.pricing.features.analysis50,
+        t.pricing.features.evCalculator,
+        t.pricing.features.weaknessReport,
+        t.pricing.features.allCourses,
+        t.pricing.features.prioritySupport,
       ];
     case 'premium':
       return [
-        '专业版全部功能',
-        '无限手牌分析',
-        'GTO求解器',
-        '自定义范围（无限）',
-        'API访问',
-        '高级AI教练',
-        '专属1对1支持',
+        t.pricing.features.allProFeatures,
+        t.pricing.features.unlimitedAnalysis,
+        t.pricing.features.gtoSolver,
+        t.pricing.features.customRangesUnlimited,
+        t.pricing.features.apiAccess,
+        t.pricing.features.advancedAiCoach,
+        t.pricing.features.dedicatedSupport,
       ];
     default:
       return [];

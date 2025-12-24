@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useUserStore } from '@/store';
 import { useToast } from '@/components';
+import { useTranslation } from '@/i18n';
 import Link from 'next/link';
 
 // Helper to calculate accuracy percentage
@@ -18,19 +19,15 @@ function formatDate(dateStr: string): string {
 }
 
 // Share stats to social media
-function generateShareText(streak: number, accuracy: number, decisions: number): string {
+function generateShareText(streak: number, accuracy: number, decisions: number, t: any): string {
   const emoji = streak >= 30 ? '👑' : streak >= 7 ? '⚡' : streak >= 3 ? '🔥' : '🎯';
-  return `${emoji} GTO训练连续打卡${streak}天！
-📊 总正确率: ${accuracy}%
-🎴 已完成${decisions}次决策
-
-和我一起提升GTO水平吧！
-#GTO训练 #扑克`;
+  return `${emoji} ${t.stats.share.text(streak, accuracy, decisions)}`;
 }
 
 export default function StatsPage() {
   const { practiceStats, resetStats } = useUserStore();
   const { showToast } = useToast();
+  const { t } = useTranslation();
   const [showShareModal, setShowShareModal] = useState(false);
 
   // Calculate overall stats
@@ -39,12 +36,12 @@ export default function StatsPage() {
   // Stats by street
   const streetStats = useMemo(() => {
     return Object.entries(practiceStats.byStreet).map(([street, data]) => ({
-      name: street === 'preflop' ? '翻前' : street === 'flop' ? '翻牌' : street === 'turn' ? '转牌' : '河牌',
+      name: street === 'preflop' ? t.stats.preflop : street === 'flop' ? t.stats.flop : street === 'turn' ? t.stats.turn : t.stats.river,
       key: street,
       accuracy: calcAccuracy(data.correct, data.total),
       total: data.total,
     }));
-  }, [practiceStats.byStreet]);
+  }, [practiceStats.byStreet, t]);
 
   // Stats by scenario
   const scenarioStats = useMemo(() => {
@@ -70,12 +67,12 @@ export default function StatsPage() {
   // Stats by hand type
   const handTypeStats = useMemo(() => {
     return Object.entries(practiceStats.byHandType).map(([type, data]) => ({
-      name: type === 'pairs' ? '对子' : type === 'suited' ? '同花' : '杂色',
+      name: type === 'pairs' ? t.stats.pairs : type === 'suited' ? t.stats.suited : t.stats.offsuit,
       key: type,
       accuracy: calcAccuracy(data.correct, data.total),
       total: data.total,
     }));
-  }, [practiceStats.byHandType]);
+  }, [practiceStats.byHandType, t]);
 
   // Daily trend (last 7 days)
   const dailyTrend = useMemo(() => {
@@ -89,52 +86,52 @@ export default function StatsPage() {
 
   // Weak spots with friendly names
   const weakSpotNames: Record<string, string> = {
-    preflop_street: '翻前街',
-    flop_street: '翻牌街',
-    turn_street: '转牌街',
-    river_street: '河牌街',
-    rfi_scenario: 'RFI场景',
-    vs_rfi_scenario: 'vs RFI场景',
-    vs_3bet_scenario: 'vs 3-Bet场景',
-    pairs_hands: '对子手牌',
-    suited_hands: '同花手牌',
-    offsuit_hands: '杂色手牌',
+    preflop_street: t.stats.weakSpots.preflopStreet,
+    flop_street: t.stats.weakSpots.flopStreet,
+    turn_street: t.stats.weakSpots.turnStreet,
+    river_street: t.stats.weakSpots.riverStreet,
+    rfi_scenario: t.stats.weakSpots.rfiScenario,
+    vs_rfi_scenario: t.stats.weakSpots.vsRfiScenario,
+    vs_3bet_scenario: t.stats.weakSpots.vs3betScenario,
+    pairs_hands: t.stats.weakSpots.pairsHands,
+    suited_hands: t.stats.weakSpots.suitedHands,
+    offsuit_hands: t.stats.weakSpots.offsuitHands,
   };
 
   return (
     <div className="stats-page">
       {/* Header */}
       <div className="header">
-        <Link href="/practice" className="back-link">← 返回练习</Link>
-        <h1>练习统计</h1>
+        <Link href="/practice" className="back-link">← {t.stats.backToPractice}</Link>
+        <h1>{t.stats.title}</h1>
         <button className="reset-btn" onClick={() => {
-          if (confirm('确定要重置所有统计数据吗？')) {
+          if (confirm(t.stats.confirmReset)) {
             resetStats();
           }
-        }}>重置数据</button>
+        }}>{t.stats.resetData}</button>
       </div>
 
       {/* Overview Cards */}
       <div className="overview-cards">
         <div className="card overall">
-          <div className="card-label">总体正确率</div>
+          <div className="card-label">{t.stats.overallAccuracy}</div>
           <div className="card-value">{overallAccuracy}%</div>
-          <div className="card-sub">{practiceStats.totalDecisions} 次决策</div>
+          <div className="card-sub">{practiceStats.totalDecisions} {t.stats.decisions}</div>
         </div>
         <div className="card streak">
-          <div className="card-label">连续天数</div>
+          <div className="card-label">{t.stats.streakDays}</div>
           <div className="card-value">{practiceStats.streakDays}</div>
-          <div className="card-sub">天</div>
+          <div className="card-sub">{t.stats.days}</div>
           <button
             className="share-btn"
             onClick={() => setShowShareModal(true)}
-            title="分享我的成绩"
+            title={t.stats.share.title}
           >
-            📤 分享
+            📤 {t.stats.share.button}
           </button>
         </div>
         <div className="card correct">
-          <div className="card-label">正确决策</div>
+          <div className="card-label">{t.stats.correctDecisions}</div>
           <div className="card-value">{practiceStats.correctDecisions}</div>
           <div className="card-sub">/ {practiceStats.totalDecisions}</div>
         </div>
@@ -143,7 +140,7 @@ export default function StatsPage() {
       {/* Weak Spots Alert */}
       {practiceStats.weakSpots.length > 0 && (
         <div className="weak-spots-alert">
-          <div className="alert-title">需要加强的领域</div>
+          <div className="alert-title">{t.stats.weakSpotsTitle}</div>
           <div className="weak-list">
             {practiceStats.weakSpots.map(spot => (
               <span key={spot} className="weak-tag">
@@ -158,7 +155,7 @@ export default function StatsPage() {
       <div className="stats-grid">
         {/* By Street */}
         <div className="stats-section">
-          <h2>按街统计</h2>
+          <h2>{t.stats.byStreet}</h2>
           <div className="stat-bars">
             {streetStats.map(stat => (
               <div key={stat.key} className="stat-bar-row">
@@ -178,7 +175,7 @@ export default function StatsPage() {
 
         {/* By Scenario */}
         <div className="stats-section">
-          <h2>按场景统计</h2>
+          <h2>{t.stats.byScenario}</h2>
           <div className="stat-bars">
             {scenarioStats.map(stat => (
               <div key={stat.key} className="stat-bar-row">
@@ -198,7 +195,7 @@ export default function StatsPage() {
 
         {/* By Position */}
         <div className="stats-section">
-          <h2>按位置统计</h2>
+          <h2>{t.stats.byPosition}</h2>
           <div className="stat-bars">
             {positionStats.length > 0 ? positionStats.map(stat => (
               <div key={stat.name} className="stat-bar-row">
@@ -212,13 +209,13 @@ export default function StatsPage() {
                 <span className="stat-value">{stat.accuracy}%</span>
                 <span className="stat-count">({stat.total})</span>
               </div>
-            )) : <div className="no-data">暂无数据</div>}
+            )) : <div className="no-data">{t.stats.noData}</div>}
           </div>
         </div>
 
         {/* By Hand Type */}
         <div className="stats-section">
-          <h2>按手牌类型</h2>
+          <h2>{t.stats.byHandType}</h2>
           <div className="stat-bars">
             {handTypeStats.map(stat => (
               <div key={stat.key} className="stat-bar-row">
@@ -239,7 +236,7 @@ export default function StatsPage() {
 
       {/* Daily Trend */}
       <div className="daily-trend-section">
-        <h2>近7天趋势</h2>
+        <h2>{t.stats.last7DaysTrend}</h2>
         {dailyTrend.length > 0 ? (
           <div className="trend-chart">
             {dailyTrend.map((day, idx) => (
@@ -252,13 +249,13 @@ export default function StatsPage() {
             ))}
           </div>
         ) : (
-          <div className="no-data">暂无历史数据，开始练习来记录你的进步！</div>
+          <div className="no-data">{t.stats.noHistoryData}</div>
         )}
       </div>
 
       {/* Action Button */}
       <Link href="/practice" className="practice-btn">
-        开始练习
+        {t.stats.startPractice}
       </Link>
 
       {/* Share Modal */}
@@ -266,57 +263,57 @@ export default function StatsPage() {
         <div className="share-modal-overlay" onClick={() => setShowShareModal(false)}>
           <div className="share-modal" onClick={(e) => e.stopPropagation()}>
             <div className="share-modal-header">
-              <h3>分享我的GTO成绩</h3>
+              <h3>{t.stats.share.modalTitle}</h3>
               <button className="close-modal" onClick={() => setShowShareModal(false)}>×</button>
             </div>
 
             <div className="share-card">
               <div className="share-card-header">
                 <span className="share-fire">{practiceStats.streakDays >= 30 ? '👑' : practiceStats.streakDays >= 7 ? '⚡' : practiceStats.streakDays >= 3 ? '🔥' : '🎯'}</span>
-                <span className="share-title">GTO训练打卡</span>
+                <span className="share-title">{t.stats.share.cardTitle}</span>
               </div>
               <div className="share-stats">
                 <div className="share-stat">
                   <span className="share-stat-value">{practiceStats.streakDays}</span>
-                  <span className="share-stat-label">连续天数</span>
+                  <span className="share-stat-label">{t.stats.streakDays}</span>
                 </div>
                 <div className="share-stat">
                   <span className="share-stat-value">{overallAccuracy}%</span>
-                  <span className="share-stat-label">正确率</span>
+                  <span className="share-stat-label">{t.stats.accuracy}</span>
                 </div>
                 <div className="share-stat">
                   <span className="share-stat-value">{practiceStats.totalDecisions}</span>
-                  <span className="share-stat-label">决策次数</span>
+                  <span className="share-stat-label">{t.stats.decisionCount}</span>
                 </div>
               </div>
-              <div className="share-footer">GTO Play - 科学提升扑克水平</div>
+              <div className="share-footer">{t.stats.share.footer}</div>
             </div>
 
             <div className="share-actions">
               <button
                 className="share-action-btn copy"
                 onClick={async () => {
-                  const text = generateShareText(practiceStats.streakDays, overallAccuracy, practiceStats.totalDecisions);
+                  const text = generateShareText(practiceStats.streakDays, overallAccuracy, practiceStats.totalDecisions, t);
                   try {
                     await navigator.clipboard.writeText(text);
-                    showToast('已复制到剪贴板，快去分享吧！', 'success');
+                    showToast(t.stats.share.copySuccess, 'success');
                     setShowShareModal(false);
                   } catch {
-                    showToast('复制失败，请手动复制', 'error');
+                    showToast(t.stats.share.copyFailed, 'error');
                   }
                 }}
               >
-                📋 复制文字
+                📋 {t.stats.share.copyText}
               </button>
               <button
                 className="share-action-btn twitter"
                 onClick={() => {
-                  const text = generateShareText(practiceStats.streakDays, overallAccuracy, practiceStats.totalDecisions);
+                  const text = generateShareText(practiceStats.streakDays, overallAccuracy, practiceStats.totalDecisions, t);
                   const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
                   window.open(url, '_blank');
                 }}
               >
-                𝕏 分享到 Twitter
+                𝕏 {t.stats.share.shareToTwitter}
               </button>
             </div>
           </div>

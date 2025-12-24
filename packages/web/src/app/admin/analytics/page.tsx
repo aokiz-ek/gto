@@ -8,6 +8,7 @@ import {
   CONVERSION_FUNNELS,
   AnalyticsEvent,
 } from '@/lib/analytics';
+import { useTranslation } from '@/i18n';
 import './analytics.css';
 
 // Mock data for demo (in production, fetch from API)
@@ -53,6 +54,7 @@ const MOCK_METRICS = {
 type TimeRange = '24h' | '7d' | '30d' | '90d';
 
 export default function AnalyticsDashboard() {
+  const { t } = useTranslation();
   const [timeRange, setTimeRange] = useState<TimeRange>('7d');
   const [events, setEvents] = useState<AnalyticsEvent[]>([]);
   const [eventStats, setEventStats] = useState<ReturnType<typeof getEventStats> | null>(null);
@@ -72,8 +74,8 @@ export default function AnalyticsDashboard() {
         {/* Header */}
         <header className="analytics-header">
           <div className="header-left">
-            <h1 className="analytics-title">数据分析</h1>
-            <p className="analytics-subtitle">用户行为分析与业务指标</p>
+            <h1 className="analytics-title">{t.admin.analytics.title}</h1>
+            <p className="analytics-subtitle">{t.admin.analytics.subtitle}</p>
           </div>
           <div className="header-right">
             <select
@@ -81,10 +83,10 @@ export default function AnalyticsDashboard() {
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value as TimeRange)}
             >
-              <option value="24h">过去24小时</option>
-              <option value="7d">过去7天</option>
-              <option value="30d">过去30天</option>
-              <option value="90d">过去90天</option>
+              <option value="24h">{t.admin.analytics.timeRange.last24h}</option>
+              <option value="7d">{t.admin.analytics.timeRange.last7d}</option>
+              <option value="30d">{t.admin.analytics.timeRange.last30d}</option>
+              <option value="90d">{t.admin.analytics.timeRange.last90d}</option>
             </select>
           </div>
         </header>
@@ -102,7 +104,7 @@ export default function AnalyticsDashboard() {
             </div>
             <div className="stat-content">
               <span className="stat-value">{MOCK_METRICS.overview.totalUsers.toLocaleString()}</span>
-              <span className="stat-label">总用户</span>
+              <span className="stat-label">{t.admin.analytics.totalUsers}</span>
             </div>
             <span className="stat-change positive">+12.5%</span>
           </div>
@@ -115,7 +117,7 @@ export default function AnalyticsDashboard() {
             </div>
             <div className="stat-content">
               <span className="stat-value">{MOCK_METRICS.overview.activeUsers.toLocaleString()}</span>
-              <span className="stat-label">活跃用户</span>
+              <span className="stat-label">{t.admin.analytics.activeUsers}</span>
             </div>
             <span className="stat-change positive">+8.3%</span>
           </div>
@@ -130,7 +132,7 @@ export default function AnalyticsDashboard() {
             </div>
             <div className="stat-content">
               <span className="stat-value">{MOCK_METRICS.overview.totalSessions.toLocaleString()}</span>
-              <span className="stat-label">总会话</span>
+              <span className="stat-label">{t.admin.analytics.sessions}</span>
             </div>
             <span className="stat-change positive">+15.2%</span>
           </div>
@@ -143,8 +145,8 @@ export default function AnalyticsDashboard() {
               </svg>
             </div>
             <div className="stat-content">
-              <span className="stat-value">{MOCK_METRICS.overview.avgSessionDuration}分</span>
-              <span className="stat-label">平均时长</span>
+              <span className="stat-value">{MOCK_METRICS.overview.avgSessionDuration}{t.admin.analytics.minutes}</span>
+              <span className="stat-label">{t.admin.analytics.avgDuration}</span>
             </div>
             <span className="stat-change positive">+2.1%</span>
           </div>
@@ -158,7 +160,7 @@ export default function AnalyticsDashboard() {
             </div>
             <div className="stat-content">
               <span className="stat-value">{MOCK_METRICS.overview.bounceRate}%</span>
-              <span className="stat-label">跳出率</span>
+              <span className="stat-label">{t.admin.analytics.bounceRate}</span>
             </div>
             <span className="stat-change negative">-3.2%</span>
           </div>
@@ -172,7 +174,7 @@ export default function AnalyticsDashboard() {
             </div>
             <div className="stat-content">
               <span className="stat-value">¥{MOCK_METRICS.conversionMetrics.mrr.toLocaleString()}</span>
-              <span className="stat-label">MRR</span>
+              <span className="stat-label">{t.admin.analytics.mrr}</span>
             </div>
             <span className="stat-change positive">+18.7%</span>
           </div>
@@ -182,34 +184,34 @@ export default function AnalyticsDashboard() {
         <div className="charts-row">
           {/* Retention Chart */}
           <section className="chart-card retention-chart">
-            <h3 className="chart-title">用户留存率</h3>
+            <h3 className="chart-title">{t.admin.analytics.retention.title}</h3>
             <div className="retention-bars">
               <div className="retention-bar">
                 <div className="bar-fill" style={{ height: `${MOCK_METRICS.retention.day1}%` }} />
                 <span className="bar-value">{MOCK_METRICS.retention.day1}%</span>
-                <span className="bar-label">次日</span>
+                <span className="bar-label">{t.admin.analytics.retention.day1}</span>
               </div>
               <div className="retention-bar">
                 <div className="bar-fill" style={{ height: `${MOCK_METRICS.retention.day7}%` }} />
                 <span className="bar-value">{MOCK_METRICS.retention.day7}%</span>
-                <span className="bar-label">7日</span>
+                <span className="bar-label">{t.admin.analytics.retention.day7}</span>
               </div>
               <div className="retention-bar">
                 <div className="bar-fill" style={{ height: `${MOCK_METRICS.retention.day14}%` }} />
                 <span className="bar-value">{MOCK_METRICS.retention.day14}%</span>
-                <span className="bar-label">14日</span>
+                <span className="bar-label">{t.admin.analytics.retention.day14}</span>
               </div>
               <div className="retention-bar">
                 <div className="bar-fill" style={{ height: `${MOCK_METRICS.retention.day30}%` }} />
                 <span className="bar-value">{MOCK_METRICS.retention.day30}%</span>
-                <span className="bar-label">30日</span>
+                <span className="bar-label">{t.admin.analytics.retention.day30}</span>
               </div>
             </div>
           </section>
 
           {/* Device Breakdown */}
           <section className="chart-card device-chart">
-            <h3 className="chart-title">设备分布</h3>
+            <h3 className="chart-title">{t.admin.analytics.devices.title}</h3>
             <div className="device-breakdown">
               <div className="device-item">
                 <div className="device-icon mobile">
@@ -219,7 +221,7 @@ export default function AnalyticsDashboard() {
                   </svg>
                 </div>
                 <div className="device-info">
-                  <span className="device-name">移动端</span>
+                  <span className="device-name">{t.admin.analytics.devices.mobile}</span>
                   <span className="device-percent">{MOCK_METRICS.deviceBreakdown.mobile}%</span>
                 </div>
                 <div className="device-bar">
@@ -234,7 +236,7 @@ export default function AnalyticsDashboard() {
                   </svg>
                 </div>
                 <div className="device-info">
-                  <span className="device-name">平板</span>
+                  <span className="device-name">{t.admin.analytics.devices.tablet}</span>
                   <span className="device-percent">{MOCK_METRICS.deviceBreakdown.tablet}%</span>
                 </div>
                 <div className="device-bar">
@@ -250,7 +252,7 @@ export default function AnalyticsDashboard() {
                   </svg>
                 </div>
                 <div className="device-info">
-                  <span className="device-name">桌面端</span>
+                  <span className="device-name">{t.admin.analytics.devices.desktop}</span>
                   <span className="device-percent">{MOCK_METRICS.deviceBreakdown.desktop}%</span>
                 </div>
                 <div className="device-bar">
@@ -264,7 +266,7 @@ export default function AnalyticsDashboard() {
         {/* Conversion Funnel */}
         <section className="chart-card funnel-section">
           <div className="funnel-header">
-            <h3 className="chart-title">转化漏斗</h3>
+            <h3 className="chart-title">{t.admin.analytics.funnel.title}</h3>
             <select
               className="funnel-select"
               value={selectedFunnel}
@@ -294,7 +296,7 @@ export default function AnalyticsDashboard() {
                 </div>
               ))}
               <div className="funnel-summary">
-                <span>总转化率: </span>
+                <span>{t.admin.analytics.funnel.totalConversion}: </span>
                 <strong>{funnelData.overallRate}%</strong>
               </div>
             </div>
@@ -303,13 +305,13 @@ export default function AnalyticsDashboard() {
 
         {/* Top Pages */}
         <section className="chart-card top-pages">
-          <h3 className="chart-title">热门页面</h3>
+          <h3 className="chart-title">{t.admin.analytics.topPages.title}</h3>
           <table className="pages-table">
             <thead>
               <tr>
-                <th>页面</th>
-                <th>浏览量</th>
-                <th>平均停留</th>
+                <th>{t.admin.analytics.topPages.page}</th>
+                <th>{t.admin.analytics.topPages.views}</th>
+                <th>{t.admin.analytics.topPages.avgTime}</th>
               </tr>
             </thead>
             <tbody>
@@ -317,7 +319,7 @@ export default function AnalyticsDashboard() {
                 <tr key={index}>
                   <td className="page-path">{page.path}</td>
                   <td>{page.views.toLocaleString()}</td>
-                  <td>{page.avgTime}分</td>
+                  <td>{page.avgTime}{t.admin.analytics.minutes}</td>
                 </tr>
               ))}
             </tbody>
@@ -326,30 +328,30 @@ export default function AnalyticsDashboard() {
 
         {/* Business Metrics */}
         <section className="chart-card business-metrics">
-          <h3 className="chart-title">商业指标</h3>
+          <h3 className="chart-title">{t.admin.analytics.business.title}</h3>
           <div className="metrics-grid">
             <div className="metric-item">
-              <span className="metric-label">免费转试用</span>
+              <span className="metric-label">{t.admin.analytics.business.freeToTrial}</span>
               <span className="metric-value">{MOCK_METRICS.conversionMetrics.freeToTrial}%</span>
             </div>
             <div className="metric-item">
-              <span className="metric-label">试用转付费</span>
+              <span className="metric-label">{t.admin.analytics.business.trialToPaid}</span>
               <span className="metric-value">{MOCK_METRICS.conversionMetrics.trialToPaid}%</span>
             </div>
             <div className="metric-item">
-              <span className="metric-label">月流失率</span>
+              <span className="metric-label">{t.admin.analytics.business.churn}</span>
               <span className="metric-value negative">{MOCK_METRICS.conversionMetrics.monthlyChurn}%</span>
             </div>
             <div className="metric-item">
-              <span className="metric-label">ARR</span>
+              <span className="metric-label">{t.admin.analytics.business.arr}</span>
               <span className="metric-value">¥{MOCK_METRICS.conversionMetrics.arr.toLocaleString()}</span>
             </div>
             <div className="metric-item">
-              <span className="metric-label">LTV</span>
+              <span className="metric-label">{t.admin.analytics.business.ltv}</span>
               <span className="metric-value">¥{MOCK_METRICS.conversionMetrics.ltv}</span>
             </div>
             <div className="metric-item">
-              <span className="metric-label">CAC</span>
+              <span className="metric-label">{t.admin.analytics.business.cac}</span>
               <span className="metric-value">¥{MOCK_METRICS.conversionMetrics.cac}</span>
             </div>
           </div>
@@ -358,9 +360,9 @@ export default function AnalyticsDashboard() {
         {/* Local Events (Dev) */}
         {process.env.NODE_ENV !== 'production' && eventStats && (
           <section className="chart-card local-events">
-            <h3 className="chart-title">本地事件 (开发)</h3>
+            <h3 className="chart-title">{t.admin.analytics.localEvents.title}</h3>
             <div className="events-summary">
-              <p>总事件数: {eventStats.totalEvents}</p>
+              <p>{t.admin.analytics.localEvents.totalEvents}: {eventStats.totalEvents}</p>
               <div className="events-by-category">
                 {Object.entries(eventStats.byCategory).map(([category, count]) => (
                   <span key={category} className="category-badge">

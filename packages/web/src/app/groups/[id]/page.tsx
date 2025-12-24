@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useResponsive } from '@/hooks';
+import { useTranslation } from '@/i18n';
 import './group-detail.css';
 
 // Types
@@ -77,6 +78,7 @@ interface CategoryLabel {
 export default function GroupDetailPage() {
   const params = useParams();
   const { isMobile, isMobileOrTablet } = useResponsive();
+  const { t } = useTranslation();
   const [group, setGroup] = useState<StudyGroup | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [categories, setCategories] = useState<Record<string, CategoryLabel>>({});
@@ -208,7 +210,7 @@ export default function GroupDetailPage() {
           <h1>{group.name}</h1>
         </div>
         <button className="join-group-btn">
-          {group.requireApproval ? '申请加入' : '加入小组'}
+          {group.requireApproval ? t.groups.join : t.groups.join}
         </button>
       </header>
 
@@ -246,7 +248,7 @@ export default function GroupDetailPage() {
         <div className="stats-bar">
           <div className="stat-item">
             <span className="stat-value">{group.stats.totalMembers}</span>
-            <span className="stat-label">成员</span>
+            <span className="stat-label">{t.groups.members}</span>
           </div>
           <div className="stat-item">
             <span className="stat-value">{group.stats.weeklyActive}</span>
@@ -266,10 +268,10 @@ export default function GroupDetailPage() {
       {/* Tab navigation */}
       <div className="tab-nav">
         {[
-          { key: 'overview', label: '概览' },
-          { key: 'leaderboard', label: '排行榜' },
-          { key: 'challenges', label: '挑战' },
-          { key: 'members', label: '成员' },
+          { key: 'overview', label: t.groups.posts },
+          { key: 'leaderboard', label: t.groups.events },
+          { key: 'challenges', label: t.groups.about },
+          { key: 'members', label: t.groups.members },
         ].map(tab => (
           <button
             key={tab.key}
@@ -408,8 +410,8 @@ export default function GroupDetailPage() {
                         <span className="member-title">{entry.member.title}</span>
                       )}
                       <span className="member-role">
-                        {entry.member.role === 'owner' ? '创建者' :
-                         entry.member.role === 'admin' ? '管理员' : '成员'}
+                        {entry.member.role === 'owner' ? t.groups.admin :
+                         entry.member.role === 'admin' ? t.groups.admin : t.groups.members}
                       </span>
                     </div>
                   </div>
@@ -506,8 +508,8 @@ export default function GroupDetailPage() {
                       <span className="member-title-badge">{member.title}</span>
                     )}
                     <span className={`member-role-badge role-${member.role}`}>
-                      {member.role === 'owner' ? '创建者' :
-                       member.role === 'admin' ? '管理员' : '成员'}
+                      {member.role === 'owner' ? t.groups.admin :
+                       member.role === 'admin' ? t.groups.admin : t.groups.members}
                     </span>
                   </div>
                   <div className="member-activity">

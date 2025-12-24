@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { PokerCard } from '@gto/ui';
 import { ShareButton } from '@/components';
 import { useUserStore } from '@/store';
+import { useTranslation } from '@/i18n';
 import {
   createDeck,
   handToDisplayString,
@@ -172,12 +173,12 @@ interface ActionRating {
   color: string;
 }
 
-function getActionRating(frequency: number): ActionRating {
-  if (frequency >= 80) return { level: 5, name: '完美', color: '#22c55e' };
-  if (frequency >= 50) return { level: 4, name: '良好', color: '#84cc16' };
-  if (frequency >= 20) return { level: 3, name: '小失误', color: '#eab308' };
-  if (frequency >= 5) return { level: 2, name: '错误', color: '#f97316' };
-  return { level: 1, name: '严重失误', color: '#ef4444' };
+function getActionRating(frequency: number, t: any): ActionRating {
+  if (frequency >= 80) return { level: 5, name: t.challenge.rating.perfect, color: '#22c55e' };
+  if (frequency >= 50) return { level: 4, name: t.challenge.rating.good, color: '#84cc16' };
+  if (frequency >= 20) return { level: 3, name: t.challenge.rating.minor, color: '#eab308' };
+  if (frequency >= 5) return { level: 2, name: t.challenge.rating.mistake, color: '#f97316' };
+  return { level: 1, name: t.challenge.rating.serious, color: '#ef4444' };
 }
 
 function mapActionType(action: string): string {
@@ -206,6 +207,7 @@ function saveChallengeState(state: SevenDayChallengeState): void {
 }
 
 export default function SevenDayChallengePage() {
+  const { t } = useTranslation();
   const [challengeState, setChallengeState] = useState<SevenDayChallengeState | null>(null);
   const [challenges, setChallenges] = useState<ChallengeQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -351,37 +353,37 @@ export default function SevenDayChallengePage() {
       <div className="challenge-page">
         <div className="start-view">
           <div className="icon">7</div>
-          <h1>7天挑战</h1>
-          <p className="subtitle">连续7天完成每日训练，提升你的GTO水平</p>
+          <h1>{t.challenge.sevenDay.title}</h1>
+          <p className="subtitle">{t.challenge.sevenDay.subtitle}</p>
 
           <div className="rules">
-            <h3>挑战规则</h3>
+            <h3>{t.challenge.sevenDay.rules.title}</h3>
             <ul>
-              <li>每天完成指定数量的GTO题目</li>
-              <li>难度逐日递增，从第1天10题到第7天25题</li>
-              <li>连续7天完成即为挑战成功</li>
-              <li>中断后需重新开始</li>
+              <li>{t.challenge.sevenDay.rules.rule1}</li>
+              <li>{t.challenge.sevenDay.rules.rule2}</li>
+              <li>{t.challenge.sevenDay.rules.rule3}</li>
+              <li>{t.challenge.sevenDay.rules.rule4}</li>
             </ul>
           </div>
 
           <div className="day-preview">
-            <h3>每日任务</h3>
+            <h3>{t.challenge.sevenDay.dailyTask}</h3>
             <div className="days-grid">
               {QUESTIONS_PER_DAY.map((count, i) => (
                 <div key={i} className="day-preview-item">
-                  <span className="day-num">Day {i + 1}</span>
-                  <span className="day-count">{count}题</span>
+                  <span className="day-num">{t.challenge.sevenDay.day} {i + 1}</span>
+                  <span className="day-count">{count}{t.challenge.sevenDay.questions}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <button className="start-btn" onClick={startNewChallenge}>
-            开始挑战
+            {t.challenge.sevenDay.startChallenge}
           </button>
 
           <Link href="/challenge" className="back-link">
-            返回每日挑战
+            {t.challenge.sevenDay.backToChallenge}
           </Link>
         </div>
 
@@ -533,21 +535,21 @@ export default function SevenDayChallengePage() {
       <div className="challenge-page">
         <div className="day-complete-view">
           <div className="trophy">{isAllComplete ? '🎉' : '✨'}</div>
-          <h1>{isAllComplete ? '7天挑战完成!' : `Day ${challengeState.currentDay - 1} 完成!`}</h1>
+          <h1>{isAllComplete ? t.challenge.sevenDay.challengeComplete : `${t.challenge.sevenDay.day} ${challengeState.currentDay - 1} ${t.challenge.sevenDay.completed}!`}</h1>
 
           <div className="summary-cards">
             <div className="summary-card">
               <div className="card-value">{avgScore}%</div>
-              <div className="card-label">平均分数</div>
+              <div className="card-label">{t.challenge.sevenDay.averageScore}</div>
             </div>
             <div className="summary-card highlight">
               <div className="card-value">{perfectCount}/{dayResults.length}</div>
-              <div className="card-label">完美决策</div>
+              <div className="card-label">{t.challenge.sevenDay.perfectDecisions}</div>
             </div>
           </div>
 
           <div className="progress-overview">
-            <h3>挑战进度</h3>
+            <h3>{t.challenge.sevenDay.challengeProgress}</h3>
             <div className="progress-days">
               {challengeState.days.map((day, i) => (
                 <div
@@ -564,12 +566,12 @@ export default function SevenDayChallengePage() {
           <div className="action-btns">
             <ShareButton
               title={isAllComplete
-                ? `我完成了7天GTO挑战！`
-                : `我完成了7天挑战第${challengeState.currentDay - 1}天！`}
-              desc={`得分: ${avgScore}% | 完美决策: ${perfectCount}/${dayResults.length}，来挑战我吧！`}
+                ? t.challenge.sevenDay.shareComplete
+                : `${t.challenge.sevenDay.shareDay}${challengeState.currentDay - 1}${t.challenge.sevenDay.day}!`}
+              desc={`${t.challenge.sevenDay.score}: ${avgScore}% | ${t.challenge.sevenDay.perfectDecisions}: ${perfectCount}/${dayResults.length}${t.challenge.sevenDay.shareChallenge}`}
               variant="secondary"
             >
-              分享战绩
+              {t.challenge.sevenDay.shareResults}
             </ShareButton>
             {!isAllComplete && (
               <button className="btn-primary" onClick={() => {
@@ -581,11 +583,11 @@ export default function SevenDayChallengePage() {
                 setSelectedAction(null);
                 setShowResult(false);
               }}>
-                继续 Day {challengeState.currentDay}
+                {t.challenge.sevenDay.continueChallenge} {t.challenge.sevenDay.day} {challengeState.currentDay}
               </button>
             )}
             <Link href="/" className="btn-secondary">
-              返回首页
+              {t.common.backToHome}
             </Link>
           </div>
         </div>
@@ -775,10 +777,10 @@ export default function SevenDayChallengePage() {
     <div className="challenge-page">
       {/* Header */}
       <div className="header">
-        <Link href="/" className="back-link">← 返回</Link>
+        <Link href="/" className="back-link">← {t.common.back}</Link>
         <div className="title">
-          <span className="day-badge">Day {challengeState.currentDay}</span>
-          7天挑战
+          <span className="day-badge">{t.challenge.sevenDay.day} {challengeState.currentDay}</span>
+          {t.challenge.sevenDay.title}
         </div>
         <div className="progress">
           {currentIndex + 1} / {challenges.length}
@@ -798,7 +800,7 @@ export default function SevenDayChallengePage() {
         <div className="scenario-info">
           <span className="scenario-badge">
             {currentQuestion.preflopScenario === 'rfi' ? 'RFI' :
-             currentQuestion.preflopScenario === 'vs_rfi' ? '面对RFI' : '面对3-Bet'}
+             currentQuestion.preflopScenario === 'vs_rfi' ? t.challenge.sevenDay.vsRFI : t.challenge.sevenDay.vs3Bet}
           </span>
           <span className="position-info">
             {currentQuestion.heroPosition} vs {currentQuestion.villainPosition}
@@ -818,7 +820,7 @@ export default function SevenDayChallengePage() {
         <div className="result-panel">
           <div className="score-display">
             {(() => {
-              const rating = getActionRating(accuracyScore);
+              const rating = getActionRating(accuracyScore, t);
               return (
                 <>
                   <div className="rating-stars">
@@ -840,7 +842,10 @@ export default function SevenDayChallengePage() {
               .map(action => {
                 const isSelected = mapActionType(selectedAction || '') === action.action;
                 const actionLabels: Record<string, string> = {
-                  fold: 'Fold', call: 'Call', raise: 'Raise', allin: 'All-in',
+                  fold: t.practice.fold,
+                  call: t.practice.call,
+                  raise: t.practice.raise,
+                  allin: t.practice.allIn,
                 };
                 return (
                   <div key={action.action} className={`gto-item ${isSelected ? 'selected' : ''}`}>
@@ -856,8 +861,8 @@ export default function SevenDayChallengePage() {
           </div>
 
           <button className="next-btn" onClick={handleNext}>
-            {currentIndex >= challenges.length - 1 ? '查看结果' : '下一题'}
-            <span className="hint">空格键继续</span>
+            {currentIndex >= challenges.length - 1 ? t.challenge.sevenDay.viewResults : t.challenge.sevenDay.nextQuestion}
+            <span className="hint">{t.challenge.sevenDay.pressSpace}</span>
           </button>
         </div>
       ) : (
